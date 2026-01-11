@@ -1,0 +1,29 @@
+/* Custom scrollbar for console */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Base Body Styles */
+body {
+    height: 100dvh; /* Force exact viewport height */
+    overflow: hidden; /* Prevent body scroll, everything scrolls internally */
+}
+
+/* Custom Scrollbar for the Log Console (if not using scrollbar-hide) */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #000;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #444;
+}
