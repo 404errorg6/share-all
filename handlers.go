@@ -3,7 +3,8 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"time"
+
+	"github.com/404errorg6/FTP-server/ftp/server"
 )
 
 func handleLogs(w http.ResponseWriter, req *http.Request) {
@@ -18,22 +19,28 @@ func handleLogs(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	i := 0
-	for {
-		i += 1
-		data := fmt.Sprintf("Fucked you %v times\n", i)
-		fmt.Fprint(w, data)
+	for m := range logsCh {
+		fmt.Fprint(w, m)
 		flusher.Flush()
-		time.Sleep(time.Second)
 	}
 }
 
 func handleStart(w http.ResponseWriter, req *http.Request) {
-	sendJSON(w, "server started to fuck you")
+	err := server.StartFTP()
+	if err != nil {
+		w.Write([]byte(err.Error()))
+		fmt.Printf("Error occured while starting ftp: %v\n", err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	w.Write([]byte("server started successfully"))
+	w.WriteHeader(http.StatusOK)
 }
 
 func handleStop(w http.ResponseWriter, req *http.Request) {
-	sendJSON(w, "server stopped beating your ass")
+	server.StopFTP()
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("server closed"))
 }
 
 func handleCheck(w http.ResponseWriter, req *http.Request) {
