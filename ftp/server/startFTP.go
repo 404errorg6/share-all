@@ -1,25 +1,34 @@
 package server
 
 import (
-	"log"
+	"fmt"
+	"net"
 	"os"
-	"strconv"
+	"sync"
 
 	filedriver "github.com/404errorg6/FTP-server/ftp/file_driver"
 	"github.com/goftp/server"
 )
 
 var (
-	svr *server.Server
+	svr      *server.Server
+	listener *trackedListener
+	mu       sync.Mutex
 )
 
-func StartFTP() error {
+func StartFTP(logsCh chan string) error {
 	port := 2121
-	msg := "server start successfully on port " + strconv.Itoa(port)
+	msg := fmt.Sprintf("server start successfully on port: %d", port)
 	path, err := os.UserHomeDir()
 	if err != nil {
 		return err
 	}
+
+	l, err := net.Listen("tcp", fmt.Sprintf(":%v", port))
+	if err != nil {
+		return err
+	}
+	listener = newTrackedListener(l)
 
 	driverFactory := filedriver.FileDriverFactory{
 		RootPath: path,
@@ -34,16 +43,27 @@ func StartFTP() error {
 		},
 	)
 
-	go startLog()
+	go func() {
+		err := svr.Serve(listener)
+		if err != nil {
+			logsCh <- err.Error()
+		}
+	}()
 	return nil
 }
 
-func startLog() {
-	log.Fatal(svr.ListenAndServe())
-}
-
 func StopFTP() {
+	mu.Lock()
+	defer mu.Unlock()
+
+	if listener != nil {
+		listener.closeAll()
+	}
+
 	if svr != nil {
-		svr.Shutdown()
+		err := svr.Shutdown()
+		if err != nil {
+			fmt.Printf("Error occured while closing server: %v\n", err)
+		}
 	}
 }
