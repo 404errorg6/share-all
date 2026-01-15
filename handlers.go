@@ -26,21 +26,20 @@ func handleLogs(w http.ResponseWriter, req *http.Request) {
 }
 
 func handleStart(w http.ResponseWriter, req *http.Request) {
-	err := server.StartFTP()
+	err := server.StartFTP(logsCh)
 	if err != nil {
-		w.Write([]byte(err.Error()))
+		sendJSON(w, err.Error())
 		fmt.Printf("Error occured while starting ftp: %v\n", err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
-	sendJSON(w, "server started successfully")
+	sendJSON(w, "server started successfully ")
 	w.WriteHeader(http.StatusOK)
 }
 
 func handleStop(w http.ResponseWriter, req *http.Request) {
 	server.StopFTP()
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("server closed"))
+	sendJSON(w, "server closed")
 }
 
 func handleCheck(w http.ResponseWriter, req *http.Request) {
