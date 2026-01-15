@@ -33,7 +33,7 @@ func handleStart(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
-	w.Write([]byte("server started successfully"))
+	sendJSON(w, "server started successfully")
 	w.WriteHeader(http.StatusOK)
 }
 
