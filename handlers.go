@@ -33,7 +33,7 @@ func handleStart(w http.ResponseWriter, req *http.Request) {
 }
 
 func handleStop(w http.ResponseWriter, req *http.Request) {
-	sendJSON(w, "server stopped beating your ass")
+	w.WriteHeader(http.StatusOK)
 }
 
 func handleCheck(w http.ResponseWriter, req *http.Request) {
@@ -77,7 +77,7 @@ func handleCheck(w http.ResponseWriter, req *http.Request) {
 
         async function connectToLogs() {
             try {
-	const response = await fetch('http://localhost:8085/api/logs'); // Adjust to your Go route
+                const response = await fetch('/api/logs'); // Adjust to your Go route
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
 
