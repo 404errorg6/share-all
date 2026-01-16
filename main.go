@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/404errorg6/FTP-server/ftp/server"
 	"log"
 	"net/http"
 )
@@ -15,10 +16,11 @@ func main() {
 	fmt.Printf("Starting server on %v...\n", port)
 	mux := Mux()
 
-	server := &http.Server{
+	svr := &http.Server{
 		Addr:    ":" + port,
 		Handler: mux,
 	}
 
-	log.Fatal(server.ListenAndServe())
+	server.StartFTP(logsCh)
+	log.Fatal(svr.ListenAndServe())
 }
