@@ -2,68 +2,35 @@ package server
 
 import (
 	"fmt"
-	"net"
+	"log/slog"
 	"os"
-	"sync"
 
-	filedriver "github.com/404errorg6/FTP-server/ftp/file_driver"
-	"github.com/goftp/server"
+	ftpserver "github.com/fclairamb/ftpserverlib"
 )
 
 var (
-	svr      *server.Server
-	listener *trackedListener
-	mu       sync.Mutex
+	svr *ftpserver.FtpServer
 )
 
 func StartFTP(logsCh chan string) error {
-	port := 2121
-	msg := fmt.Sprintf("server start successfully on port: %d", port)
-	path, err := os.UserHomeDir()
-	if err != nil {
-		return err
-	}
+	//	path, err := os.UserHomeDir()
+	//	if err != nil {
+	//		return err
+	//	}
 
-	l, err := net.Listen("tcp", fmt.Sprintf(":%v", port))
-	if err != nil {
-		return err
-	}
-	listener = newTrackedListener(l)
-
-	driverFactory := filedriver.FileDriverFactory{
-		RootPath: path,
-	}
-
-	svr = server.NewServer(
-		&server.ServerOpts{
-			Factory:        &driverFactory,
-			WelcomeMessage: msg,
-			Port:           port,
-			Auth:           &PermissiveAuth{},
-		},
-	)
-
-	go func() {
-		err := svr.Serve(listener)
-		if err != nil {
-			logsCh <- err.Error()
-		}
-	}()
+	mydriver := &AndroidMainDriver{}
+	svr = ftpserver.NewFtpServer(mydriver)
+	svr.Logger = slog.New(slog.NewTextHandler(os.Stdout, nil))
+	go startLogs(logsCh)
+	fmt.Printf("server started successfully on: %v\n", addr)
 	return nil
 }
 
 func StopFTP() {
-	mu.Lock()
-	defer mu.Unlock()
+}
 
-	if listener != nil {
-		listener.closeAll()
-	}
-
-	if svr != nil {
-		err := svr.Shutdown()
-		if err != nil {
-			fmt.Printf("Error occured while closing server: %v\n", err)
-		}
+func startLogs(logsCh chan string) {
+	if err := svr.ListenAndServe(); err != nil {
+		logsCh <- err.Error()
 	}
 }
