@@ -16,4 +16,4 @@ func sendJSON(w http.ResponseWriter, data string) {
 
 	w.Write([]byte(body))
 	w.WriteHeader(200)
-}
+} 

@@ -2,14 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/404errorg6/FTP-server/ftp/server"
 	"log"
 	"net/http"
 )
 
 var (
-	port   = "8085"
-	logsCh = make(chan string, 1)
+	port             = "8085"
+	logsTestingCount = 0
+	logsCh           = make(chan string, 1)
 )
 
 func main() {
@@ -21,6 +21,16 @@ func main() {
 		Handler: mux,
 	}
 
-	server.StartFTP(logsCh)
+	go testLogs()
+	logsCh <- "server ready to start"
 	log.Fatal(svr.ListenAndServe())
+}
+
+func testLogs() {
+	i := 1
+	for i <= logsTestingCount {
+		m := fmt.Sprintf("Logs testing %v...", i)
+		logsCh <- m
+		i++
+	}
 }

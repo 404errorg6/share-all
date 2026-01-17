@@ -2,8 +2,6 @@ package server
 
 import (
 	"fmt"
-	"log/slog"
-	"os"
 
 	ftpserver "github.com/fclairamb/ftpserverlib"
 )
@@ -13,6 +11,10 @@ var (
 )
 
 func StartFTP(logsCh chan string) error {
+	if svr != nil {
+		logsCh <- "server already running"
+		return nil
+	}
 	//	path, err := os.UserHomeDir()
 	//	if err != nil {
 	//		return err
@@ -20,17 +22,53 @@ func StartFTP(logsCh chan string) error {
 
 	mydriver := &AndroidMainDriver{}
 	svr = ftpserver.NewFtpServer(mydriver)
-	svr.Logger = slog.New(slog.NewTextHandler(os.Stdout, nil))
 	go startLogs(logsCh)
-	fmt.Printf("server started successfully on: %v\n", addr)
+	logsCh <- fmt.Sprintf("FTP server started on: %v", addr)
 	return nil
 }
 
-func StopFTP() {
+func StopFTP(logsCh chan string) {
+	if svr == nil {
+		logsCh <- "server is already dead"
+		return
+	}
+
+	if err := svr.Stop(); err != nil {
+		logsCh <- fmt.Sprintf("Error occured while stopping server: %v", err.Error())
+		return
+	}
+	svr = nil
+
+	connectedClient.Range(rmClients(logsCh))
+	logsCh <- "server stopped"
+}
+
+func rmClients(logsCh chan string) func(key any, val any) bool {
+	return func(key, val any) bool {
+		cc, ok := val.(ftpserver.ClientContext)
+		if !ok {
+			logsCh <- fmt.Sprintf("Unable to type-cast(ClientContext): %v", val)
+			return true
+		}
+		err := cc.Close()
+		if err != nil {
+			logsCh <- fmt.Sprintf("Error while closing %v: %v", cc.RemoteAddr(), err)
+			return true
+		}
+
+		logsCh <- fmt.Sprintf("%v forcibly disconnected.", cc.RemoteAddr())
+		return true
+	}
 }
 
 func startLogs(logsCh chan string) {
 	if err := svr.ListenAndServe(); err != nil {
-		logsCh <- err.Error()
+		// send error to logs channel without blocking
+		select {
+		case logsCh <- err.Error():
+		default:
+			fmt.Printf("logs channel full, dropping error: %v", err)
+		}
+		fmt.Printf("ftp server error: %v\n", err)
 	}
 }

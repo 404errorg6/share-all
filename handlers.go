@@ -13,33 +13,44 @@ func handleLogs(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
+	ctx := req.Context()
 	flusher, ok := w.(http.Flusher)
 	if !ok {
 		http.Error(w, "Unable to typecast to flusher", http.StatusInternalServerError)
 		return
 	}
 
-	for m := range logsCh {
-		fmt.Fprint(w, m)
-		flusher.Flush()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case m := <-logsCh:
+			m = fmt.Sprintf("[LOGS]: %v\n", m)
+			_, err := fmt.Fprint(w, m)
+			if err != nil {
+				fmt.Printf("[FATAL] %v", m)
+				continue
+			}
+
+			//			fmt.Printf("%v", m)
+			flusher.Flush()
+		}
 	}
 }
 
 func handleStart(w http.ResponseWriter, req *http.Request) {
 	err := server.StartFTP(logsCh)
 	if err != nil {
-		sendJSON(w, err.Error())
-		fmt.Printf("Error occured while starting ftp: %v\n", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		logsCh <- fmt.Sprintf("Error occured while starting ftp: %v\n", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	sendJSON(w, "server started successfully ")
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func handleStop(w http.ResponseWriter, req *http.Request) {
-	server.StopFTP()
-	sendJSON(w, "server closed")
+	server.StopFTP(logsCh)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func handleCheck(w http.ResponseWriter, req *http.Request) {
