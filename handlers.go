@@ -41,14 +41,12 @@ func handleStart(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
-	w.WriteHeader(http.StatusOK)
-	sendJSON(w, "No response")
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func handleStop(w http.ResponseWriter, req *http.Request) {
 	server.StopFTP(logsCh)
-	w.WriteHeader(http.StatusOK)
-	sendJSON(w, "No response")
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func handleCheck(w http.ResponseWriter, req *http.Request) {
