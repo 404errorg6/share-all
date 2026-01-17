@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/404errorg6/FTP-server/ftp/server"
 	"log"
 	"net/http"
 )
@@ -21,6 +20,16 @@ func main() {
 		Handler: mux,
 	}
 
-	server.StartFTP(logsCh)
+	//	go testLogs()
 	log.Fatal(svr.ListenAndServe())
+}
+
+func testLogs() {
+	i := 0
+	for i <= 1 {
+		i++
+		m := fmt.Sprintf("Logs testing %v...", i)
+		logsCh <- m
+		fmt.Println(m)
+	}
 }

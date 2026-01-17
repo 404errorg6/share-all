@@ -2,8 +2,6 @@ package server
 
 import (
 	"fmt"
-	"log/slog"
-	"os"
 
 	ftpserver "github.com/fclairamb/ftpserverlib"
 )
@@ -13,6 +11,10 @@ var (
 )
 
 func StartFTP(logsCh chan string) error {
+	if svr != nil {
+		logsCh <- "server already running"
+		return nil
+	}
 	//	path, err := os.UserHomeDir()
 	//	if err != nil {
 	//		return err
@@ -20,17 +22,30 @@ func StartFTP(logsCh chan string) error {
 
 	mydriver := &AndroidMainDriver{}
 	svr = ftpserver.NewFtpServer(mydriver)
-	svr.Logger = slog.New(slog.NewTextHandler(os.Stdout, nil))
 	go startLogs(logsCh)
-	fmt.Printf("server started successfully on: %v\n", addr)
+	logsCh <- "server started"
 	return nil
 }
 
-func StopFTP() {
+func StopFTP(logsCh chan string) {
+	if svr != nil {
+		svr.Stop()
+		svr = nil
+		logsCh <- "server stopped"
+		return
+	}
+	logsCh <- "server is already dead"
 }
 
 func startLogs(logsCh chan string) {
+	fmt.Printf("server starting on: %v\n", addr)
 	if err := svr.ListenAndServe(); err != nil {
-		logsCh <- err.Error()
+		// send error to logs channel without blocking
+		select {
+		case logsCh <- err.Error():
+		default:
+			fmt.Printf("logs channel full, dropping error: %v\n", err)
+		}
+		fmt.Printf("ftp server error: %v\n", err)
 	}
 }

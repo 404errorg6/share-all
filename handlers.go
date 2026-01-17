@@ -13,15 +13,23 @@ func handleLogs(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
+	ctx := req.Context()
 	flusher, ok := w.(http.Flusher)
 	if !ok {
 		http.Error(w, "Unable to typecast to flusher", http.StatusInternalServerError)
 		return
 	}
 
-	for m := range logsCh {
-		fmt.Fprint(w, m)
-		flusher.Flush()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case m := <-logsCh:
+			m = fmt.Sprintf("[LOGS]: %v\n", m)
+			fmt.Fprint(w, m)
+			fmt.Printf("%v", m)
+			flusher.Flush()
+		}
 	}
 }
 
@@ -33,13 +41,14 @@ func handleStart(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
-	sendJSON(w, "server started successfully ")
 	w.WriteHeader(http.StatusOK)
+	sendJSON(w, "No response")
 }
 
 func handleStop(w http.ResponseWriter, req *http.Request) {
-	server.StopFTP()
-	sendJSON(w, "server closed")
+	server.StopFTP(logsCh)
+	w.WriteHeader(http.StatusOK)
+	sendJSON(w, "No response")
 }
 
 func handleCheck(w http.ResponseWriter, req *http.Request) {

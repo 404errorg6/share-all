@@ -19,7 +19,7 @@ type AndroidMainDriver struct {
 
 func (d *AndroidMainDriver) GetSettings() (*ftpserver.Settings, error) {
 	settings := ftpserver.Settings{
-		ListenAddr: ":" + port,
+		ListenAddr: addr,
 		PublicHost: host,
 		PassiveTransferPortRange: ftpserver.PortRange{
 			Start: 2122,
@@ -30,7 +30,9 @@ func (d *AndroidMainDriver) GetSettings() (*ftpserver.Settings, error) {
 }
 
 func (d *AndroidMainDriver) ClientConnected(cc ftpserver.ClientContext) (string, error) {
-	msg := fmt.Sprintf("%v successfully connected to FTP.", cc.RemoteAddr().String())
+	remote := cc.RemoteAddr().String()
+	fmt.Printf("Client connected from: %v\n", remote)
+	msg := fmt.Sprintf("%v successfully connected to FTP.", remote)
 	return msg, nil
 }
 
@@ -40,6 +42,11 @@ func (d *AndroidMainDriver) ClientDisconnected(cc ftpserver.ClientContext) {
 }
 
 func (d *AndroidMainDriver) AuthUser(cc ftpserver.ClientContext, user, pass string) (ftpserver.ClientDriver, error) {
+	remote := "unknown"
+	if cc != nil {
+		remote = cc.RemoteAddr().String()
+	}
+	fmt.Printf("Auth attempt from %v with user=%q\n", remote, user)
 	cDriver := &AndroidClientDriver{}
 	cDriver.Fs = afero.NewOsFs()
 	afero.WriteFile(cDriver.Fs, "test.txt", []byte("Hello FTP"), 0644)
