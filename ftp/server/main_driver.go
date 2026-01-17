@@ -19,7 +19,7 @@ type AndroidMainDriver struct {
 
 func (d *AndroidMainDriver) GetSettings() (*ftpserver.Settings, error) {
 	settings := ftpserver.Settings{
-		ListenAddr: addr,
+		ListenAddr: ":" + port,
 		PublicHost: host,
 		PassiveTransferPortRange: ftpserver.PortRange{
 			Start: 2122,
@@ -30,7 +30,7 @@ func (d *AndroidMainDriver) GetSettings() (*ftpserver.Settings, error) {
 }
 
 func (d *AndroidMainDriver) ClientConnected(cc ftpserver.ClientContext) (string, error) {
-	msg := fmt.Sprintf("%v successfully connected to FTP", cc.RemoteAddr().String())
+	msg := fmt.Sprintf("%v successfully connected to FTP.", cc.RemoteAddr().String())
 	return msg, nil
 }
 
