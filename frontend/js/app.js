@@ -1,140 +1,172 @@
+/**
+ * FTP Server Manager - Frontend Logic
+ * Handles UI updates, API calls, log streaming, and simulation.
+ */
 
-// DOM Elements
-const startBtn = document.getElementById('startBtn');
-const stopBtn = document.getElementById('stopBtn');
-const ftpUrlLabel = document.getElementById('ftpUrl');
-const urlPlaceholder = document.getElementById('urlPlaceholder');
-const consoleEl = document.getElementById('console');
-const consoleContainer = consoleEl.querySelector('div'); // The inner div
+// ==========================================
+// 1. DOM Elements & Constants
+// ==========================================
+const DOM = {
+    startBtn: document.getElementById('startBtn'),
+    stopBtn: document.getElementById('stopBtn'),
+    ftpUrlLabel: document.getElementById('ftpUrl'),
+    urlPlaceholder: document.getElementById('urlPlaceholder'),
+    consoleEl: document.getElementById('console'),
+    logContainer: document.getElementById('console').querySelector('.text-log-text'),
+    scrollAnchor: document.getElementById('scrollAnchor')
+};
 
-// State
-let isRunning = false;
-let logArray = [];
-const MAX_LOGS = 1000;
-const PRUNE_PERCENT = 0.05;
-let isUserScrolling = false;
-let abortController = null;
+const CONFIG = {
+    MAX_LOGS: 1000,
+    PRUNE_PERCENT: 0.05,
+    DEFAULT_URL: "ftp://127.0.0.1:2121",
+};
 
-// Helpers
+// ==========================================
+// 2. State Management
+// ==========================================
+let state = {
+    isRunning: false,
+    isUserScrolling: false,
+    abortController: null,
+};
+
+// ==========================================
+// 3. UI Helpers
+// ==========================================
 function updateUI(running, url = "") {
-    isRunning = running;
-    startBtn.disabled = running;
-    stopBtn.disabled = !running;
+    state.isRunning = running;
+    
+    // Button States
+    DOM.startBtn.disabled = running;
+    DOM.stopBtn.disabled = !running;
+    DOM.startBtn.style.opacity = running ? "0.5" : "1";
+    DOM.stopBtn.style.opacity = running ? "1" : "0.5";
 
-    // Toggle opacity for disabled state visualization (Tailwind handles cursor-not-allowed)
-    startBtn.style.opacity = running ? "0.5" : "1";
-    stopBtn.style.opacity = running ? "1" : "0.5";
-
+    // URL Display
     if (running && url) {
-        ftpUrlLabel.innerText = url;
-        ftpUrlLabel.classList.remove('hidden');
-        urlPlaceholder.classList.add('hidden');
+        DOM.ftpUrlLabel.innerText = url;
+        DOM.ftpUrlLabel.classList.remove('hidden');
+        DOM.urlPlaceholder.classList.add('hidden');
     } else {
-        ftpUrlLabel.classList.add('hidden');
-        urlPlaceholder.classList.remove('hidden');
+        DOM.ftpUrlLabel.classList.add('hidden');
+        DOM.urlPlaceholder.classList.remove('hidden');
     }
 }
 
-const scrollAnchor = document.getElementById('scrollAnchor');
-
 function addLog(text) {
     const now = new Date().toLocaleTimeString();
-
-    // Create Wrapper Div
+    
+    // Create Log Entry
     const entryDiv = document.createElement('div');
     entryDiv.className = "mb-1 group relative";
-
-    // Create Text Paragraph with line clamping
+    
     const p = document.createElement('p');
-    // whitespace-pre-wrap preserves newlines but allows wrapping
-    // break-all ensures long text doesn't overflow horizontally
     p.className = "line-clamp-3 break-all whitespace-pre-wrap"; 
     p.innerHTML = `<span class="text-gray-500 mr-2">[${now}]</span><span>${text}</span>`;
-
+    
     entryDiv.appendChild(p);
 
-    // Connect to Container
-    const logContainer = consoleEl.querySelector('.text-log-text');
+    if (!DOM.logContainer) return;
 
-    if (logContainer) {
-        // Insert before cursor or append
-        const cursorDiv = logContainer.querySelector('.animate-pulse');
-        if (cursorDiv) {
-            logContainer.insertBefore(entryDiv, cursorDiv);
-        } else {
-            logContainer.appendChild(entryDiv);
-        }
+    // Insert Log
+    const cursorDiv = DOM.logContainer.querySelector('.animate-pulse');
+    if (cursorDiv) {
+        DOM.logContainer.insertBefore(entryDiv, cursorDiv);
+    } else {
+        DOM.logContainer.appendChild(entryDiv);
+    }
 
-        // Check for overflow (Log must be in DOM to calculate height)
-        // If content height > visible height (which is clamped), show button
-        if (p.scrollHeight > p.clientHeight) {
-            const showMoreBtn = document.createElement('button');
-            showMoreBtn.innerText = "Show more";
-            showMoreBtn.className = "text-xs text-primary/80 hover:text-primary mt-0.5 focus:outline-none hover:underline block";
-            
-            showMoreBtn.onclick = () => {
-                p.classList.remove('line-clamp-3');
-                showMoreBtn.remove();
-            };
-            
-            entryDiv.appendChild(showMoreBtn);
-        }
+    // Handle "Show More" for long logs
+    if (p.scrollHeight > p.clientHeight) {
+        const showMoreBtn = document.createElement('button');
+        showMoreBtn.innerText = "Show more";
+        showMoreBtn.className = "text-xs text-primary/80 hover:text-primary mt-0.5 focus:outline-none hover:underline block";
+        showMoreBtn.onclick = () => {
+            p.classList.remove('line-clamp-3');
+            showMoreBtn.remove();
+        };
+        entryDiv.appendChild(showMoreBtn);
+    }
 
-        // Buffer Logic - Prune old logs
-        // Note: We are removing 'entryDiv' elements now, which is correct (first child)
-        // Ensure we don't accidentally remove the cursor if buffer is small/empty, but MAX_LOGS is 1000 so safe.
-        if (logContainer.children.length > MAX_LOGS) {
-            const removeCount = Math.floor(MAX_LOGS * PRUNE_PERCENT);
-            for (let i = 0; i < removeCount; i++) {
-                // Remove from top
-                if (logContainer.firstElementChild && logContainer.firstElementChild !== cursorDiv) {
-                    logContainer.removeChild(logContainer.firstElementChild);
-                }
+    // Buffer Management (Prune old logs)
+    if (DOM.logContainer.children.length > CONFIG.MAX_LOGS) {
+        const pruneCount = Math.floor(CONFIG.MAX_LOGS * CONFIG.PRUNE_PERCENT);
+        for (let i = 0; i < pruneCount; i++) {
+            const firstLog = DOM.logContainer.firstElementChild;
+            if (firstLog && firstLog !== cursorDiv) {
+                DOM.logContainer.removeChild(firstLog);
             }
         }
     }
 
-    // Auto-scroll
-    if (!isUserScrolling) {
-        if (scrollAnchor) {
-            scrollAnchor.scrollIntoView({ behavior: "smooth", block: "end" });
+    // Auto-Scroll
+    if (!state.isUserScrolling) {
+        if (DOM.scrollAnchor) {
+            DOM.scrollAnchor.scrollIntoView({ behavior: "smooth", block: "end" });
         } else {
-            consoleEl.scrollTop = consoleEl.scrollHeight;
+            DOM.consoleEl.scrollTop = DOM.consoleEl.scrollHeight;
         }
     }
 }
 
-// Scroll Detection
-consoleEl.addEventListener('scroll', () => {
-    const threshold = 100; // Increased threshold for mobile touch variance
-    const position = consoleEl.scrollTop + consoleEl.clientHeight;
-    const height = consoleEl.scrollHeight;
-
-    // If user is near bottom, enable auto-scroll. If they scroll up, disable it.
-    if (Math.abs(height - position) < threshold) {
-        isUserScrolling = false;
-    } else {
-        isUserScrolling = true;
-    }
+// Scroll Detection (Pause auto-scroll on user interaction)
+DOM.consoleEl.addEventListener('scroll', () => {
+    const threshold = 100;
+    const position = DOM.consoleEl.scrollTop + DOM.consoleEl.clientHeight;
+    const height = DOM.consoleEl.scrollHeight;
+    state.isUserScrolling = Math.abs(height - position) >= threshold;
 });
 
-// API Calls
-async function startServer() {
+
+
+// ==========================================
+// 5. API Interactions
+// ==========================================
+
+/**
+ * Parses the response from start-ftp API.
+ * Handles both JSON objects and plain text strings.
+ */
+async function parseResponse(res) {
+    const text = await res.text();
     try {
+        const data = JSON.parse(text);
+        return {
+            message: (typeof data === 'string') ? data : (data.message || text),
+            url: (typeof data === 'object' && data.url) ? data.url : CONFIG.DEFAULT_URL
+        };
+    } catch {
+        return { message: text, url: CONFIG.DEFAULT_URL };
+    }
+}
+
+async function startServer() {
+    // 1. Prepare UI
+    initLogs(); // Start listener immediately
+
+    try {
+        // 2. Call API
         const res = await fetch('/api/start-ftp', { method: 'POST' });
-        // The legacy backend sends a JSON string, not an object with 'message'
-        const data = await res.json();
-        const message = (typeof data === 'string') ? data : data.message;
-        const url = (typeof data === 'object' && data.url) ? data.url : "ftp://127.0.0.1:2121";
+        const { message, url } = await parseResponse(res);
 
         if (res.ok) {
+            // 3. Success State
             updateUI(true, url);
-            initLogs();
+            addLog("SYSTEM: FTP Server Started successfully on port 2121");
+
+            
+            if (message && message !== "server started successfully") {
+                addLog(`SYSTEM: ${message}`);
+            }
         } else {
+            // 4. Error State (Backend rejected start)
             addLog(`ERROR: ${message}`);
+            shutdownLogStream();
         }
     } catch (err) {
         addLog(`ERROR: Could not connect to backend. ${err.message}`);
+        shutdownLogStream();
     }
 }
 
@@ -144,37 +176,41 @@ async function stopServer() {
 
         if (res.ok) {
             updateUI(false);
-            if (abortController) {
-                abortController.abort();
-                abortController = null;
-            }
+
+            shutdownLogStream();
+            addLog("SYSTEM: Server stopped.");
         } else {
-            // Try to read error message if any
-            try {
-                const data = await res.json();
-                const message = (typeof data === 'string') ? data : data.message || "Unknown error";
-                addLog(`ERROR: ${message}`);
-            } catch (e) {
-                addLog(`ERROR: Server returned ${res.status}`);
-            }
+            const { message } = await parseResponse(res);
+            addLog(`ERROR: ${message}`);
         }
     } catch (err) {
         addLog(`ERROR: ${err.message}`);
     }
 }
 
-async function initLogs() {
-    if (abortController) return;
+// ==========================================
+// 6. Log Streaming (SSE / Reader)
+// ==========================================
+function shutdownLogStream() {
+    if (state.abortController) {
+        state.abortController.abort();
+        state.abortController = null;
+    }
+}
 
-    abortController = new AbortController();
+async function initLogs() {
+    if (state.abortController) return;
+
+    state.abortController = new AbortController();
 
     try {
         const response = await fetch('/api/logs', {
-            signal: abortController.signal
+            signal: state.abortController.signal
         });
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
+
         while (true) {
             const { value, done } = await reader.read();
             if (done) break;
@@ -182,26 +218,18 @@ async function initLogs() {
             const chunk = decoder.decode(value, { stream: true });
             const lines = chunk.split('\n').filter(line => line.trim() !== "");
 
-            for (const line of lines) {
-                addLog(line);
-            }
+            lines.forEach(line => addLog(line));
         }
     } catch (err) {
-        if (err.name === 'AbortError') {
-            addLog("SYSTEM: Log stream stopped.");
-        } else {
+        if (err.name !== 'AbortError') {
             addLog(`ERROR: Log stream failed. ${err.message}`);
         }
-        abortController = null;
+        state.abortController = null;
     }
 }
 
-// Event Listeners
-startBtn.addEventListener('click', startServer);
-stopBtn.addEventListener('click', stopServer);
-
-// Init
-
-// Check status (Optional, if backend supported it)
-// But since backend doesn't serve frontend, we assume start disjointly
-
+// ==========================================
+// 7. Initialization
+// ==========================================
+DOM.startBtn.addEventListener('click', startServer);
+DOM.stopBtn.addEventListener('click', stopServer);
