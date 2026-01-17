@@ -40,44 +40,62 @@ const scrollAnchor = document.getElementById('scrollAnchor');
 function addLog(text) {
     const now = new Date().toLocaleTimeString();
 
-    // Create Log Element
-    const p = document.createElement('p');
-    p.innerHTML = `<span class="text-gray-500">[${now}]</span> <span class="text-log-text">${text}</span>`;
+    // Create Wrapper Div
+    const entryDiv = document.createElement('div');
+    entryDiv.className = "mb-1 group relative";
 
-    // Append before the cursor or anchor. Actually, we want it before the cursor div which is usually last. 
-    // But since I added an anchor at the very end, let's append to the log container div (the first child of consoleEl)
-    // The consoleEl has a direct child (the div with text-log-text).
-    // Let's just find that inner container.
+    // Create Text Paragraph with line clamping
+    const p = document.createElement('p');
+    // whitespace-pre-wrap preserves newlines but allows wrapping
+    // break-all ensures long text doesn't overflow horizontally
+    p.className = "line-clamp-3 break-all whitespace-pre-wrap"; 
+    p.innerHTML = `<span class="text-gray-500 mr-2">[${now}]</span><span>${text}</span>`;
+
+    entryDiv.appendChild(p);
+
+    // Connect to Container
     const logContainer = consoleEl.querySelector('.text-log-text');
 
-    // Insert before the last element (the cursor or anchor logic handled by just appending to list, but we have cursor)
-    // Actually, simply appending to logContainer works if cursor is part of it.
-    // The previous code used consoleContainer which was undefined in the snippets above, let's fix that.
-
-    // Safety check
     if (logContainer) {
-        // Find the cursor div to insert before
+        // Insert before cursor or append
         const cursorDiv = logContainer.querySelector('.animate-pulse');
         if (cursorDiv) {
-            logContainer.insertBefore(p, cursorDiv);
+            logContainer.insertBefore(entryDiv, cursorDiv);
         } else {
-            logContainer.appendChild(p);
+            logContainer.appendChild(entryDiv);
         }
-    }
 
-    // Buffer Logic
-    if (logContainer && logContainer.children.length > MAX_LOGS) {
-        const removeCount = Math.floor(MAX_LOGS * PRUNE_PERCENT);
-        for (let i = 0; i < removeCount; i++) {
-            if (logContainer.firstElementChild) {
-                logContainer.removeChild(logContainer.firstElementChild);
+        // Check for overflow (Log must be in DOM to calculate height)
+        // If content height > visible height (which is clamped), show button
+        if (p.scrollHeight > p.clientHeight) {
+            const showMoreBtn = document.createElement('button');
+            showMoreBtn.innerText = "Show more";
+            showMoreBtn.className = "text-xs text-primary/80 hover:text-primary mt-0.5 focus:outline-none hover:underline block";
+            
+            showMoreBtn.onclick = () => {
+                p.classList.remove('line-clamp-3');
+                showMoreBtn.remove();
+            };
+            
+            entryDiv.appendChild(showMoreBtn);
+        }
+
+        // Buffer Logic - Prune old logs
+        // Note: We are removing 'entryDiv' elements now, which is correct (first child)
+        // Ensure we don't accidentally remove the cursor if buffer is small/empty, but MAX_LOGS is 1000 so safe.
+        if (logContainer.children.length > MAX_LOGS) {
+            const removeCount = Math.floor(MAX_LOGS * PRUNE_PERCENT);
+            for (let i = 0; i < removeCount; i++) {
+                // Remove from top
+                if (logContainer.firstElementChild && logContainer.firstElementChild !== cursorDiv) {
+                    logContainer.removeChild(logContainer.firstElementChild);
+                }
             }
         }
     }
 
     // Auto-scroll
     if (!isUserScrolling) {
-        // Use scrollIntoView on the anchor for smooth/reliable scrolling
         if (scrollAnchor) {
             scrollAnchor.scrollIntoView({ behavior: "smooth", block: "end" });
         } else {
@@ -103,7 +121,7 @@ consoleEl.addEventListener('scroll', () => {
 // API Calls
 async function startServer() {
     try {
-        const res = await fetch('http://localhost:8085/api/start-ftp', { method: 'POST' });
+        const res = await fetch('/api/start-ftp', { method: 'POST' });
         // The legacy backend sends a JSON string, not an object with 'message'
         const data = await res.json();
         const message = (typeof data === 'string') ? data : data.message;
@@ -112,7 +130,7 @@ async function startServer() {
         if (res.ok) {
             updateUI(true, url);
             addLog(`SYSTEM: ${message}`);
-
+            
             // Start reading logs
             initLogs();
         } else {
@@ -125,7 +143,7 @@ async function startServer() {
 
 async function stopServer() {
     try {
-        const res = await fetch('http://localhost:8085/api/stop-ftp', { method: 'POST' });
+        const res = await fetch('/api/stop-ftp', { method: 'POST' });
 
         if (res.ok) {
             // Backend sends 200 OK (Empty Body)
@@ -158,7 +176,7 @@ async function initLogs() {
     abortController = new AbortController();
 
     try {
-        const response = await fetch('http://localhost:8085/api/logs', {
+        const response = await fetch('/api/logs', {
             signal: abortController.signal
         });
 
