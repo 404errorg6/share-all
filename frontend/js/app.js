@@ -129,9 +129,6 @@ async function startServer() {
 
         if (res.ok) {
             updateUI(true, url);
-            addLog(`SYSTEM: ${message}`);
-            
-            // Start reading logs
             initLogs();
         } else {
             addLog(`ERROR: ${message}`);
@@ -146,11 +143,7 @@ async function stopServer() {
         const res = await fetch('/api/stop-ftp', { method: 'POST' });
 
         if (res.ok) {
-            // Backend sends 200 OK (Empty Body)
             updateUI(false);
-            addLog(`SYSTEM: Server stopped successfully.`);
-
-            // Stop reading logs
             if (abortController) {
                 abortController.abort();
                 abortController = null;
@@ -171,7 +164,7 @@ async function stopServer() {
 }
 
 async function initLogs() {
-    if (abortController) return; // Already running
+    if (abortController) return;
 
     abortController = new AbortController();
 
@@ -182,9 +175,6 @@ async function initLogs() {
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
-
-        addLog("SYSTEM: Log stream connected.");
-
         while (true) {
             const { value, done } = await reader.read();
             if (done) break;
@@ -193,8 +183,6 @@ async function initLogs() {
             const lines = chunk.split('\n').filter(line => line.trim() !== "");
 
             for (const line of lines) {
-                // If line contains specific strings, we can style it or filter it
-                // For now, raw output
                 addLog(line);
             }
         }
@@ -213,7 +201,7 @@ startBtn.addEventListener('click', startServer);
 stopBtn.addEventListener('click', stopServer);
 
 // Init
-addLog("SYSTEM: Dashboard initialized.");
+
 // Check status (Optional, if backend supported it)
 // But since backend doesn't serve frontend, we assume start disjointly
 
