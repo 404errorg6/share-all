@@ -4,11 +4,10 @@ import "net/http"
 
 func Mux() *http.ServeMux {
 	mux := http.NewServeMux()
-	// Serve Frontend Static Files
 	fs := http.FileServer(http.Dir("./frontend"))
-	mux.Handle("/", fs)
 
-	mux.HandleFunc("GET /api/check", handleCheck)
+	mux.Handle("/", fs)
+	mux.HandleFunc("GET /check", handleCheck)
 	mux.HandleFunc("POST /api/start-ftp", handleStart)
 	mux.HandleFunc("POST /api/stop-ftp", handleStop)
 	mux.HandleFunc("GET /api/logs", handleLogs)
