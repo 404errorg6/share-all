@@ -7,8 +7,9 @@ import (
 )
 
 var (
-	port   = "8085"
-	logsCh = make(chan string, 1)
+	port             = "8085"
+	logsTestingCount = 0
+	logsCh           = make(chan string, 1)
 )
 
 func main() {
@@ -20,16 +21,16 @@ func main() {
 		Handler: mux,
 	}
 
-	//	go testLogs()
+	go testLogs()
+	logsCh <- "server ready to start"
 	log.Fatal(svr.ListenAndServe())
 }
 
 func testLogs() {
-	i := 0
-	for i <= 1 {
-		i++
+	i := 1
+	for i <= logsTestingCount {
 		m := fmt.Sprintf("Logs testing %v...", i)
 		logsCh <- m
-		fmt.Println(m)
+		i++
 	}
 }

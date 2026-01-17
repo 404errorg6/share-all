@@ -26,8 +26,13 @@ func handleLogs(w http.ResponseWriter, req *http.Request) {
 			return
 		case m := <-logsCh:
 			m = fmt.Sprintf("[LOGS]: %v\n", m)
-			fmt.Fprint(w, m)
-			fmt.Printf("%v", m)
+			_, err := fmt.Fprint(w, m)
+			if err != nil {
+				fmt.Printf("[FATAL] %v", m)
+				continue
+			}
+
+			//			fmt.Printf("%v", m)
 			flusher.Flush()
 		}
 	}
@@ -36,9 +41,8 @@ func handleLogs(w http.ResponseWriter, req *http.Request) {
 func handleStart(w http.ResponseWriter, req *http.Request) {
 	err := server.StartFTP(logsCh)
 	if err != nil {
-		sendJSON(w, err.Error())
-		fmt.Printf("Error occured while starting ftp: %v\n", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		logsCh <- fmt.Sprintf("Error occured while starting ftp: %v\n", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
 	w.WriteHeader(http.StatusNoContent)
