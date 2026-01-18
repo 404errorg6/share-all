@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Servers Dashboard</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#50c2f7",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#101c22",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            height: 100dvh; /* Changed from min-height to height to prevent overflow */
+            overflow: hidden; /* Prevent body scroll, let individual areas scroll if needed */
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Fade in animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased overflow-hidden">
+    <div class="relative flex h-full w-full flex-col overflow-hidden max-w-md mx-auto border-x border-slate-200 dark:border-slate-800">
+        
+        <!-- TopAppBar -->
+        <header class="flex items-center bg-background-light dark:bg-background-dark px-4 py-3 justify-between border-b border-slate-200 dark:border-slate-800 z-10 sticky top-0">
+            <div class="flex items-center gap-3">
+                <div class="text-primary flex size-10 items-center justify-center">
+                    <span class="material-symbols-outlined text-3xl">storage</span>
+                </div>
+                <!-- Dynamic Title -->
+                <h2 class="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-tight">Remote</h2>
+            </div>
+            <div class="flex items-center">
+                <a href="Form-A.html" class="flex size-11 cursor-pointer items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
+                    <span class="material-symbols-outlined text-primary text-3xl">add</span>
+                </a>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col overflow-y-auto relative">
+            
+            <!-- EMPTY STATE (#empty-state) -->
+            <div id="empty-state" class="hidden flex-col items-center justify-center h-full px-6 py-10 animate-fade-in">
+                <!-- Abstract Visual -->
+                <div class="relative flex items-center justify-center w-full max-w-[280px] aspect-square mb-8">
+                    <div class="absolute inset-0 bg-primary/10 rounded-full blur-3xl"></div>
+                    <div class="relative bg-slate-100 dark:bg-[#1b2327] border-2 border-dashed border-slate-300 dark:border-slate-700 aspect-square w-full rounded-3xl flex items-center justify-center group">
+                        <div class="flex flex-col items-center gap-2">
+                            <div class="text-slate-400 dark:text-slate-600">
+                                <span class="material-symbols-outlined text-8xl">dns</span>
+                            </div>
+                            <div class="absolute bottom-6 right-6 bg-primary p-3 rounded-2xl shadow-lg shadow-primary/20">
+                                <span class="material-symbols-outlined text-white">add_link</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Text Content -->
+                <div class="flex flex-col items-center gap-3 text-center mb-8">
+                    <h3 class="text-slate-900 dark:text-white text-2xl font-bold tracking-tight">No servers yet</h3>
+                    <p class="text-slate-500 dark:text-slate-400 text-base font-normal max-w-[240px] leading-relaxed">
+                        Tap <span class="text-primary font-semibold">+</span> to add your first FTP or SFTP server.
+                    </p>
+                </div>
+                <!-- Action Button -->
+                <a href="Form-A.html" class="flex min-w-[160px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-6 bg-primary text-white text-base font-bold leading-normal tracking-wide shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all">
+                    <span class="truncate">Add Server</span>
+                </a>
+            </div>
+
+            <!-- FILLED STATE (#server-list) -->
+            <div id="server-list" class="hidden flex-col px-4 py-6 space-y-4 animate-fade-in w-full">
+                <!-- Server ListItem 1 -->
+                <div class="flex items-center gap-4 bg-white dark:bg-[#1a262e] p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onclick="window.location.href='Remote.html'">
+                    <div class="text-primary flex items-center justify-center rounded-lg bg-primary/10 shrink-0 size-12">
+                        <span class="material-symbols-outlined">folder</span>
+                    </div>
+                    <div class="flex flex-col flex-1 justify-center">
+                        <p class="text-gray-900 dark:text-white text-base font-semibold leading-normal line-clamp-1">Production Web</p>
+                        <p class="text-gray-500 dark:text-[#9cb0ba] text-sm font-normal leading-normal line-clamp-1">192.168.1.100 : 21</p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button class="p-2 text-gray-400 hover:text-primary transition-colors" onclick="event.stopPropagation()">
+                            <span class="material-symbols-outlined text-[20px]">edit</span>
+                        </button>
+                        <button class="p-2 text-gray-400 hover:text-red-400 transition-colors" onclick="event.stopPropagation()">
+                            <span class="material-symbols-outlined text-[20px]">delete</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Server ListItem 2 -->
+                <div class="flex items-center gap-4 bg-white dark:bg-[#1a262e] p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                    <div class="text-primary flex items-center justify-center rounded-lg bg-primary/10 shrink-0 size-12">
+                        <span class="material-symbols-outlined">database</span>
+                    </div>
+                    <div class="flex flex-col flex-1 justify-center">
+                        <p class="text-gray-900 dark:text-white text-base font-semibold leading-normal line-clamp-1">Backup SFTP</p>
+                        <p class="text-gray-500 dark:text-[#9cb0ba] text-sm font-normal leading-normal line-clamp-1">backup.service.com : 22</p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button class="p-2 text-gray-400 hover:text-primary transition-colors">
+                            <span class="material-symbols-outlined text-[20px]">edit</span>
+                        </button>
+                        <button class="p-2 text-gray-400 hover:text-red-400 transition-colors">
+                            <span class="material-symbols-outlined text-[20px]">delete</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Server ListItem 3 -->
+                <div class="flex items-center gap-4 bg-white dark:bg-[#1a262e] p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                    <div class="text-primary flex items-center justify-center rounded-lg bg-primary/10 shrink-0 size-12">
+                        <span class="material-symbols-outlined">dns</span>
+                    </div>
+                     <div class="flex flex-col flex-1 justify-center">
+                        <p class="text-gray-900 dark:text-white text-base font-semibold leading-normal line-clamp-1">Home NAS</p>
+                        <p class="text-gray-500 dark:text-[#9cb0ba] text-sm font-normal leading-normal line-clamp-1">10.0.0.5 : 21</p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                         <button class="p-2 text-gray-400 hover:text-primary transition-colors">
+                            <span class="material-symbols-outlined text-[20px]">edit</span>
+                         </button>
+                         <button class="p-2 text-gray-400 hover:text-red-400 transition-colors">
+                            <span class="material-symbols-outlined text-[20px]">delete</span>
+                         </button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- BottomNavBar -->
+        <nav class="flex gap-2 border-t border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-[#1b2327]/80 backdrop-blur-md px-4 pb-6 pt-2 z-20">
+            <a class="flex flex-1 flex-col items-center justify-center gap-1 py-1 rounded-xl text-primary" href="#">
+                <div class="flex h-8 items-center justify-center">
+                    <span class="material-symbols-outlined material-symbols-fill text-2xl">database</span>
+                </div>
+                <p class="text-[11px] font-semibold leading-normal tracking-wide uppercase">Remote</p>
+            </a>
+            <a class="flex flex-1 flex-col items-center justify-center gap-1 py-1 text-slate-400 dark:text-[#9cb0ba]" href="#">
+                <div class="flex h-8 items-center justify-center">
+                    <span class="material-symbols-outlined text-2xl">list_alt</span>
+                </div>
+                <p class="text-[11px] font-semibold leading-normal tracking-wide uppercase">Logs</p>
+            </a>
+            <a class="flex flex-1 flex-col items-center justify-center gap-1 py-1 text-slate-400 dark:text-[#9cb0ba]" href="#">
+                <div class="flex h-8 items-center justify-center">
+                    <span class="material-symbols-outlined text-2xl">settings</span>
+                </div>
+                <p class="text-[11px] font-semibold leading-normal tracking-wide uppercase">Settings</p>
+            </a>
+        </nav>
+        
+        <!-- Home Indicator -->
+        <div class="h-1.5 w-32 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-2 absolute bottom-2 left-1/2 -translate-x-1/2 opacity-30 z-20"></div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <style>
+        .toast {
+            pointer-events: auto;
+            transform: translateX(100%);
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        .toast.show {
+            transform: translateX(0);
+        }
+    </style>
+
+    <!-- Script to toggle states -->
+    <script>
+        // Toast Function
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            // Colors based on type
+            const bgClass = type === 'error' ? 'bg-red-500' : 'bg-green-500';
+            const icon = type === 'error' ? 'error' : 'check_circle';
+
+            toast.className = `toast flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg shadow-black/5 ${bgClass} text-white min-w-[300px] show`;
+            toast.innerHTML = `
+                <span class="material-symbols-outlined text-xl bg-white/20 p-1 rounded-full">${icon}</span>
+                <p class="font-medium text-sm">${message}</p>
+            `;
+
+            container.appendChild(toast);
+
+            // Auto dismiss
+            setTimeout(() => {
+                toast.classList.remove('show');
+                toast.classList.add('translate-x-[120%]'); // Slide out completely
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3000);
+        }
+
+        const emptyState = document.getElementById('empty-state');
+        const serverList = document.getElementById('server-list');
+
+        function render() {
+            const servers = JSON.parse(localStorage.getItem('ftp_servers') || '[]');
+            const hasServers = servers.length > 0;
+
+            if (hasServers) {
+                emptyState.classList.add('hidden');
+                emptyState.classList.remove('flex');
+                
+                serverList.classList.remove('hidden');
+                serverList.classList.add('flex');
+                
+                serverList.innerHTML = '';
+
+                servers.forEach(server => {
+                    const item = document.createElement('div');
+                    item.className = "flex items-center gap-4 bg-white dark:bg-[#1a262e] p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer";
+                    item.onclick = () => {
+                        localStorage.setItem('current_server_id', server.id);
+                        window.location.href = 'Remote.html';
+                    }; 
+                    
+                    let icon = 'dns';
+                    if (server.type === 'ftp') icon = 'folder';
+                    if (server.type === 'sftp') icon = 'cloud';
+
+                    item.innerHTML = `
+                        <div class="text-primary flex items-center justify-center rounded-lg bg-primary/10 shrink-0 size-12">
+                            <span class="material-symbols-outlined">${icon}</span>
+                        </div>
+                        <div class="flex flex-col flex-1 justify-center">
+                            <p class="text-gray-900 dark:text-white text-base font-semibold leading-normal line-clamp-1">${server.name}</p>
+                            <p class="text-gray-500 dark:text-[#9cb0ba] text-sm font-normal leading-normal line-clamp-1">${server.host} : ${server.port}</p>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button class="p-2 text-gray-400 hover:text-primary transition-colors" onclick="event.stopPropagation(); editServer(${server.id})">
+                                <span class="material-symbols-outlined text-[20px]">edit</span>
+                            </button>
+                            <button class="p-2 text-gray-400 hover:text-red-400 transition-colors" onclick="event.stopPropagation(); deleteServer(${server.id})">
+                                <span class="material-symbols-outlined text-[20px]">delete</span>
+                            </button>
+                        </div>
+                    `;
+                    serverList.appendChild(item);
+                });
+
+            } else {
+                serverList.classList.add('hidden');
+                serverList.classList.remove('flex');
+                
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+            }
+        }
+
+        async function deleteServer(id) {
+            // Simulated API Call
+            if(confirm('Delete this server connection?')) {
+                try {
+                    // console.log(`DELETE /api/servers/${id}`);
+                    // await fetch(`/api/servers/${id}`, { method: 'DELETE' });
+                    
+                    let servers = JSON.parse(localStorage.getItem('ftp_servers') || '[]');
+                    servers = servers.filter(s => s.id !== id);
+                    localStorage.setItem('ftp_servers', JSON.stringify(servers));
+                    
+                    showToast('Server deleted successfully');
+                    render();
+                } catch (error) {
+                    showToast('Failed to delete server', 'error');
+                }
+            }
+        }
+
+        function editServer(id) {
+            // Save ID to edit to pass to next page (mock)
+            localStorage.setItem('edit_server_id', id);
+            window.location.href = 'Form-E.html';
+        }
+        
+        // Initial render
+        render();
+    </script>
+</body>
+</html>

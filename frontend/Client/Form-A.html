@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Add Connection</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#50c2f7",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#101c22",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        .form-input:focus {
+            border-color: #50c2f7 !important;
+            box-shadow: 0 0 0 1px #50c2f7 !important
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24
+        }
+
+        .custom-select-arrow {
+            appearance: none;
+            background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuDxlaGCXq5p87NCFCYT-T-OlG-HHOMEl-ynpOmzVxLEEUurNqBfn2DFBwIcIkNgmOXl8hhLhCCm02TL5zN7teLbcq7fgpHd_ddUZGgDrTJQxR9xAfivOnip1vg33L0NqWMit-YyEOUB3cy_fOkjhxp6Kf6J1SEemk2P-COEZ15QYzxvTaJMQntG2ZoMrHcfe4bcFQ2M59IjqxxqqTiCEviDNMsjr2zV0hilRbGTR_aLBmg8DWRKHIvhtSC89zhqouUk7aR67zsqeAU);
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1.25rem
+        }
+    </style>
+    <style>
+        body {
+            height: 100dvh;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
+    <!-- Top Navigation Bar -->
+    <header
+        class="sticky top-0 z-50 bg-background-light dark:bg-background-dark border-b border-slate-200 dark:border-slate-800">
+        <div class="flex items-center justify-between px-4 h-16">
+            <button id="cancel-btn" class="flex items-center text-primary font-medium">
+                <span class="material-symbols-outlined mr-1">close</span>
+                Cancel
+            </button>
+            <h1 class="text-lg font-bold tracking-tight">Add Connection</h1>
+            <button class="text-primary font-bold">Help</button>
+        </div>
+    </header>
+    <main class="flex-1 overflow-y-auto pb-32">
+        <div class="max-w-md mx-auto">
+            <!-- Section A: Connection Details -->
+            <div class="mt-4">
+                <h3 class="text-primary text-xs font-bold uppercase tracking-widest px-4 pb-2 pt-4">Connection Details
+                </h3>
+                <!-- Protocol Selection -->
+                <div class="px-4 py-3">
+                    <label class="flex flex-col w-full">
+                        <span class="text-sm font-medium text-slate-500 dark:text-slate-400 pb-2">Protocol</span>
+                        <select
+                            class="custom-select-arrow form-input w-full rounded-lg text-white border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1b2327] h-14 px-4 text-base font-normal">
+                            <option selected="" value="ftp">FTP - File Transfer Protocol</option>
+                            <option value="sftp">SFTP - SSH File Transfer Protocol</option>
+                            <option value="ftps">FTPS - FTP over TLS/SSL</option>
+                        </select>
+                    </label>
+                </div>
+                <!-- Name Field -->
+                <div class="px-4 py-3">
+                    <label class="flex flex-col w-full">
+                        <span class="text-sm font-medium text-slate-500 dark:text-slate-400 pb-2">Name</span>
+                        <input
+                            class="form-input w-full rounded-lg text-white border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1b2327] h-14 px-4 text-base font-normal placeholder:text-slate-600"
+                            type="text" value="My Home Server" />
+                    </label>
+                </div>
+                <!-- Host and Port Fields -->
+                <div class="flex gap-4 px-4 py-3">
+                    <label class="flex flex-col flex-[3]">
+                        <span class="text-sm font-medium text-slate-500 dark:text-slate-400 pb-2">Host / IP
+                            Address</span>
+                        <input
+                            class="form-input w-full rounded-lg text-white border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1b2327] h-14 px-4 text-base font-normal"
+                            type="text" value="192.168.1.1" />
+                    </label>
+                    <label class="flex flex-col flex-1">
+                        <span class="text-sm font-medium text-slate-500 dark:text-slate-400 pb-2">Port</span>
+                        <input
+                            class="form-input w-full rounded-lg text-white border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1b2327] h-14 px-4 text-base font-normal"
+                            type="number" value="21" />
+                    </label>
+                </div>
+            </div>
+            <div class="h-4"></div>
+            <!-- Section B: Authentication -->
+            <div>
+                <h3 class="text-primary text-xs font-bold uppercase tracking-widest px-4 pb-2 pt-4">Authentication</h3>
+                <!-- Connection Mode Radio Group -->
+                <div class="px-4 py-3">
+                    <span class="text-sm font-medium text-slate-500 dark:text-slate-400 pb-3 block">Connection
+                        Mode</span>
+                    <div class="flex gap-3">
+                        <label class="flex-1 cursor-pointer group">
+                            <input checked="" class="hidden peer" name="mode" type="radio" value="passive" />
+                            <div
+                                class="flex items-center justify-center h-12 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1b2327] peer-checked:border-primary peer-checked:bg-primary/10 transition-all">
+                                <span
+                                    class="text-sm font-medium text-slate-400 peer-checked:text-primary">Passive</span>
+                            </div>
+                        </label>
+                        <label class="flex-1 cursor-pointer group">
+                            <input class="hidden peer" name="mode" type="radio" value="active" />
+                            <div
+                                class="flex items-center justify-center h-12 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1b2327] peer-checked:border-primary peer-checked:bg-primary/10 transition-all">
+                                <span class="text-sm font-medium text-slate-400 peer-checked:text-primary">Active</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                <!-- Anonymous Toggle -->
+                <div
+                    class="px-4 py-4 flex items-center justify-between border-y border-slate-200 dark:border-slate-800 my-2">
+                    <div>
+                        <p class="font-medium">Anonymous Login</p>
+                        <p class="text-xs text-slate-500">Connect without username/password</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input class="sr-only peer" type="checkbox" value="" />
+                        <div
+                            class="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary">
+                        </div>
+                    </label>
+                </div>
+                <!-- Credentials -->
+                <div class="px-4 py-3">
+                    <label class="flex flex-col w-full">
+                        <span class="text-sm font-medium text-slate-500 dark:text-slate-400 pb-2">Username</span>
+                        <div class="relative">
+                            <span
+                                class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">person</span>
+                            <input
+                                class="form-input w-full rounded-lg text-white border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1b2327] h-14 pl-12 pr-4 text-base font-normal"
+                                type="text" value="admin" />
+                        </div>
+                    </label>
+                </div>
+                <div class="px-4 py-3">
+                    <label class="flex flex-col w-full">
+                        <span class="text-sm font-medium text-slate-500 dark:text-slate-400 pb-2">Password</span>
+                        <div class="relative">
+                            <span
+                                class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">lock</span>
+                            <input
+                                class="form-input w-full rounded-lg text-white border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1b2327] h-14 pl-12 pr-12 text-base font-normal"
+                                type="password" value="password123" />
+                            <button class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">
+                                <span class="material-symbols-outlined">visibility</span>
+                            </button>
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- Fixed Bottom Action Bar -->
+    <footer
+        class="fixed bottom-0 left-0 right-0 p-4 bg-background-light dark:bg-background-dark/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800">
+        <div class="max-w-md mx-auto flex gap-4">
+            <button id="save-btn"
+                class="flex-1 h-14 bg-primary text-background-dark font-bold text-lg rounded-xl shadow-lg shadow-primary/20 active:scale-95 transition-transform">
+                Save Connection
+            </button>
+        </div>
+        <div class="h-4"></div> <!-- Safe area spacing -->
+    </footer>
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <style>
+        .toast {
+            pointer-events: auto;
+            transform: translateX(100%);
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        .toast.show {
+            transform: translateX(0);
+        }
+    </style>
+
+    <script>
+        // Toast Function
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const bgClass = type === 'error' ? 'bg-red-500' : 'bg-green-500';
+            const icon = type === 'error' ? 'error' : 'check_circle';
+
+            toast.className = `toast flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg shadow-black/5 ${bgClass} text-white min-w-[300px] show`;
+            toast.innerHTML = `
+                <span class="material-symbols-outlined text-xl bg-white/20 p-1 rounded-full">${icon}</span>
+                <p class="font-medium text-sm">${message}</p>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+                toast.classList.add('translate-x-[120%]');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3000);
+        }
+
+        // IDs for inputs
+        const nameInput = document.querySelector('input[value="My Home Server"]');
+        const hostInput = document.querySelector('input[value="192.168.1.1"]');
+        const portInput = document.querySelector('input[value="21"]');
+        const userInput = document.querySelector('input[value="admin"]');
+        const passInput = document.querySelector('input[value="password123"]');
+        const anonCheckbox = document.querySelector('input[type="checkbox"]'); // The anonymous toggle
+        
+        // Set IDs for easier access (optional since we have refs)
+        
+        // Clear default values
+        nameInput.value = '';
+        hostInput.value = '';
+        portInput.value = '21';
+        userInput.value = '';
+        passInput.value = '';
+
+        // Toggle Anonymous Mode
+        anonCheckbox.addEventListener('change', function() {
+            const isAnon = this.checked;
+            userInput.disabled = isAnon;
+            passInput.disabled = isAnon;
+            
+            if (isAnon) {
+                userInput.parentElement.parentElement.classList.add('opacity-50');
+                passInput.parentElement.parentElement.classList.add('opacity-50');
+            } else {
+                userInput.parentElement.parentElement.classList.remove('opacity-50');
+                passInput.parentElement.parentElement.classList.remove('opacity-50');
+            }
+        });
+
+        document.getElementById('save-btn').addEventListener('click', function() {
+            // Validation
+            if (!nameInput.value.trim()) { showToast('Please enter a connection name', 'error'); return; }
+            if (!hostInput.value.trim()) { showToast('Please enter a host address', 'error'); return; }
+            if (!portInput.value.trim()) { showToast('Please enter a port number', 'error'); return; }
+            
+            if (!anonCheckbox.checked) {
+                if (!userInput.value.trim()) { showToast('Please enter a username', 'error'); return; }
+                if (!passInput.value.trim()) { showToast('Please enter a password', 'error'); return; }
+            }
+
+            // Create Server Object
+            const newServer = {
+                id: Date.now(),
+                name: nameInput.value,
+                host: hostInput.value,
+                port: portInput.value,
+                user: anonCheckbox.checked ? 'Anonymous' : userInput.value,
+                type: document.querySelector('select').value,
+                mode: document.querySelector('input[name="mode"]:checked').value,
+                isAnon: anonCheckbox.checked
+            };
+
+            // Save to localStorage
+            const servers = JSON.parse(localStorage.getItem('ftp_servers') || '[]');
+            servers.push(newServer);
+            localStorage.setItem('ftp_servers', JSON.stringify(servers));
+
+            showToast('Connection saved successfully');
+            
+            setTimeout(() => {
+                window.location.href = 'Dashboard.html';
+            }, 1000);
+        });
+        
+        document.getElementById('cancel-btn').addEventListener('click', function() {
+            window.location.href = 'Dashboard.html';
+        });
+    </script>
+</body>
+
+</html>

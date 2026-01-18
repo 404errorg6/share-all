@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Server Detail - Home NAS</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#50c2f7",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#101c22",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-tab-indicator {
+            height: 3px;
+            background-color: #50c2f7;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen">
+<div class="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root overflow-x-hidden max-w-md mx-auto shadow-2xl">
+<!-- Header Section -->
+<header class="sticky top-0 z-20 bg-background-light dark:bg-background-dark">
+<div class="flex items-center p-4 pb-0 justify-between">
+<div class="text-slate-900 dark:text-white flex size-10 shrink-0 items-center justify-start">
+<span class="material-symbols-outlined text-2xl cursor-pointer">arrow_back_ios</span>
+</div>
+<div class="flex-1 text-center">
+<h2 class="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">Home NAS</h2>
+<p class="text-slate-500 dark:text-[#9cb0ba] text-xs font-normal leading-normal">SFTP - 192.168.1.50</p>
+</div>
+<div class="flex w-10 items-center justify-end">
+<button class="flex items-center justify-center rounded-lg h-10 w-10 bg-transparent text-slate-900 dark:text-white">
+<span class="material-symbols-outlined text-2xl">search</span>
+</button>
+</div>
+</div>
+<!-- Tabs Section -->
+<div class="pt-4">
+<div class="flex border-b border-slate-200 dark:border-[#3b4c54] px-4 justify-between relative">
+                <a class="relative flex flex-col items-center justify-center pb-[13px] pt-4 flex-1" href="#">
+                    <p class="text-primary text-sm font-bold leading-normal tracking-[0.015em]">Remote</p>
+                    <div class="active-tab-indicator"></div>
+                </a>
+                <a class="flex flex-col items-center justify-center pb-[13px] pt-4 flex-1" href="Local.html">
+                    <p class="text-slate-500 dark:text-[#9cb0ba] text-sm font-bold leading-normal tracking-[0.015em]">Local</p>
+                </a>
+</div>
+</div>
+    <!-- Breadcrumbs Section -->
+    <div class="flex gap-2 p-3 overflow-x-auto no-scrollbar items-center bg-slate-50 dark:bg-[#16252c]">
+        <div class="flex h-8 shrink-0 items-center justify-center gap-x-1 rounded-lg bg-slate-200 dark:bg-[#283439] px-3">
+            <span class="material-symbols-outlined text-primary text-lg">folder</span>
+            <p class="text-slate-900 dark:text-white text-xs font-medium">root</p>
+        </div>
+    </div>
+</header>
+<!-- Main Content: Empty for now (Dynamic later) -->
+<main class="flex-1 overflow-y-auto pb-24" id="file-list">
+    <!-- Files will be loaded here dynamically -->
+    <div class="flex flex-col items-center justify-center h-full text-slate-400">
+        <span class="material-symbols-outlined text-4xl mb-2">folder_open</span>
+        <p>No files loaded</p>
+    </div>
+</main>
+<!-- Removed FAB -->
+    <!-- Tab Bar Navigation (Optional bottom nav) -->
+    <footer class="h-5 bg-background-light dark:bg-background-dark"></footer>
+</div>
+
+<script>
+    // Load Server Details
+    const serverId = localStorage.getItem('current_server_id');
+    const servers = JSON.parse(localStorage.getItem('ftp_servers') || '[]');
+    const server = servers.find(s => s.id == serverId);
+
+    if (server) {
+        // Update Header
+        document.querySelector('h2').textContent = server.name;
+        // Update Subtitle to "Root Directory" as requested
+        document.querySelector('p.text-xs.font-normal').textContent = "Root Directory /";
+        
+        // Ensure "Remote" tab is active (already hardcoded in HTML but good to know)
+    } else {
+        // Fallback if accessed directly without selecting a server
+        document.querySelector('h2').textContent = "No Server Selected";
+        document.querySelector('p.text-xs.font-normal').textContent = "-";
+    }
+
+    // Back Button Logic
+    const backBtn = document.querySelector('.material-symbols-outlined:contains("arrow_back_ios"), .material-symbols-outlined.arrow_back_ios, .material-symbols-outlined').parentElement; 
+    // Using a more robust selector approach if 'contains' isn't valid in pure JS querySelector (it's not).
+    // Let's find by content manually or index.
+    const backArrow = Array.from(document.querySelectorAll('.material-symbols-outlined')).find(el => el.textContent.includes('arrow_back'));
+    if(backArrow) {
+        backArrow.parentElement.onclick = () => window.location.href = 'Dashboard.html';
+    }
+</script>
+</body></html>
