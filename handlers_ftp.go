@@ -7,8 +7,40 @@ import (
 	"path/filepath"
 
 	"github.com/404errorg6/FTP-server/ftp/client"
+	"github.com/404errorg6/FTP-server/ftp/server"
 	"github.com/jlaffaye/ftp"
 )
+
+func handleConnectToServer(w http.ResponseWriter, req *http.Request) {
+	host := req.Form.Get("svr_host")
+	port := req.Form.Get("svr_port")
+	user := req.Form.Get("user")
+	pass := req.Form.Get("password")
+
+	if host == "" || port == "" {
+		http.Error(w, "host/port are required", http.StatusBadRequest)
+		return
+	}
+
+	if user == "" || pass == "" {
+		http.Error(w, "user/password are required", http.StatusBadRequest)
+		return
+	}
+
+	addr := host + ":" + port
+	err := client.AuthClient(addr, user, pass)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+
+	sendJSON(w, "successfully connected to server")
+}
+
+func handleConnectedClients(w http.ResponseWriter, req *http.Request) {
+	connClients := server.GetConnectedHosts()
+	sendJSON(w, connClients)
+}
 
 func handleAuthClient(w http.ResponseWriter, req *http.Request) {
 	user := req.URL.Query().Get("user")
@@ -37,7 +69,7 @@ func handleAuthClient(w http.ResponseWriter, req *http.Request) {
 	sendJSON(w, "successfully connected")
 }
 
-func handleDownloadFile(w http.ResponseWriter, req *http.Request) {
+func handleStreamFile(w http.ResponseWriter, req *http.Request) {
 	c, err := client.GetClient()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusForbidden)
