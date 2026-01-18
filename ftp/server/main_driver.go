@@ -37,6 +37,7 @@ func (d *AndroidMainDriver) AuthUser(cc ftpserver.ClientContext, user, pass stri
 	if cc != nil {
 		remote = cc.RemoteAddr().String()
 	}
+
 	cDriver := &AndroidClientDriver{}
 	cDriver.Fs = afero.NewBasePathFs(afero.NewOsFs(), baseRoot) //Dir at baseRoot
 	sendToLogsChPtr(fmt.Sprintf("Auth attempt from %v with user=%q", remote, user))
@@ -45,7 +46,7 @@ func (d *AndroidMainDriver) AuthUser(cc ftpserver.ClientContext, user, pass stri
 
 func (d *AndroidMainDriver) ClientConnected(cc ftpserver.ClientContext) (string, error) {
 	remote := cc.RemoteAddr().String()
-	connectedClients.Store(cc.ID(), cc)
+	connectedClients.Store(remote, cc)
 	msg := fmt.Sprintf("%v successfully connected to FTP.", remote)
 	sendToLogsChPtr(fmt.Sprintf("%v connected", remote))
 	return msg, nil
@@ -53,7 +54,7 @@ func (d *AndroidMainDriver) ClientConnected(cc ftpserver.ClientContext) (string,
 
 func (d *AndroidMainDriver) ClientDisconnected(cc ftpserver.ClientContext) {
 	remoteAddr := cc.RemoteAddr()
-	connectedClients.Delete(cc.ID())
+	connectedClients.Delete(remoteAddr)
 	sendToLogsChPtr(fmt.Sprintf("%v diconnected.", remoteAddr.String()))
 }
 

@@ -2,15 +2,15 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net/http"
-	"os"
 	"path/filepath"
 
 	"github.com/404errorg6/FTP-server/ftp/client"
 	"github.com/jlaffaye/ftp"
 )
 
-func handleConnectClient(w http.ResponseWriter, req *http.Request) {
+func handleAuthClient(w http.ResponseWriter, req *http.Request) {
 	user := req.URL.Query().Get("user")
 	pass := req.URL.Query().Get("pass")
 	svrAddr := req.URL.Query().Get("server_addr")
@@ -70,26 +70,16 @@ func handleFile(w http.ResponseWriter, req *http.Request) {
 	}
 	defer response.Close()
 
-	f, err := os.Open(filepath.Join(root, path))
+	fileName := filepath.Base(path)
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileName))
+	w.Header().Set("Content-Type", "application/octet-stream")
+
+	_, err = io.Copy(w, response)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logsCh <- err.Error()
 		return
 	}
-
-	var buffer []byte
-	_, err = f.Read(buffer)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	_, err = response.Read(buffer)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	sendJSON(w, buffer)
 }
 
 func handleLS(w http.ResponseWriter, req *http.Request) {

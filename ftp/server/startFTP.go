@@ -22,10 +22,6 @@ func StartFTP() error {
 		sendToLogsChPtr("server already running")
 		return nil
 	}
-	//	path, err := os.UserHomeDir()
-	//	if err != nil {
-	//		return err
-	//	}
 
 	mydriver := &AndroidMainDriver{}
 	svr = ftpserver.NewFtpServer(mydriver)
