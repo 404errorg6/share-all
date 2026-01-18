@@ -32,7 +32,7 @@ func handleLogs(w http.ResponseWriter, req *http.Request) {
 				continue
 			}
 
-			//			fmt.Printf("%v", m)
+			fmt.Printf("%v", m)
 			flusher.Flush()
 		}
 	}

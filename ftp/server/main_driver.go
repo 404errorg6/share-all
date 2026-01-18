@@ -10,6 +10,7 @@ import (
 )
 
 var (
+	logsChPtr       *chan string
 	host            = "127.0.0.1"
 	port            = "2121"
 	addr            = host + ":" + port
@@ -33,16 +34,16 @@ func (d *AndroidMainDriver) GetSettings() (*ftpserver.Settings, error) {
 
 func (d *AndroidMainDriver) ClientConnected(cc ftpserver.ClientContext) (string, error) {
 	remote := cc.RemoteAddr().String()
-	fmt.Printf("Client connected from: %v\n", remote)
 	connectedClient.Store(cc.ID(), cc)
 	msg := fmt.Sprintf("%v successfully connected to FTP.", remote)
+	sendToLogsChPtr(fmt.Sprintf("%v connected", remote))
 	return msg, nil
 }
 
 func (d *AndroidMainDriver) ClientDisconnected(cc ftpserver.ClientContext) {
 	remoteAddr := cc.RemoteAddr()
 	connectedClient.Delete(cc.ID())
-	fmt.Printf("%v diconnected.\n", remoteAddr.String())
+	sendToLogsChPtr(fmt.Sprintf("%v diconnected.\n", remoteAddr.String()))
 }
 
 func (d *AndroidMainDriver) AuthUser(cc ftpserver.ClientContext, user, pass string) (ftpserver.ClientDriver, error) {
@@ -50,10 +51,9 @@ func (d *AndroidMainDriver) AuthUser(cc ftpserver.ClientContext, user, pass stri
 	if cc != nil {
 		remote = cc.RemoteAddr().String()
 	}
-	fmt.Printf("Auth attempt from %v with user=%q\n", remote, user)
 	cDriver := &AndroidClientDriver{}
 	cDriver.Fs = afero.NewOsFs()
-	afero.WriteFile(cDriver.Fs, "test.txt", []byte("Hello FTP"), 0644)
+	sendToLogsChPtr(fmt.Sprintf("Auth attempt from %v with user=%q\n", remote, user))
 	return cDriver, nil
 }
 
