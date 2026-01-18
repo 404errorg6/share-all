@@ -14,5 +14,6 @@ func Mux() *http.ServeMux {
 	//FTP handles
 	mux.HandleFunc("GET /api/ls", handleLS)
 	mux.HandleFunc("GET /api/file", handleFile)
+	mux.HandleFunc("POST /api/client/connect", handleConnectClient)
 	return mux
 }

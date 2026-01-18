@@ -10,11 +10,11 @@ import (
 )
 
 var (
-	logsChPtr       *chan string
-	host            = "127.0.0.1"
-	port            = "2121"
-	addr            = host + ":" + port
-	connectedClient sync.Map
+	logsChPtr        *chan string
+	host             string
+	port             string
+	connectedClients sync.Map
+	baseRoot         string
 )
 
 type AndroidMainDriver struct {
@@ -22,28 +22,14 @@ type AndroidMainDriver struct {
 
 func (d *AndroidMainDriver) GetSettings() (*ftpserver.Settings, error) {
 	settings := ftpserver.Settings{
-		ListenAddr: addr,
+		ListenAddr: host + ":" + port,
 		PublicHost: host,
 		PassiveTransferPortRange: ftpserver.PortRange{
-			Start: 2122,
-			End:   2130,
+			Start: 30000,
+			End:   30050,
 		},
 	}
 	return &settings, nil
-}
-
-func (d *AndroidMainDriver) ClientConnected(cc ftpserver.ClientContext) (string, error) {
-	remote := cc.RemoteAddr().String()
-	connectedClient.Store(cc.ID(), cc)
-	msg := fmt.Sprintf("%v successfully connected to FTP.", remote)
-	sendToLogsChPtr(fmt.Sprintf("%v connected", remote))
-	return msg, nil
-}
-
-func (d *AndroidMainDriver) ClientDisconnected(cc ftpserver.ClientContext) {
-	remoteAddr := cc.RemoteAddr()
-	connectedClient.Delete(cc.ID())
-	sendToLogsChPtr(fmt.Sprintf("%v diconnected.\n", remoteAddr.String()))
 }
 
 func (d *AndroidMainDriver) AuthUser(cc ftpserver.ClientContext, user, pass string) (ftpserver.ClientDriver, error) {
@@ -52,11 +38,37 @@ func (d *AndroidMainDriver) AuthUser(cc ftpserver.ClientContext, user, pass stri
 		remote = cc.RemoteAddr().String()
 	}
 	cDriver := &AndroidClientDriver{}
-	cDriver.Fs = afero.NewOsFs()
-	sendToLogsChPtr(fmt.Sprintf("Auth attempt from %v with user=%q\n", remote, user))
+	cDriver.Fs = afero.NewBasePathFs(afero.NewOsFs(), baseRoot) //Dir at baseRoot
+	sendToLogsChPtr(fmt.Sprintf("Auth attempt from %v with user=%q", remote, user))
 	return cDriver, nil
+}
+
+func (d *AndroidMainDriver) ClientConnected(cc ftpserver.ClientContext) (string, error) {
+	remote := cc.RemoteAddr().String()
+	connectedClients.Store(cc.ID(), cc)
+	msg := fmt.Sprintf("%v successfully connected to FTP.", remote)
+	sendToLogsChPtr(fmt.Sprintf("%v connected", remote))
+	return msg, nil
+}
+
+func (d *AndroidMainDriver) ClientDisconnected(cc ftpserver.ClientContext) {
+	remoteAddr := cc.RemoteAddr()
+	connectedClients.Delete(cc.ID())
+	sendToLogsChPtr(fmt.Sprintf("%v diconnected.", remoteAddr.String()))
 }
 
 func (d *AndroidMainDriver) GetTLSConfig() (*tls.Config, error) {
 	return nil, nil
+}
+
+func sendToLogsChPtr(s string) {
+	if logsChPtr != nil {
+		select {
+		case *logsChPtr <- s:
+		default:
+			fmt.Printf("[FAILURE] Channel full. Lost log: %v\n", s)
+		}
+	} else {
+		fmt.Printf("[FAILURE] Use of nil logsChPtr. Lost log: %v\n", s)
+	}
 }
