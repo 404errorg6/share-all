@@ -11,6 +11,9 @@ var (
 )
 
 func StartFTP(logsCh chan string) error {
+	if logsChPtr == nil {
+		logsChPtr = &logsCh
+	}
 	if svr != nil {
 		logsCh <- "server already running"
 		return nil
@@ -22,7 +25,7 @@ func StartFTP(logsCh chan string) error {
 
 	mydriver := &AndroidMainDriver{}
 	svr = ftpserver.NewFtpServer(mydriver)
-	go startLogs(logsCh)
+	go startLogsAndFTP(logsCh)
 	logsCh <- fmt.Sprintf("FTP server started on: %v", addr)
 	return nil
 }
@@ -61,7 +64,7 @@ func rmClients(logsCh chan string) func(key any, val any) bool {
 	}
 }
 
-func startLogs(logsCh chan string) {
+func startLogsAndFTP(logsCh chan string) {
 	if err := svr.ListenAndServe(); err != nil {
 		// send error to logs channel without blocking
 		select {
@@ -70,5 +73,13 @@ func startLogs(logsCh chan string) {
 			fmt.Printf("logs channel full, dropping error: %v", err)
 		}
 		fmt.Printf("ftp server error: %v\n", err)
+	}
+}
+
+func sendToLogsChPtr(s string) {
+	if logsChPtr != nil {
+		*logsChPtr <- s
+	} else {
+		fmt.Printf("[FAIL] Failed to send log: %v\n", s)
 	}
 }
