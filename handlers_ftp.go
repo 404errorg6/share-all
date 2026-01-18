@@ -42,33 +42,6 @@ func handleConnectedClients(w http.ResponseWriter, req *http.Request) {
 	sendJSON(w, connClients)
 }
 
-func handleAuthClient(w http.ResponseWriter, req *http.Request) {
-	user := req.URL.Query().Get("user")
-	pass := req.URL.Query().Get("pass")
-	svrAddr := req.URL.Query().Get("server_addr")
-
-	if user == "" || pass == "" {
-		err := fmt.Errorf("user/pass not provided")
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if svrAddr == "" {
-		err := fmt.Errorf("server_addr not provided")
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	err := client.AuthClient(svrAddr, user, pass)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		logsCh <- err.Error()
-		return
-	}
-
-	sendJSON(w, "successfully connected")
-}
-
 func handleStreamFile(w http.ResponseWriter, req *http.Request) {
 	c, err := client.GetClient()
 	if err != nil {
@@ -114,7 +87,7 @@ func handleStreamFile(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func handleLS(w http.ResponseWriter, req *http.Request) {
+func handleListDir(w http.ResponseWriter, req *http.Request) {
 	client.AuthClient(ftpHost+":"+ftpPort, "test", "test") //Auto auth for testing
 	c, err := client.GetClient()
 	if err != nil {
