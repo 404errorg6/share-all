@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Server Detail - Local Tab</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#50c2f7",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#101c22",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-tab {
+            border-bottom: 3px solid #50c2f7;
+            color: #50c2f7;
+        }
+        body {
+            -webkit-tap-highlight-color: transparent;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased overflow-x-hidden">
+<div class="relative flex min-h-screen w-full flex-col max-w-md mx-auto shadow-2xl bg-background-light dark:bg-background-dark">
+<!-- TopAppBar -->
+<header class="sticky top-0 z-20 bg-background-light dark:bg-background-dark/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+<div class="flex items-center p-4 justify-between">
+<div class="flex items-center gap-3">
+<button class="flex items-center justify-center size-10 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined">arrow_back_ios</span>
+</button>
+<h2 class="text-xl font-bold leading-tight tracking-tight">Home NAS</h2>
+</div>
+<div class="flex items-center gap-1">
+    <button class="flex size-10 items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
+        <span class="material-symbols-outlined">search</span>
+    </button>
+</div>
+</div>
+<!-- Tabs -->
+<div class="flex px-4 justify-between">
+<a class="flex flex-col items-center justify-center active-tab pb-3 pt-4 flex-1 transition-all" href="#">
+<p class="text-sm font-bold tracking-wide uppercase">Local</p>
+</a>
+            <a class="flex flex-col items-center justify-center border-b-[3px] border-b-transparent text-slate-500 dark:text-slate-400 pb-3 pt-4 flex-1 transition-all" href="Remote.html">
+                <p class="text-sm font-bold tracking-wide uppercase">Remote</p>
+            </a>
+</div>
+</header>
+    <!-- Path Breadcrumb Bar -->
+    <div class="flex items-center gap-3 bg-slate-100 dark:bg-slate-900/50 px-4 py-3 border-b border-slate-200 dark:border-slate-800 overflow-x-auto no-scrollbar">
+        <div class="flex items-center gap-3 min-w-max">
+            <div class="flex items-center justify-center rounded-lg bg-primary/20 text-primary shrink-0 size-9 transition-transform active:scale-95 cursor-pointer">
+                <span class="material-symbols-outlined text-[20px]">smartphone</span>
+            </div>
+            <div class="flex items-center gap-2 overflow-x-auto whitespace-nowrap">
+                <span class="text-slate-400"><span class="material-symbols-outlined text-[18px] align-middle">chevron_right</span></span>
+                <p class="text-sm font-medium text-slate-600 dark:text-slate-300">Internal Memory</p>
+            </div>
+        </div>
+    </div>
+    <!-- File List (Empty State / Populated) -->
+    <main class="flex-1 flex flex-col pb-24" id="local-file-list">
+        <!-- Empty State Container -->
+        <div id="empty-state" class="flex flex-col items-center justify-center h-full text-slate-400">
+            <span class="material-symbols-outlined text-5xl mb-3 opacity-50">sd_storage</span>
+            <p class="font-medium text-lg">Local Storage</p>
+            <p class="text-sm opacity-70 mt-1 max-w-[200px] text-center">Tap below to grant access to your device storage.</p>
+            <button id="browse-btn" class="mt-6 px-6 py-2 bg-primary/10 text-primary rounded-lg font-bold text-sm hover:bg-primary/20 transition-colors">
+                Browse Files
+            </button>
+        </div>
+        <!-- List Container (Hidden by default) -->
+        <div id="file-list-container" class="hidden flex-col">
+            <!-- Items injected by JS -->
+        </div>
+    </main>
+
+    <!-- Tab Bar Navigation (Optional bottom nav) -->
+    <footer class="h-5 bg-background-light dark:bg-background-dark"></footer>
+    <!-- Tab Bar Navigation (Optional bottom nav) -->
+    <footer class="h-5 bg-background-light dark:bg-background-dark"></footer>
+
+<!-- iOS Indicator -->
+<div class="bg-background-light dark:bg-background-dark pb-2 flex justify-center">
+<div class="h-1 w-32 bg-slate-300 dark:bg-slate-700 rounded-full mb-1"></div>
+</div>
+</div>
+<script>
+    // Elements
+    const browseBtn = document.getElementById('browse-btn');
+    const emptyState = document.getElementById('empty-state');
+    const listContainer = document.getElementById('file-list-container');
+    const breadcrumbPath = document.querySelector('p.text-sm.font-medium');
+
+    // Handle File Browsing
+    browseBtn.addEventListener('click', async () => {
+        try {
+            // Check for support
+            if (!('showDirectoryPicker' in window)) {
+                alert('Your browser does not support the File System Access API. Please use Chrome/Edge on Desktop or support browsers.');
+                return;
+            }
+
+            // Request Directory Access
+            const dirHandle = await window.showDirectoryPicker({
+                id: 'local-storage',
+                mode: 'read'
+            });
+
+            // Update UI
+            emptyState.classList.add('hidden');
+            listContainer.classList.remove('hidden');
+            listContainer.classList.add('flex');
+            listContainer.innerHTML = ''; // clear old
+            
+            // Update Breadcrumb
+            breadcrumbPath.textContent = dirHandle.name + " /";
+
+            // Iterate entries
+            for await (const entry of dirHandle.values()) {
+                const item = document.createElement('div');
+                item.className = "flex items-center gap-4 px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer border-b border-slate-100 dark:border-slate-800/50";
+                
+                // Icon & Color Logic
+                let icon = 'description';
+                let colorClass = 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400';
+                
+                if (entry.kind === 'directory') {
+                    icon = 'folder';
+                    colorClass = 'bg-primary/10 text-primary';
+                } else if (entry.name.match(/\.(jpg|jpeg|png|gif)$/i)) {
+                    icon = 'image';
+                    colorClass = 'bg-purple-500/10 text-purple-500';
+                } else if (entry.name.match(/\.(mp4|mov|avi)$/i)) {
+                    icon = 'movie';
+                    colorClass = 'bg-red-500/10 text-red-500';
+                }
+
+                item.innerHTML = `
+                    <div class="flex items-center flex-1 gap-4">
+                        <div class="flex items-center justify-center rounded-xl shrink-0 size-12 ${colorClass} transition-colors">
+                            <span class="material-symbols-outlined">${icon}</span>
+                        </div>
+                        <div class="flex flex-col justify-center overflow-hidden">
+                            <p class="text-base font-semibold truncate text-slate-900 dark:text-gray-100">${entry.name}</p>
+                            <p class="text-slate-500 dark:text-slate-400 text-xs capitalize">${entry.kind}</p>
+                        </div>
+                    </div>
+                `;
+                listContainer.appendChild(item);
+            }
+
+        } catch (error) {
+            console.error(error);
+            // Don't alert if user just cancelled
+            if (error.name !== 'AbortError') {
+                alert('Error accessing storage: ' + error.message);
+            }
+        }
+    });
+
+    // Back Button Logic (Reused from Remote.html style)
+    const backArrow = Array.from(document.querySelectorAll('.material-symbols-outlined')).find(el => el.textContent.includes('arrow_back'));
+    if(backArrow) {
+        backArrow.parentElement.onclick = () => window.location.href = 'Dashboard.html';
+    }
+</script>
+</body></html>

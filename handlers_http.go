@@ -39,7 +39,7 @@ func handleLogs(w http.ResponseWriter, req *http.Request) {
 }
 
 func handleStart(w http.ResponseWriter, req *http.Request) {
-	err := server.StartFTP(logsCh)
+	err := server.StartFTP()
 	if err != nil {
 		logsCh <- fmt.Sprintf("Error occured while starting ftp: %v\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -49,7 +49,7 @@ func handleStart(w http.ResponseWriter, req *http.Request) {
 }
 
 func handleStop(w http.ResponseWriter, req *http.Request) {
-	server.StopFTP(logsCh)
+	server.StopFTP()
 	w.WriteHeader(http.StatusNoContent)
 }
 
