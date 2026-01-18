@@ -6,6 +6,8 @@ func Mux() *http.ServeMux {
 	mux := http.NewServeMux()
 	// Serve Frontend Static Files
 	fs := http.FileServer(http.Dir("./frontend"))
+
+	//http handles
 	mux.Handle("/", fs)
 
 	mux.HandleFunc("GET /api/check", handleCheck)
@@ -13,8 +15,8 @@ func Mux() *http.ServeMux {
 	mux.HandleFunc("POST /api/stop-ftp", handleStop)
 	mux.HandleFunc("GET /api/logs", handleLogs)
 	//FTP handles
-	mux.HandleFunc("GET /api/list", handleLS)
-	mux.HandleFunc("GET /api/download", handleFile)
+	mux.HandleFunc("GET /api/ls", handleLS)
+	mux.HandleFunc("GET /api/download-file", handleDownloadFile)
 	mux.HandleFunc("POST /api/client/auth", handleAuthClient)
 	return mux
 }

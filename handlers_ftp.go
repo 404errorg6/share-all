@@ -37,7 +37,7 @@ func handleAuthClient(w http.ResponseWriter, req *http.Request) {
 	sendJSON(w, "successfully connected")
 }
 
-func handleFile(w http.ResponseWriter, req *http.Request) {
+func handleDownloadFile(w http.ResponseWriter, req *http.Request) {
 	c, err := client.GetClient()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusForbidden)
