@@ -12,11 +12,10 @@ func Mux() *http.ServeMux {
 	mux.HandleFunc("POST /api/stop-ftp", handleStop)   //stop ftp server
 	mux.HandleFunc("GET /api/logs", handleLogs)        //get logs
 	//FTP server handles
-	mux.HandleFunc("GET /api/ftp/server/ls", handleLS)                              //list directory on server
-	mux.HandleFunc("GET /api/ftp/server/get-file", handleStreamFile)                //stream file
-	mux.HandleFunc("GET /api/ftp/server/connected-clients", handleConnectedClients) //get connected clients to server
+	mux.HandleFunc("GET /api/ftp/server/ls", handleListDir)                         //list other server directory
+	mux.HandleFunc("GET /api/ftp/server/get-file", handleStreamFile)                //get file from other server
+	mux.HandleFunc("GET /api/ftp/server/connected-clients", handleConnectedClients) //get connected clients to own server
 	//FTP client handles
-	mux.HandleFunc("POST /api/ftp/server/connect", handleConnectToServer) //connect to other server
-	mux.HandleFunc("POST /api/ftp/client/auth", handleAuthClient)         //authenticate client trying to connect to this server, with auth
+	mux.HandleFunc("POST /api/ftp/client/connect-to-server", handleConnectToServer) //connect to other server
 	return mux
 }
