@@ -2,12 +2,18 @@ package server
 
 import (
 	"fmt"
+	"sync"
 
 	ftpserver "github.com/fclairamb/ftpserverlib"
 )
 
 var (
-	svr *ftpserver.FtpServer
+	svr              *ftpserver.FtpServer
+	logsChPtr        *chan string
+	host             string
+	port             string
+	connectedClients sync.Map
+	baseRoot         string
 )
 
 func Init(ftpHost, ftpPort string, logsCh chan string, root string) {
@@ -17,7 +23,7 @@ func Init(ftpHost, ftpPort string, logsCh chan string, root string) {
 	baseRoot = root
 }
 
-func StartFTP() error {
+func StartFTP(port, rootP string) error {
 	if svr != nil {
 		sendToLogsChPtr("server already running")
 		return nil
@@ -26,7 +32,7 @@ func StartFTP() error {
 	mydriver := &AndroidMainDriver{}
 	svr = ftpserver.NewFtpServer(mydriver)
 	go startLogsAndFTP()
-	sendToLogsChPtr(fmt.Sprintf("FTP server started on: %v:%v", host, port))
+	sendToLogsChPtr(fmt.Sprintf("FTP server started on: %v:%v with path: %v", host, port, baseRoot))
 	return nil
 }
 

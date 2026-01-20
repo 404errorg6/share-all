@@ -13,47 +13,33 @@ import (
 	"github.com/jlaffaye/ftp"
 )
 
-func handleConnectToServer(w http.ResponseWriter, req *http.Request) {
-	host := req.FormValue("server_host")
-	port := req.FormValue("server_port")
-	user := req.FormValue("user")
-	pass := req.FormValue("password")
-	annonymous := req.FormValue("anonymous")
-	isAnonymous := false
-
-	if annonymous != "" {
-		var err error
-		isAnonymous, err = strconv.ParseBool(annonymous)
-		if err != nil {
-			err = fmt.Errorf("Invalid value for annonymous in form: %v", err.Error())
-			http.Error(w, err.Error(), http.StatusBadRequest)
+func handleStartFTP(w http.ResponseWriter, req *http.Request) {
+	port := req.FormValue("port")
+	path := req.FormValue("root")
+	if port != "" {
+		ftpPort = port
+	}
+	if path != "" {
+		if !folderExists(path) {
+			http.Error(w, fmt.Sprintf("\"%v\" folder does not exist", path), http.StatusBadRequest)
 			return
 		}
+
+		svrRootDir = filepath.Join(homeDir, path)
 	}
 
-	if isAnonymous {
-		user = "anonymous"
-		pass = "anonymous"
-	}
-
-	if host == "" || port == "" {
-		http.Error(w, "server_host/server_port are required", http.StatusBadRequest)
-		return
-	}
-
-	if user == "" || pass == "" {
-		http.Error(w, "user/password are required", http.StatusBadRequest)
-		return
-	}
-
-	addr := host + ":" + port
-	err := client.AuthClient(addr, user, pass)
+	err := server.StartFTP(port, svrRootDir)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusForbidden)
-		return
+		logsCh <- fmt.Sprintf("Error occured while starting ftp: %v\n", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	sendJSON(w, "successfully connected to server")
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func handleStopFTP(w http.ResponseWriter, req *http.Request) {
+	server.StopFTP()
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func handleGetConnectedClients(w http.ResponseWriter, req *http.Request) {
@@ -74,10 +60,6 @@ func handleStreamFile(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	fileName := filepath.Base(path)
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileName))
-	w.Header().Set("Content-Type", "application/octet-stream")
 
 	entry, err := c.GetEntry(path)
 	if err != nil {
@@ -103,11 +85,24 @@ func handleStreamFile(w http.ResponseWriter, req *http.Request) {
 	}
 	defer response.Close()
 
+	//Set headers for file download
+	mode := req.URL.Query().Get("mode")
+	fileName := filepath.Base(path)
+	contentType := getContentType(fileName)
+	if mode == "stream" {
+		w.Header().Set("Content-Disposition", fmt.Sprintf("inline; filename=\"%v\"", fileName))
+		w.Header().Set("Content-Type", contentType)
+	}
+	if mode == "download" {
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", fileName))
+		w.Header().Set("Content-Type", "application/octet-stream")
+	}
+	w.Header().Set("Content-Length", strconv.Itoa(int(entry.Size)))
+
 	_, err = io.Copy(w, response)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logsCh <- err.Error()
-		return
 	}
 }
 
@@ -144,7 +139,7 @@ func handleListDir(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//Store and send in json
-	directory := Dir{}
+	directory := Dir{Entries: []FSObject{}} //Initialize to avoid null in json
 	for _, entry := range entries {
 		e := FSObject{
 			Name: entry.Name,

@@ -10,7 +10,7 @@ import (
 
 func main() {
 	fmt.Printf("Starting http server on %v:%v...\n", httpHost, httpPort)
-	server.Init(ftpHost, ftpPort, logsCh, root)
+	server.Init(ftpHost, ftpPort, logsCh, homeDir)
 	mux := Mux()
 
 	svr := &http.Server{

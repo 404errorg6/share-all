@@ -18,5 +18,6 @@ var (
 	httpHost         = "127.0.0.1"
 	logsTestingCount = 0
 	logsCh           = make(chan string, 100)
-	root, _          = os.UserHomeDir()
+	homeDir, _       = os.UserHomeDir()
+	svrRootDir       string
 )
