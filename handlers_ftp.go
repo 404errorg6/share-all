@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/404errorg6/FTP-server/ftp/client"
 	"github.com/404errorg6/FTP-server/ftp/server"
@@ -36,7 +37,7 @@ func handleConnectToServer(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if host == "" || port == "" {
-		http.Error(w, "host/port are required", http.StatusBadRequest)
+		http.Error(w, "server_host/server_port are required", http.StatusBadRequest)
 		return
 	}
 
@@ -74,6 +75,10 @@ func handleStreamFile(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	fileName := filepath.Base(path)
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileName))
+	w.Header().Set("Content-Type", "application/octet-stream")
+
 	entry, err := c.GetEntry(path)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -88,14 +93,15 @@ func handleStreamFile(w http.ResponseWriter, req *http.Request) {
 
 	response, err := c.Retr(path)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		//Clarify error msg if file not found
+		if strings.Contains(strings.ToLower(err.Error()), "file not found") || strings.Contains(err.Error(), "550") { // 550 is the FTP code for not found
+			http.Error(w, "Error: The requested file does not exist.", http.StatusNotFound)
+		} else {
+			http.Error(w, "Server Error: "+err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	defer response.Close()
-
-	fileName := filepath.Base(path)
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileName))
-	w.Header().Set("Content-Type", "application/octet-stream")
 
 	_, err = io.Copy(w, response)
 	if err != nil {
