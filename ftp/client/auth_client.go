@@ -2,6 +2,7 @@ package client
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/jlaffaye/ftp"
 )
@@ -9,14 +10,14 @@ import (
 var client *ftp.ServerConn
 
 func AuthClient(addr string, user, pass string) error {
-	c, err := ftp.Dial(addr)
+	c, err := ftp.Dial(addr, ftp.DialWithTimeout(5*time.Second))
 	if err != nil {
-		return nil
+		return err
 	}
 
 	err = c.Login(user, pass)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	client = c

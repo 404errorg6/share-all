@@ -7,14 +7,14 @@ func Mux() *http.ServeMux {
 	// Serve Frontend Static Files
 	fs := http.FileServer(http.Dir("./frontend"))
 	//http handles
-	mux.Handle("/", fs)                                //sevrer frontend
+	mux.Handle("/", fs)                                //serve frontend
 	mux.HandleFunc("POST /api/start-ftp", handleStart) //start ftp server
 	mux.HandleFunc("POST /api/stop-ftp", handleStop)   //stop ftp server
 	mux.HandleFunc("GET /api/logs", handleLogs)        //get logs
 	//FTP server handles
-	mux.HandleFunc("GET /api/ftp/server/ls", handleListDir)                         //list other server directory
-	mux.HandleFunc("GET /api/ftp/server/get-file", handleStreamFile)                //get file from other server
-	mux.HandleFunc("GET /api/ftp/server/connected-clients", handleConnectedClients) //get connected clients to own server
+	mux.HandleFunc("GET /api/ftp/server/ls", handleListDir)                            //list other server directory
+	mux.HandleFunc("GET /api/ftp/server/get-file", handleStreamFile)                   //get file from other server
+	mux.HandleFunc("GET /api/ftp/server/connected-clients", handleGetConnectedClients) //get clients connected to own server
 	//FTP client handles
 	mux.HandleFunc("POST /api/ftp/client/connect-to-server", handleConnectToServer) //connect to other server
 	return mux

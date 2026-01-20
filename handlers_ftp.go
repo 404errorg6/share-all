@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"path/filepath"
+	"strconv"
 
 	"github.com/404errorg6/FTP-server/ftp/client"
 	"github.com/404errorg6/FTP-server/ftp/server"
@@ -12,10 +13,27 @@ import (
 )
 
 func handleConnectToServer(w http.ResponseWriter, req *http.Request) {
-	host := req.Form.Get("svr_host")
-	port := req.Form.Get("svr_port")
-	user := req.Form.Get("user")
-	pass := req.Form.Get("password")
+	host := req.FormValue("server_host")
+	port := req.FormValue("server_port")
+	user := req.FormValue("user")
+	pass := req.FormValue("password")
+	annonymous := req.FormValue("anonymous")
+	isAnonymous := false
+
+	if annonymous != "" {
+		var err error
+		isAnonymous, err = strconv.ParseBool(annonymous)
+		if err != nil {
+			err = fmt.Errorf("Invalid value for annonymous in form: %v", err.Error())
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+
+	if isAnonymous {
+		user = "anonymous"
+		pass = "anonymous"
+	}
 
 	if host == "" || port == "" {
 		http.Error(w, "host/port are required", http.StatusBadRequest)
@@ -37,7 +55,7 @@ func handleConnectToServer(w http.ResponseWriter, req *http.Request) {
 	sendJSON(w, "successfully connected to server")
 }
 
-func handleConnectedClients(w http.ResponseWriter, req *http.Request) {
+func handleGetConnectedClients(w http.ResponseWriter, req *http.Request) {
 	connClients := server.GetConnectedHosts()
 	sendJSON(w, connClients)
 }
@@ -88,7 +106,6 @@ func handleStreamFile(w http.ResponseWriter, req *http.Request) {
 }
 
 func handleListDir(w http.ResponseWriter, req *http.Request) {
-	client.AuthClient(ftpHost+":"+ftpPort, "test", "test") //Auto auth for testing
 	c, err := client.GetClient()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusForbidden)
