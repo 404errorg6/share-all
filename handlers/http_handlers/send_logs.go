@@ -1,11 +1,13 @@
-package main
+package httphandlers
 
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/404errorg6/FTP-server/ftp/config"
 )
 
-func handleLogs(w http.ResponseWriter, req *http.Request) {
+func HandleLogs(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 	w.Header().Set("Content-Type", "text/event-stream")
@@ -22,7 +24,7 @@ func handleLogs(w http.ResponseWriter, req *http.Request) {
 		select {
 		case <-ctx.Done():
 			return
-		case m := <-logsCh:
+		case m := <-config.LogsCh:
 			m = fmt.Sprintf("[LOGS]: %v\n", m)
 			_, err := fmt.Fprint(w, m)
 			if err != nil {

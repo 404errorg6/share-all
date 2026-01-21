@@ -1,4 +1,4 @@
-package main
+package clienthandlers
 
 import (
 	"fmt"
@@ -6,11 +6,11 @@ import (
 	"strconv"
 
 	"github.com/404errorg6/FTP-server/ftp/client"
+	"github.com/404errorg6/FTP-server/ftp/config"
 )
 
-func handleConnectToServer(w http.ResponseWriter, req *http.Request) {
+func HandleConnectToServer(w http.ResponseWriter, req *http.Request) {
 	host := req.FormValue("server_host")
-
 	port := req.FormValue("server_port")
 	user := req.FormValue("user")
 	pass := req.FormValue("password")
@@ -49,5 +49,5 @@ func handleConnectToServer(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	sendJSON(w, "successfully connected to server")
+	config.SendJSON(w, "successfully connected to server")
 }

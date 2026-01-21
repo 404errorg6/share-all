@@ -6,35 +6,35 @@ import (
 	"github.com/404errorg6/FTP-server/ftp/config"
 )
 
-func StopFTP() {
-	if svr == nil {
-		sendToLogsChPtr("server is already dead")
-		return
+func StopFTP() error {
+	if config.Server.Conn == nil {
+		return fmt.Errorf("server is already dead")
 	}
 
-	connectedClients.Range(rmClients)
-	if err := svr.Stop(); err != nil {
-		sendToLogsChPtr(fmt.Sprintf("Error occured while stopping server: %v", err.Error()))
-		return
+	config.Server.ConnectedClients.Range(rmClients)
+	if err := config.Server.Conn.Stop(); err != nil {
+		config.LogsCh <- fmt.Sprintf("Error occured while stopping server: %v", err.Error())
+		return err
 	}
-	svr = nil
+	config.Server.Conn = nil
 
-	sendToLogsChPtr("server stopped")
+	config.LogsCh <- "server stopped"
+	return nil
 }
 
 func rmClients(key any, val any) bool {
 	client, ok := val.(config.Client)
 	if !ok {
-		sendToLogsChPtr(fmt.Sprintf("Unable to type-cast(Client): %v", val))
+		config.LogsCh <- fmt.Sprintf("Unable to type-cast(Client): %v", val)
 		return false
 	}
 
 	err := client.Context.Close()
 	if err != nil {
-		sendToLogsChPtr(fmt.Sprintf("Error while closing %v: %v", client.Msg, err))
+		config.LogsCh <- fmt.Sprintf("Error while closing %v: %v", client.Msg, err)
 		return true
 	}
 
-	sendToLogsChPtr(fmt.Sprintf("%v forcibly disconnected.", client.Msg))
+	config.LogsCh <- fmt.Sprintf("%v forcibly disconnected.", client.Msg)
 	return true
 }

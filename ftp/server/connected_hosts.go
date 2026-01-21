@@ -9,10 +9,10 @@ import (
 func GetConnectedHosts() []string {
 	hostsAddr := []string{}
 	fmt.Printf("Connected Clients:\n")
-	connectedClients.Range(func(key, value any) bool {
+	config.Server.ConnectedClients.Range(func(key, value any) bool {
 		client, ok := value.(config.Client)
 		if !ok {
-			sendToLogsChPtr(fmt.Sprintf("Unable to convert to Client: %v", value))
+			config.LogsCh <- fmt.Sprintf("Unable to convert to Client: %v", value)
 			return false
 		}
 
