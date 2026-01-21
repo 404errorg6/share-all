@@ -7,7 +7,17 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 )
+
+func GetHostPort(addr string) (string, string, error) {
+	host, port, found := strings.Cut(addr, ":")
+	if !found {
+		LogsCh <- fmt.Sprintf("[FATAL]: %v doesn't contain \":\"", addr)
+		return "", "", fmt.Errorf("\"%v\" doesn't contain \":\"", addr)
+	}
+	return host, port, nil
+}
 
 func SendJSON(w http.ResponseWriter, data any) {
 	body, err := json.Marshal(data)
@@ -23,8 +33,13 @@ func SendJSON(w http.ResponseWriter, data any) {
 
 func FolderExists(path string) bool {
 	info, err := os.Stat(path)
-	if os.IsExist(err) {
-		return true
+	if err != nil {
+		if os.IsExist(err) {
+			return true
+		}
+
+		LogsCh <- err.Error()
+		return false
 	}
 
 	return info.IsDir()

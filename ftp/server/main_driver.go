@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/afero"
 )
 
+// TODO: Clean up this mess
+
 type AndroidMainDriver struct {
 }
 
@@ -16,10 +18,6 @@ func (d *AndroidMainDriver) GetSettings() (*ftpserver.Settings, error) {
 	settings := ftpserver.Settings{
 		ListenAddr: config.Server.FTPHost + ":" + config.Server.FTPPort,
 		PublicHost: config.Server.FTPHost,
-		PassiveTransferPortRange: ftpserver.PortRange{
-			Start: 30000,
-			End:   30050,
-		},
 	}
 	return &settings, nil
 }
@@ -28,8 +26,18 @@ func (d *AndroidMainDriver) AuthUser(cc ftpserver.ClientContext, user, pass stri
 	var isAuthorized bool
 	cDriver := &AndroidClientDriver{}
 
+	host, _, err := config.GetHostPort(cc.RemoteAddr().String())
+	if err != nil {
+		config.LogsCh <- err.Error()
+	}
+
+	if alreadyConnected(host) {
+		return nil, fmt.Errorf("%v is already connected", host)
+	}
+
 	if config.Server.AnonymousAccessAllowed {
 		if user == "anonymous" {
+			config.Server.WriteAllowed = true
 			cDriver.Fs = afero.NewBasePathFs(afero.NewOsFs(), config.Server.RootDir)
 			isAuthorized = true
 		}

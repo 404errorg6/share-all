@@ -22,3 +22,31 @@ func GetConnectedHosts() []string {
 	})
 	return hostsAddr
 }
+
+func alreadyConnected(addr string) bool {
+	host, _, err := config.GetHostPort(addr)
+	if err != nil {
+		config.LogsCh <- err.Error()
+		return true
+	}
+	var matchFound bool
+
+	config.Server.ConnectedClients.Range(func(key, value any) bool {
+		client, ok := value.(config.Client)
+		if !ok {
+			config.LogsCh <- fmt.Sprintf("[FATAL]: cannot convert to Client: %v", value)
+			return false
+		}
+
+		if client.Host == host {
+			matchFound = true
+			return false
+		}
+		return true
+	})
+
+	if matchFound {
+		return true
+	}
+	return false
+}

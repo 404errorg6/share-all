@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#50c2f7",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#101c22",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <title>FTP Server Control Panel</title>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark font-display text-white antialiased">
+    <!-- Container for Phone Form Factor -->
+    <div
+        class="relative mx-auto flex h-full min-h-screen max-w-[430px] flex-col overflow-x-hidden border-x border-white/5 shadow-2xl">
+        <!-- TopAppBar -->
+        <header
+            class="sticky top-0 z-10 flex items-center bg-background-light/90 dark:bg-background-dark/90 px-4 py-3 backdrop-blur-md">
+            <a href="../Dashboard.html"
+                class="flex size-10 shrink-0 items-center justify-center cursor-pointer hover:bg-white/10 rounded-full transition-colors">
+                <span class="material-symbols-outlined text-white text-[24px]">arrow_back_ios_new</span>
+            </a>
+            <h1 class="flex-1 text-center pr-10 text-lg font-bold leading-tight tracking-tight text-white">FTP Server
+            </h1>
+        </header>
+        <!-- Section A: Status + URL -->
+        <main class="flex flex-col gap-1 p-2">
+            <!-- Status Row -->
+            <div class="flex items-center gap-4 px-4 min-h-14 justify-between bg-white/5 rounded-t-xl mt-2">
+                <div class="flex flex-col">
+                    <p class="text-white text-base font-medium leading-normal">Status</p>
+                    <p id="status-text" class="text-[#9cb0ba] text-xs font-normal">Not started</p>
+                </div>
+                <div class="shrink-0">
+                    <label
+                        class="relative flex h-[31px] w-[51px] cursor-pointer items-center rounded-full border-none bg-[#283439] p-0.5 has-[:checked]:justify-end has-[:checked]:bg-primary">
+                        <div class="h-full w-[27px] rounded-full bg-white shadow-md"></div>
+                        <input id="status-toggle" class="invisible absolute" type="checkbox" onchange="toggleServer(this)" />
+                    </label>
+                </div>
+            </div>
+            <!-- URL Row -->
+            <div class="flex items-center gap-4 px-4 min-h-[80px] py-2 justify-between bg-white/5">
+                <div class="flex flex-col justify-center">
+                    <p class="text-white text-base font-medium leading-normal line-clamp-1">URL</p>
+                    <p id="ftp-url" class="text-primary text-sm font-normal leading-normal line-clamp-2">
+                        ftp://127.0.0.1:2121/</p>
+                </div>
+                <div class="shrink-0">
+                    <button id="copy-url-btn"
+                        class="flex size-10 items-center justify-center rounded-full hover:bg-white/10 transition-colors">
+                        <span class="material-symbols-outlined text-white text-[22px]">content_copy</span>
+                    </button>
+                </div>
+            </div>
+            <!-- Section B: Configuration -->
+            <form id="ftp-config-form" class="flex flex-col" onsubmit="event.preventDefault(); saveConfig();">
+                <h3 class="text-primary text-sm font-bold uppercase tracking-[0.1em] px-4 pb-2 pt-6">Configuration</h3>
+
+                <!-- Anonymous login -->
+                <div class="flex items-center gap-4 px-4 min-h-14 justify-between">
+                    <p class="text-white text-base font-normal leading-normal flex-1">Anonymous login</p>
+                    <div class="shrink-0">
+                        <label
+                            class="relative flex h-[31px] w-[51px] cursor-pointer items-center rounded-full border-none bg-primary p-0.5 justify-end">
+                            <div class="h-full w-[27px] rounded-full bg-white shadow-md"></div>
+                            <input id="anonymous-login-toggle" name="anonymous" checked="" class="invisible absolute"
+                                type="checkbox" onchange="toggleAnonymous(this.checked)" />
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Username -->
+                <!-- Username -->
+                <div id="username-container"
+                    class="flex items-center gap-4 px-4 min-h-[72px] py-2 justify-between transition-opacity duration-300">
+                    <div class="flex flex-col justify-center w-full group">
+                        <label for="ftp-username"
+                            class="text-white text-base font-normal leading-normal">Username</label>
+                        <input id="ftp-username" name="username" type="text" value="admin"
+                            class="bg-transparent border-0 border-b border-gray-600 focus:border-primary focus:ring-0 text-[#9cb0ba] text-sm font-normal leading-normal w-full px-0 py-1 transition-colors group-hover:border-gray-500 placeholder-gray-700" />
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <!-- Password -->
+                <div id="password-container"
+                    class="flex items-center gap-4 px-4 min-h-[72px] py-2 justify-between transition-opacity duration-300">
+                    <div class="flex flex-col justify-center w-full group">
+                        <label for="ftp-password"
+                            class="text-white text-base font-normal leading-normal">Password</label>
+                        <input id="ftp-password" name="password" type="password" placeholder="Not set"
+                            class="bg-transparent border-0 border-b border-gray-600 focus:border-primary focus:ring-0 text-[#9cb0ba] text-sm font-normal leading-normal w-full px-0 py-1 transition-colors group-hover:border-gray-500 placeholder-gray-700" />
+                    </div>
+                </div>
+
+                <!-- Port -->
+                <div class="flex items-center gap-4 px-4 min-h-[72px] py-2 justify-between">
+                    <div class="flex flex-col justify-center w-full group">
+                        <label for="ftp-port" class="text-white text-base font-normal leading-normal">Port</label>
+                        <!-- Added global CSS classes for cross-browser spinner removal -->
+                        <input id="ftp-port" name="port" type="number" value="2121"
+                            class="bg-transparent border-0 border-b border-gray-600 focus:border-primary focus:ring-0 text-[#9cb0ba] text-sm font-normal leading-normal w-full px-0 py-1 transition-colors group-hover:border-gray-500 placeholder-gray-700 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                    </div>
+                </div>
+
+                <!-- Root Folder -->
+                <div class="flex items-center gap-4 px-4 min-h-[72px] py-2 justify-between">
+                    <div class="flex flex-col justify-center w-full group relative">
+                        <label for="ftp-root" class="text-white text-base font-normal leading-normal">Root
+                            folder</label>
+                        <div class="flex items-center w-full">
+                            <input id="ftp-root" name="root_folder" type="text"
+                                placeholder="Type folder path, or click folder icon to browse"
+                                class="bg-transparent border-0 border-b border-gray-600 focus:border-primary focus:ring-0 text-[#9cb0ba] text-sm font-normal leading-normal w-full px-0 py-1 transition-colors group-hover:border-gray-500 placeholder-gray-700 pr-10" />
+
+                            <!-- Folder Picker Trigger -->
+                            <button type="button" onclick="selectFolderPath()"
+                                class="absolute right-0 bottom-1 p-1 text-primary hover:text-white transition-colors">
+                                <span class="material-symbols-outlined text-[20px]">folder_open</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                    /**
+                     * Handle Server Start/Stop via Status Toggle
+                     */
+                    async function toggleServer(checkbox) {
+                        const isStarting = checkbox.checked;
+                        const statusText = document.getElementById('status-text');
+                        
+                        if (isStarting) {
+                            // Get configuration values
+                            const port = document.getElementById('ftp-port').value || '2121';
+                            const rootFolder = document.getElementById('ftp-root').value || '';
+                            const anonymous = document.getElementById('anonymous-login-toggle').checked;
+                            const allowWriting = document.getElementById('allow-writing-toggle').checked;
+                            
+                            // Validate username/password if not anonymous
+                            if (!anonymous) {
+                                const username = document.getElementById('ftp-username').value || '';
+                                const password = document.getElementById('ftp-password').value || '';
+                                
+                                if (!username || !password) {
+                                    alert('Username and Password are required when Anonymous login is disabled.');
+                                    checkbox.checked = false;
+                                    return;
+                                }
+                            }
+                            
+                            // Update status
+                            statusText.textContent = 'Starting...';
+                            
+                            try {
+                                // Call backend start API
+                                const formData = new FormData();
+                                formData.append('server_port', port);
+                                formData.append('server_root_dir', rootFolder);
+                                formData.append('anonymous_allowed', anonymous ? 'true' : 'false');
+                                formData.append('write_allowed', allowWriting ? 'true' : 'false');
+                                
+                                // Add username and password if not anonymous
+                                if (!anonymous) {
+                                    const username = document.getElementById('ftp-username').value;
+                                    const password = document.getElementById('ftp-password').value;
+                                    formData.append('username', username);
+                                    formData.append('password', password);
+                                }
+                                
+                                const response = await fetch('/api/start-ftp', {
+                                    method: 'POST',
+                                    body: formData
+                                });
+                                
+                                // Check for success (200 OK or 204 No Content)
+                                if (response.ok) {
+                                    statusText.textContent = 'Running';
+                                    saveToggleState(true);
+                                    console.log('Server started successfully');
+                                } else {
+                                    // Try to get error message from response
+                                    const errorText = await response.text();
+                                    throw new Error(errorText || 'Failed to start server');
+                                }
+                            } catch (error) {
+                                console.error('Error starting server:', error);
+                                alert('Failed to start server: ' + error.message);
+                                checkbox.checked = false;
+                                statusText.textContent = 'Stopped';
+                            }
+                        } else {
+                            // Stop server
+                            statusText.textContent = 'Stopping...';
+                            
+                            try {
+                                const response = await fetch('/api/stop-ftp', {
+                                    method: 'POST'
+                                });
+                                
+                                if (response.ok) {
+                                    statusText.textContent = 'Stopped';
+                                    saveToggleState(false);
+                                    console.log('Server stopped successfully');
+                                } else {
+                                    const errorText = await response.text();
+                                    throw new Error(errorText || 'Failed to stop server');
+                                }
+                            } catch (error) {
+                                console.error('Error stopping server:', error);
+                                alert('Failed to stop server: ' + error.message);
+                                checkbox.checked = true;
+                                statusText.textContent = 'Running';
+                            }
+                        }
+                    }
+
+                    /**
+                     * BROWSER-COMPATIBLE FOLDER SELECTION
+                     * Shows friendly message BEFORE browser's scary permission dialog
+                     */
+                    async function selectFolderPath() {
+                        // Show our own friendly message first
+                        const userConfirmed = confirm(
+                            "📁 Need Permission to Get Folder Name\n\n" +
+                            "The browser will ask for permission to 'view files'.\n\n" +
+                            "➡️ We only need the FOLDER NAME, not your files.\n" +
+                            "➡️ We will NOT read, copy, or upload your files.\n\n" +
+                            "Click OK to continue."
+                        );
+
+                        if (!userConfirmed) {
+                            // User cancelled our dialog
+                            return;
+                        }
+
+                        // Try modern File System Access API (Chrome, Edge)
+                        if ('showDirectoryPicker' in window) {
+                            try {
+                                const dirHandle = await window.showDirectoryPicker();
+                                // Browser gives us folder name, not full path (security)
+                                const folderName = dirHandle.name;
+                                document.getElementById('ftp-root').value = "/" + folderName;
+                            } catch (err) {
+                                // User cancelled or denied permission
+                                if (err.name !== 'AbortError') {
+                                    console.error('Error:', err);
+                                }
+                            }
+                        }
+                        // Fallback for browsers that don't support showDirectoryPicker
+                        else {
+                            // Just focus on the input so user can type manually
+                            const input = document.getElementById('ftp-root');
+                            input.focus();
+                            input.select();
+
+                            // Show helpful hint
+                            if (!input.value) {
+                                input.placeholder = "Type path here, e.g., /storage/emulated/0/Download";
+                            }
+                        }
+                    }
+
+                    /**
+                     * Helper function for native environments (if needed later)
+                     */
+                    function setSelectedFolderPath(path) {
+                        document.getElementById('ftp-root').value = path;
+                    }
+
+                    // Helper: Close modal (legacy function, not used anymore)
+                    function closeFileManager() {
+                        // Not needed, but kept for compatibility
+                    }
+
+                    // Helper: Render file list (legacy function, not used anymore)  
+                    function renderFileList() {
+                        // Not needed, but kept for compatibility
+                    }
+
+                    // Helper: Navigate to folder (legacy function, not used anymore)
+                    function navigateTo(folderName) {
+                        // Not needed, but kept for compatibility
+                    }
+
+                    // Helper: Select current folder (legacy function, not used anymore)
+                    function selectCurrentFolder() {
+                        // Not needed, but kept for compatibility
+                    }
+
+                    /**
+                     * Save and restore toggle state using localStorage (frontend only)
+                     */
+                    function saveToggleState(isRunning) {
+                        localStorage.setItem('ftpServerRunning', isRunning ? 'true' : 'false');
+                    }
+
+                    function restoreToggleState() {
+                        const savedState = localStorage.getItem('ftpServerRunning');
+                        const statusToggle = document.getElementById('status-toggle');
+                        const statusText = document.getElementById('status-text');
+                        
+                        if (savedState === 'true') {
+                            statusToggle.checked = true;
+                            statusText.textContent = 'Running';
+                        } else {
+                            statusToggle.checked = false;
+                            statusText.textContent = 'Stopped';
+                        }
+                    }
+
+                    // Initialize state on page load
+                    document.addEventListener('DOMContentLoaded', () => {
+                        restoreToggleState();
+                    });
+                </script>
+
+
+
+                <!-- Allow writing -->
+                <div class="flex items-center gap-4 px-4 min-h-14 justify-between">
+                    <p class="text-white text-base font-normal leading-normal flex-1">Allow writing</p>
+                    <div class="shrink-0">
+                        <label
+                            class="relative flex h-[31px] w-[51px] cursor-pointer items-center rounded-full border-none bg-primary p-0.5 justify-end">
+                            <div class="h-full w-[27px] rounded-full bg-white shadow-md"></div>
+                            <input id="allow-writing-toggle" name="allow_writing" checked="" class="invisible absolute"
+                                type="checkbox" />
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Save Button -->
+                <div class="px-4 py-6">
+                    <button type="submit"
+                        class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all">
+                        Save Configuration
+                    </button>
+                </div>
+
+            </form>
+            <script>
+                // Sync Port with URL
+                const portInput = document.getElementById('ftp-port');
+                const urlDisplay = document.getElementById('ftp-url');
+                const ipAddress = "127.0.0.1"; // Default or dynamic IP
+
+                function updateUrl() {
+                    const port = portInput.value || '2121';
+                    urlDisplay.textContent = `ftp://${ipAddress}:${port}/`;
+                }
+
+                // Add listener
+
+                function saveConfig() {
+                    // Collect form data
+                    const form = document.getElementById('ftp-config-form');
+                    const formData = new FormData(form);
+                    const data = Object.fromEntries(formData.entries());
+
+                    // Handle toggles manually
+                    data.anonymous = form.querySelector('[name="anonymous"]').checked;
+                    data.allow_writing = form.querySelector('[name="allow_writing"]').checked;
+
+                    console.log('Configuration saved:', data);
+
+                    // Visual feedback
+                    const btn = form.querySelector('button[type="submit"]');
+                    const originalText = btn.innerText;
+                    btn.innerText = "Saved!";
+                    btn.classList.add('bg-green-500', 'hover:bg-green-600');
+                    btn.classList.remove('bg-primary', 'hover:bg-primary/90');
+
+                    setTimeout(() => {
+                        btn.innerText = originalText;
+                        btn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                        btn.classList.add('bg-primary', 'hover:bg-primary/90');
+                    }, 2000);
+                }
+
+                function toggleAnonymous(isAnonymous) {
+                    const usernameInput = document.getElementById('ftp-username');
+                    const passwordInput = document.getElementById('ftp-password');
+                    const usernameContainer = document.getElementById('username-container');
+                    const passwordContainer = document.getElementById('password-container');
+
+                    if (isAnonymous) {
+                        usernameInput.disabled = true;
+                        passwordInput.disabled = true;
+                        usernameInput.required = false;
+                        passwordInput.required = false;
+                        usernameContainer.classList.add('opacity-50', 'pointer-events-none');
+                        passwordContainer.classList.add('opacity-50', 'pointer-events-none');
+                    } else {
+                        usernameInput.disabled = false;
+                        passwordInput.disabled = false;
+                        usernameInput.required = true;
+                        passwordInput.required = true;
+                        usernameContainer.classList.remove('opacity-50', 'pointer-events-none');
+                        passwordContainer.classList.remove('opacity-50', 'pointer-events-none');
+                    }
+                }
+
+                // Initialize state on load
+                document.addEventListener('DOMContentLoaded', () => {
+                    const anonCheckbox = document.getElementById('anonymous-login-toggle');
+                    toggleAnonymous(anonCheckbox.checked);
+                    updateUrl(); // Ensure URL is correct on load
+                });
+            </script>
+        </main>
+    </div>
+</body>
+
+</html>

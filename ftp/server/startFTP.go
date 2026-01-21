@@ -20,6 +20,7 @@ func StartFTP() error {
 }
 
 func startLogsAndFTP() {
+	config.Server.IsRunning = true
 	if err := config.Server.Conn.ListenAndServe(); err != nil {
 		// send error to logs channel without blocking
 		select {
