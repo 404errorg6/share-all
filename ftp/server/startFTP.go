@@ -15,7 +15,7 @@ func StartFTP() error {
 	mydriver := &AndroidMainDriver{}
 	config.Server.Conn = ftpserver.NewFtpServer(mydriver)
 	go startLogsAndFTP()
-	config.LogsCh <- fmt.Sprintf("FTP server started on: %v:%v with path: %v", config.Server.FTPHost, config.Server.FTPPort, config.Server.Root)
+	config.LogsCh <- fmt.Sprintf("FTP server started on: %v:%v with path: %v", config.Server.FTPHost, config.Server.FTPPort, config.Server.RootDir)
 	return nil
 }
 

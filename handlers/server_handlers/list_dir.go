@@ -42,7 +42,7 @@ func HandleListDir(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//Store and send in json
-	directory := config.Dir{Entries: []config.FSObject{}} //Initialize to avoid null in json
+	directory := []config.FSObject{} //Initialize to avoid null in json
 	for _, entry := range entries {
 		e := config.FSObject{
 			Name: entry.Name,
@@ -53,7 +53,7 @@ func HandleListDir(w http.ResponseWriter, req *http.Request) {
 			e.IsFolder = false
 		}
 
-		directory.Entries = append(directory.Entries, e)
+		directory = append(directory, e)
 	}
 
 	config.SendJSON(w, directory)

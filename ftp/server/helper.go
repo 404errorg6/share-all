@@ -8,7 +8,7 @@ import (
 	ftpserver "github.com/fclairamb/ftpserverlib"
 )
 
-func storeInfo(user string, cc ftpserver.ClientContext) {
+func addToConnectedClient(user string, cc ftpserver.ClientContext) {
 	client := config.Client{}
 	addr := cc.RemoteAddr().String()
 	host, port, found := strings.Cut(addr, ":")
@@ -23,4 +23,8 @@ func storeInfo(user string, cc ftpserver.ClientContext) {
 	client.Msg = fmt.Sprintf("%v: %v    %v", user, addr, cc.RemoteAddr().Network())
 	client.Context = cc
 	config.Server.ConnectedClients.Store(cc.ID(), client)
+}
+
+func rmFromConnectedClients(cc ftpserver.ClientContext) {
+	config.Server.ConnectedClients.Delete(cc.ID())
 }
