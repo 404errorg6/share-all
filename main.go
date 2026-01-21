@@ -5,29 +5,28 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/404errorg6/FTP-server/ftp/server"
+	"github.com/404errorg6/FTP-server/ftp/config"
 )
 
 func main() {
-	fmt.Printf("Starting http server on %v:%v...\n", httpHost, httpPort)
-	server.Init(ftpHost, ftpPort, logsCh, homeDir)
+	fmt.Printf("Starting http server on %v:%v...\n", config.HTTPHost, config.HTTPPort)
 	mux := Mux()
 
 	svr := &http.Server{
-		Addr:    httpHost + ":" + httpPort,
+		Addr:    config.HTTPHost + ":" + config.HTTPPort,
 		Handler: mux,
 	}
 
 	go testLogs()
-	logsCh <- "server ready to start"
+	config.LogsCh <- "server ready to start"
 	log.Fatal(svr.ListenAndServe())
 }
 
 func testLogs() {
 	i := 1
-	for i <= logsTestingCount {
+	for i <= config.LogsTestingCount {
 		m := fmt.Sprintf("Logs testing %v...", i)
-		logsCh <- m
+		config.LogsCh <- m
 		i++
 	}
 }

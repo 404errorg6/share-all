@@ -2,14 +2,23 @@ package client
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/404errorg6/FTP-server/ftp/config"
 	"github.com/jlaffaye/ftp"
 )
 
-var client *ftp.ServerConn
-
 func AuthClient(addr string, user, pass string) error {
+	host, _, err := getHostPort(addr)
+	if err != nil {
+		return err
+	}
+
+	if alreadyConnected(host) {
+		return fmt.Errorf("%v is already connected", host)
+	}
+
 	c, err := ftp.Dial(addr, ftp.DialWithTimeout(5*time.Second))
 	if err != nil {
 		return err
@@ -24,9 +33,34 @@ func AuthClient(addr string, user, pass string) error {
 	return nil
 }
 
-func GetClient() (*ftp.ServerConn, error) {
-	if client == nil {
-		return nil, fmt.Errorf("Authentication failed. Please login")
+func getHostPort(addr string) (string, string, error) {
+	host, port, found := strings.Cut(addr, ":")
+	if !found {
+		config.LogsCh <- fmt.Sprintf("[FATAL]: %v doesn't contain \":\"", addr)
+		return "", "", fmt.Errorf("\"%v\" doesn't contain \":\"", addr)
 	}
-	return client, nil
+	return host, port, nil
+}
+
+func alreadyConnected(host string) bool {
+	var matchFound bool
+
+	config.Server.ConnectedClients.Range(func(key, value any) bool {
+		client, ok := value.(config.Client)
+		if !ok {
+			config.LogsCh <- fmt.Sprintf("[FATAL]: cannot convert to Client: %v", value)
+			return false
+		}
+
+		if client.Host == host {
+			matchFound = true
+			return false
+		}
+		return true
+	})
+
+	if matchFound {
+		return true
+	}
+	return false
 }
