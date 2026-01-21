@@ -189,7 +189,7 @@
                                 const formData = new FormData();
                                 formData.append('server_port', port);
                                 formData.append('server_root_dir', rootFolder);
-                                formData.append('anonymous', anonymous ? 'true' : 'false');
+                                formData.append('anonymous_allowed', anonymous ? 'true' : 'false');
                                 formData.append('write_allowed', allowWriting ? 'true' : 'false');
                                 
                                 // Add username and password if not anonymous
@@ -205,21 +205,15 @@
                                     body: formData
                                 });
                                 
-                                // Check if response is JSON
-                                const contentType = response.headers.get('content-type');
-                                if (!contentType || !contentType.includes('application/json')) {
-                                    const text = await response.text();
-                                    console.error('Non-JSON response:', text);
-                                    throw new Error('Backend returned HTML instead of JSON. Check if API endpoint exists.');
-                                }
-                                
-                                const result = await response.json();
-                                
-                                if (response.ok && result.success) {
+                                // Check for success (200 OK or 204 No Content)
+                                if (response.ok) {
                                     statusText.textContent = 'Running';
+                                    saveToggleState(true);
                                     console.log('Server started successfully');
                                 } else {
-                                    throw new Error(result.message || 'Failed to start server');
+                                    // Try to get error message from response
+                                    const errorText = await response.text();
+                                    throw new Error(errorText || 'Failed to start server');
                                 }
                             } catch (error) {
                                 console.error('Error starting server:', error);
@@ -236,13 +230,13 @@
                                     method: 'POST'
                                 });
                                 
-                                const result = await response.json();
-                                
-                                if (response.ok && result.success) {
+                                if (response.ok) {
                                     statusText.textContent = 'Stopped';
+                                    saveToggleState(false);
                                     console.log('Server stopped successfully');
                                 } else {
-                                    throw new Error(result.message || 'Failed to stop server');
+                                    const errorText = await response.text();
+                                    throw new Error(errorText || 'Failed to stop server');
                                 }
                             } catch (error) {
                                 console.error('Error stopping server:', error);
@@ -326,6 +320,32 @@
                     function selectCurrentFolder() {
                         // Not needed, but kept for compatibility
                     }
+
+                    /**
+                     * Save and restore toggle state using localStorage (frontend only)
+                     */
+                    function saveToggleState(isRunning) {
+                        localStorage.setItem('ftpServerRunning', isRunning ? 'true' : 'false');
+                    }
+
+                    function restoreToggleState() {
+                        const savedState = localStorage.getItem('ftpServerRunning');
+                        const statusToggle = document.getElementById('status-toggle');
+                        const statusText = document.getElementById('status-text');
+                        
+                        if (savedState === 'true') {
+                            statusToggle.checked = true;
+                            statusText.textContent = 'Running';
+                        } else {
+                            statusToggle.checked = false;
+                            statusText.textContent = 'Stopped';
+                        }
+                    }
+
+                    // Initialize state on page load
+                    document.addEventListener('DOMContentLoaded', () => {
+                        restoreToggleState();
+                    });
                 </script>
 
 
