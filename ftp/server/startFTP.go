@@ -3,42 +3,27 @@ package server
 import (
 	"fmt"
 
+	"github.com/404errorg6/FTP-server/ftp/config"
 	ftpserver "github.com/fclairamb/ftpserverlib"
 )
 
-var (
-	svr *ftpserver.FtpServer
-)
-
-func Init(ftpHost, ftpPort string, logsCh chan string, root string) {
-	host = ftpHost
-	port = ftpPort
-	logsChPtr = &logsCh
-	baseRoot = root
-}
-
 func StartFTP() error {
-	if svr != nil {
-		sendToLogsChPtr("server already running")
-		return nil
+	if config.Server.Conn != nil {
+		return fmt.Errorf("server already running")
 	}
-	//	path, err := os.UserHomeDir()
-	//	if err != nil {
-	//		return err
-	//	}
 
 	mydriver := &AndroidMainDriver{}
-	svr = ftpserver.NewFtpServer(mydriver)
+	config.Server.Conn = ftpserver.NewFtpServer(mydriver)
 	go startLogsAndFTP()
-	sendToLogsChPtr(fmt.Sprintf("FTP server started on: %v:%v", host, port))
+	config.LogsCh <- fmt.Sprintf("FTP server started on: %v:%v with path: %v", config.Server.FTPHost, config.Server.FTPPort, config.Server.RootDir)
 	return nil
 }
 
 func startLogsAndFTP() {
-	if err := svr.ListenAndServe(); err != nil {
+	if err := config.Server.Conn.ListenAndServe(); err != nil {
 		// send error to logs channel without blocking
 		select {
-		case *logsChPtr <- err.Error():
+		case config.LogsCh <- err.Error():
 		default:
 			fmt.Printf("logs channel full, dropping: %v", err)
 		}

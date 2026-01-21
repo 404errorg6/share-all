@@ -1,19 +1,26 @@
 package main
 
-import "net/http"
+import (
+	"net/http"
+
+	clienthandlers "github.com/404errorg6/FTP-server/handlers/client_handlers"
+	httphandlers "github.com/404errorg6/FTP-server/handlers/http_handlers"
+	serverhandlers "github.com/404errorg6/FTP-server/handlers/server_handlers"
+)
 
 func Mux() *http.ServeMux {
 	mux := http.NewServeMux()
 	fs := http.FileServer(http.Dir("./frontend"))
-
-	mux.Handle("/", fs)
-	mux.HandleFunc("GET /check", handleCheck)
-	mux.HandleFunc("POST /api/start-ftp", handleStart)
-	mux.HandleFunc("POST /api/stop-ftp", handleStop)
-	mux.HandleFunc("GET /api/logs", handleLogs)
-	//FTP handles
-	mux.HandleFunc("GET /api/ls", handleLS)
-	mux.HandleFunc("GET /api/file", handleFile)
-	mux.HandleFunc("POST /api/client/connect", handleConnectClient)
+	//http Handles
+	mux.Handle("/", fs)                                      //serve frontend
+	mux.HandleFunc("GET /api/logs", httphandlers.HandleLogs) //get logs
+	//FTP server Handles
+	mux.HandleFunc("POST /api/start-ftp", serverhandlers.HandleStartFTP)                              //start ftp server
+	mux.HandleFunc("POST /api/stop-ftp", serverhandlers.HandleStopFTP)                                //stop ftp server
+	mux.HandleFunc("GET /api/ftp/server/ls", serverhandlers.HandleListDir)                            //list other server directory
+	mux.HandleFunc("GET /api/ftp/server/get-file", serverhandlers.HandleStreamFile)                   //get file from other server
+	mux.HandleFunc("GET /api/ftp/server/connected-clients", serverhandlers.HandleGetConnectedClients) //get clients connected to own server
+	//FTP client Handles
+	mux.HandleFunc("POST /api/ftp/client/connect-to-server", clienthandlers.HandleConnectToServer) //connect to other server
 	return mux
 }
