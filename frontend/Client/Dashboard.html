@@ -59,9 +59,9 @@
         <!-- TopAppBar -->
         <header class="flex items-center bg-background-light dark:bg-background-dark px-4 py-3 justify-between border-b border-slate-200 dark:border-slate-800 z-10 sticky top-0">
             <div class="flex items-center gap-3">
-                <div class="text-primary flex size-10 items-center justify-center">
+                <button id="menu-btn" onclick="toggleMenu()" class="text-primary flex size-10 items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20">
                     <span class="material-symbols-outlined text-3xl">storage</span>
-                </div>
+                </button>
                 <!-- Dynamic Title -->
                 <h2 class="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-tight">Remote</h2>
             </div>
@@ -192,6 +192,83 @@
         <div class="h-1.5 w-32 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-2 absolute bottom-2 left-1/2 -translate-x-1/2 opacity-30 z-20"></div>
     </div>
 
+    <!-- Side Menu Drawer -->
+    <!-- Backdrop -->
+    <div id="drawer-backdrop" onclick="toggleMenu()" class="fixed inset-0 bg-black/50 z-40 hidden opacity-0 transition-opacity duration-300"></div>
+    
+    <!-- Sidebar -->
+    <div id="drawer-sidebar" class="fixed inset-y-0 left-0 z-50 w-[75%] max-w-[300px] bg-white dark:bg-[#1b2327] shadow-2xl transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+        <!-- Drawer Header -->
+        <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800/50">
+            <h3 class="text-lg font-bold text-slate-800 dark:text-white tracking-tight">Fahad ki ma ki chut</h3>
+            <button onclick="toggleMenu()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        
+        <!-- Drawer Content -->
+        <div class="flex-1 overflow-y-auto py-2">
+            
+            <!-- Turn FTP Server ON/OFF -->
+            <div class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center justify-center size-10 rounded-full bg-blue-50 dark:bg-blue-500/10 text-primary">
+                            <span class="material-symbols-outlined">wifi</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-sm font-semibold text-slate-900 dark:text-white">FTP Server</span>
+                            <span class="text-xs text-slate-500 dark:text-slate-400">Enable remote access</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Toggle Switch -->
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="ftp-toggle" class="sr-only peer" onchange="toggleFpsServer(this.checked)">
+                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 dark:peer-focus:ring-primary/30 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Connect to Server -->
+            <a href="Form-A.html" class="flex items-center justify-between px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center size-10 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-500">
+                        <span class="material-symbols-outlined">add_link</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-sm font-semibold text-slate-900 dark:text-white">Connect to Server</span>
+                        <span class="text-xs text-slate-500 dark:text-slate-400">Add a new connection</span>
+                    </div>
+                </div>
+                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">chevron_right</span>
+            </a>
+
+            <!-- Connected Users (Placeholder) -->
+            <a href="#" class="flex items-center justify-between px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center size-10 rounded-full bg-green-50 dark:bg-green-500/10 text-green-500">
+                        <span class="material-symbols-outlined">group</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-sm font-semibold text-slate-900 dark:text-white">Connected Users</span>
+                        <span class="text-xs text-slate-500 dark:text-slate-400">View active sessions</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="flex items-center justify-center bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-[10px] font-bold px-2 py-0.5 rounded-full">LIVE</span>
+                    <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">chevron_right</span>
+                </div>
+            </a>
+
+        </div>
+
+        <!-- Drawer Footer -->
+        <div class="p-4 border-t border-slate-100 dark:border-slate-800/50">
+            <p class="text-xs text-center text-slate-400">Fahad ki ma ka bhosra(746hp)</p>
+        </div>
+    </div>
+
     <!-- Toast Notification Container -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
@@ -319,6 +396,76 @@
         
         // Initial render
         render();
+
+        // Menu Drawer Logic
+        const drawerBackdrop = document.getElementById('drawer-backdrop');
+        const drawerSidebar = document.getElementById('drawer-sidebar');
+        let isMenuOpen = false;
+
+        function toggleMenu() {
+            isMenuOpen = !isMenuOpen;
+            
+            if (isMenuOpen) {
+                // Open
+                drawerBackdrop.classList.remove('hidden');
+                // Small delay to allow display block to apply before opacity transition
+                setTimeout(() => {
+                    drawerBackdrop.classList.remove('opacity-0');
+                    drawerSidebar.classList.remove('-translate-x-full');
+                }, 10);
+            } else {
+                // Close
+                drawerBackdrop.classList.add('opacity-0');
+                drawerSidebar.classList.add('-translate-x-full');
+                
+                // Wait for transition to finish before hiding
+                setTimeout(() => {
+                    drawerBackdrop.classList.add('hidden');
+                }, 300);
+            }
+        }
+
+        // Swipe Gesture Logic
+        let touchStartX = 0;
+        let touchEndX = 0;
+        const SWIPE_THRESHOLD = 100; // Minimum distance for a swipe
+
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        document.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, { passive: true });
+
+        function handleSwipe() {
+            // Swipe Right (Open Menu) - only if starting from near the left edge
+            if (touchEndX > touchStartX + SWIPE_THRESHOLD && touchStartX < 50) {
+                if (!isMenuOpen) toggleMenu();
+            }
+            
+            // Swipe Left (Close Menu)
+            if (touchEndX < touchStartX - SWIPE_THRESHOLD) {
+                if (isMenuOpen) toggleMenu();
+            }
+        }
+
+        // FTP Server Toggle Logic
+        function toggleFpsServer(isChecked) {
+            const status = isChecked ? "ON" : "OFF";
+            console.log(`FTP Server turned ${status}`);
+            
+            // Visual feedback
+            if (isChecked) {
+                showToast("FTP Server Enabled");
+            } else {
+                showToast("FTP Server Disabled", "error"); // Using 'error' style (red) for OFF state just for visual distinction
+            }
+
+            // TODO: Here you would send this status to the backend
+            // sendStatusToBackend(isChecked);
+        }
     </script>
 </body>
 </html>
