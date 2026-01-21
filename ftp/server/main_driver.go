@@ -26,24 +26,17 @@ func (d *AndroidMainDriver) GetSettings() (*ftpserver.Settings, error) {
 
 func (d *AndroidMainDriver) AuthUser(cc ftpserver.ClientContext, user, pass string) (ftpserver.ClientDriver, error) {
 	var isAuthorized bool
-	storeInfo(user, cc)
 	cDriver := &AndroidClientDriver{}
 
 	if config.Server.AnonymousAccessAllowed {
 		if user == "anonymous" {
-			cDriver.Permisson = config.READ_ONLY
-			cDriver.Fs = afero.NewBasePathFs(afero.NewOsFs(), config.Server.Root)
+			cDriver.Fs = afero.NewBasePathFs(afero.NewOsFs(), config.Server.RootDir)
 			isAuthorized = true
 		}
 	}
 
-	if user == "admin" && pass == "admin" {
-		cDriver.Permisson = config.READ_WRITE
-		cDriver.Fs = afero.NewBasePathFs(afero.NewOsFs(), config.Server.Root)
-		isAuthorized = true
-	}
-
 	if isAuthorized {
+		addToConnectedClient(user, cc)
 		config.LogsCh <- fmt.Sprintf("%v authorization successful", cc.RemoteAddr().String())
 		return cDriver, nil
 	}
@@ -60,7 +53,7 @@ func (d *AndroidMainDriver) ClientConnected(cc ftpserver.ClientContext) (string,
 }
 
 func (d *AndroidMainDriver) ClientDisconnected(cc ftpserver.ClientContext) {
-	config.Server.ConnectedClients.Delete(cc.ID())
+	rmFromConnectedClients(cc)
 	config.LogsCh <- fmt.Sprintf("%v diconnected.", cc.RemoteAddr().String())
 }
 
