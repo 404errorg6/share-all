@@ -28,8 +28,13 @@ func (d *AndroidMainDriver) AuthUser(cc ftpserver.ClientContext, user, pass stri
 	var isAuthorized bool
 	cDriver := &AndroidClientDriver{}
 
-	if alreadyConnected(cc.RemoteAddr().String()) {
-		return nil, fmt.Errorf("%v is already connected")
+	host, _, err := config.GetHostPort(cc.RemoteAddr().String())
+	if err != nil {
+		config.LogsCh <- err.Error()
+	}
+
+	if alreadyConnected(host) {
+		return nil, fmt.Errorf("%v is already connected", host)
 	}
 
 	if config.Server.AnonymousAccessAllowed {
