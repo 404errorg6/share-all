@@ -200,7 +200,7 @@
     <div id="drawer-sidebar" class="fixed inset-y-0 left-0 z-50 w-[75%] max-w-[300px] bg-white dark:bg-[#1b2327] shadow-2xl transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
         <!-- Drawer Header -->
         <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800/50">
-            <h3 class="text-lg font-bold text-slate-800 dark:text-white tracking-tight">Fahad ki ma ki chut</h3>
+            <h3 class="text-lg font-bold text-slate-800 dark:text-white tracking-tight">Fahad ki ma ki chut(100 Time)</h3>
             <button onclick="toggleMenu()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
                 <span class="material-symbols-outlined">close</span>
             </button>
@@ -209,26 +209,19 @@
         <!-- Drawer Content -->
         <div class="flex-1 overflow-y-auto py-2">
             
-            <!-- Turn FTP Server ON/OFF -->
-            <div class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="flex items-center justify-center size-10 rounded-full bg-blue-50 dark:bg-blue-500/10 text-primary">
-                            <span class="material-symbols-outlined">wifi</span>
-                        </div>
-                        <div class="flex flex-col">
-                            <span class="text-sm font-semibold text-slate-900 dark:text-white">FTP Server</span>
-                            <span class="text-xs text-slate-500 dark:text-slate-400">Enable remote access</span>
-                        </div>
+            <!-- FTP Server Control Panel Link -->
+            <a href="Control-Panel/Panel.html" class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center size-10 rounded-full bg-blue-50 dark:bg-blue-500/10 text-primary">
+                        <span class="material-symbols-outlined">wifi</span>
                     </div>
-                    
-                    <!-- Toggle Switch -->
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="ftp-toggle" class="sr-only peer" onchange="toggleFpsServer(this.checked)">
-                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 dark:peer-focus:ring-primary/30 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
-                    </label>
+                    <div class="flex flex-col">
+                        <span class="text-sm font-semibold text-slate-900 dark:text-white">FTP Server</span>
+                        <span class="text-xs text-slate-500 dark:text-slate-400">Manage server status & config</span>
+                    </div>
                 </div>
-            </div>
+                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">chevron_right</span>
+            </a>
 
             <!-- Connect to Server -->
             <a href="Form-A.html" class="flex items-center justify-between px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
