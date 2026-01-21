@@ -114,9 +114,8 @@
     }
 
     // Back Button Logic
-    const backBtn = document.querySelector('.material-symbols-outlined:contains("arrow_back_ios"), .material-symbols-outlined.arrow_back_ios, .material-symbols-outlined').parentElement; 
-    // Using a more robust selector approach if 'contains' isn't valid in pure JS querySelector (it's not).
-    // Let's find by content manually or index.
+    // Back Button Logic
+    // Find the back arrow button by content since :contains() is not a valid CSS selector
     const backArrow = Array.from(document.querySelectorAll('.material-symbols-outlined')).find(el => el.textContent.includes('arrow_back'));
     if(backArrow) {
         backArrow.parentElement.onclick = () => window.location.href = 'Dashboard.html';
