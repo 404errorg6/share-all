@@ -7,6 +7,7 @@ import (
 	ftpserver "github.com/fclairamb/ftpserverlib"
 )
 
+// TODO: Give up on this
 type Permission struct {
 	CanRead   bool
 	CanWrite  bool
@@ -21,12 +22,13 @@ type FSObject struct {
 type MyServer struct {
 	FTPHost                string
 	FTPPort                string
-	AnonymousAccessAllowed bool
 	RootDir                string
+	AnonymousAccessAllowed bool
+	WriteAllowed           bool
 	Conn                   *ftpserver.FtpServer
 	ConnectedClients       sync.Map
 	// TODO: Add users support
-	//	Users            Client
+	//	Users            []Client
 }
 
 //func (s *MyServer) AddUser() {}
@@ -42,13 +44,14 @@ type Client struct {
 }
 
 var (
-	DefFTPPort       = "2121"
-	DefFTPHost       = "0.0.0.0"
-	DefAnonymous     = "true"
-	HTTPPort         = "8085"
-	HTTPHost         = "127.0.0.1"
-	LogsTestingCount = 0
-	LogsCh           = make(chan string, 100) //Channel that sends logs
-	HomeDir, _       = os.UserHomeDir()
-	Server           MyServer
+	DefFTPPort        = "2121"
+	DefFTPHost        = "0.0.0.0"
+	DefFTPWriteAccess = "false"
+	DefAnonymous      = "true"
+	HTTPPort          = "8085"
+	HTTPHost          = "127.0.0.1"
+	LogsTestingCount  = 0
+	LogsCh            = make(chan string, 100) //Channel that sends logs
+	HomeDir, _        = os.UserHomeDir()
+	Server            = MyServer{}
 )

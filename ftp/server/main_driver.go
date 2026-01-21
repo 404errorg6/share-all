@@ -28,8 +28,13 @@ func (d *AndroidMainDriver) AuthUser(cc ftpserver.ClientContext, user, pass stri
 	var isAuthorized bool
 	cDriver := &AndroidClientDriver{}
 
+	if alreadyConnected(cc.RemoteAddr().String()) {
+		return nil, fmt.Errorf("%v is already connected")
+	}
+
 	if config.Server.AnonymousAccessAllowed {
 		if user == "anonymous" {
+			config.Server.WriteAllowed = true
 			cDriver.Fs = afero.NewBasePathFs(afero.NewOsFs(), config.Server.RootDir)
 			isAuthorized = true
 		}
