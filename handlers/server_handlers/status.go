@@ -7,7 +7,7 @@ import (
 )
 
 func HandleServerStatus(w http.ResponseWriter, req *http.Request) {
-	if config.Server.Conn == nil {
+	if config.Server.IsRunning {
 		config.SendJSON(w, "running")
 		return
 	}

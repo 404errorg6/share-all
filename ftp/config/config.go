@@ -7,13 +7,6 @@ import (
 	ftpserver "github.com/fclairamb/ftpserverlib"
 )
 
-// TODO: Give up on this
-type Permission struct {
-	CanRead   bool
-	CanWrite  bool
-	CanDelete bool
-}
-
 type FSObject struct {
 	Name     string
 	IsFolder bool
@@ -25,6 +18,7 @@ type MyServer struct {
 	RootDir                string
 	AnonymousAccessAllowed bool
 	WriteAllowed           bool
+	IsRunning              bool
 	Conn                   *ftpserver.FtpServer
 	ConnectedClients       sync.Map
 	// TODO: Add users support
@@ -39,7 +33,6 @@ type Client struct {
 	Port    string
 	Msg     string
 	Root    string
-	Access  Permission
 	Context ftpserver.ClientContext
 }
 

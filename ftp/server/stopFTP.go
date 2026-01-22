@@ -7,8 +7,8 @@ import (
 )
 
 func StopFTP() error {
-	if config.Server.Conn == nil {
-		return fmt.Errorf("server is already dead")
+	if !config.Server.IsRunning {
+		return nil
 	}
 
 	config.Server.ConnectedClients.Range(rmClients)
@@ -17,6 +17,7 @@ func StopFTP() error {
 		return err
 	}
 	config.Server.Conn = nil
+	config.Server.IsRunning = false
 
 	config.LogsCh <- "server stopped"
 	return nil

@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/afero"
 )
 
+// TODO: Clean up this mess
+
 type AndroidMainDriver struct {
 }
 
@@ -16,10 +18,6 @@ func (d *AndroidMainDriver) GetSettings() (*ftpserver.Settings, error) {
 	settings := ftpserver.Settings{
 		ListenAddr: config.Server.FTPHost + ":" + config.Server.FTPPort,
 		PublicHost: config.Server.FTPHost,
-		PassiveTransferPortRange: ftpserver.PortRange{
-			Start: 30000,
-			End:   30050,
-		},
 	}
 	return &settings, nil
 }

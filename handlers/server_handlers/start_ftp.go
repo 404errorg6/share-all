@@ -22,6 +22,9 @@ func HandleStartFTP(w http.ResponseWriter, req *http.Request) {
 	anonymous := req.FormValue("anonymous_allowed")
 	writeAllowed := req.FormValue("write_allowed")
 
+	// TODO: Form data not given
+	fmt.Printf("Form data:\n	server_port: %v\n	server_root_dir: %v\n	anonymous_allowed: %v\n	writeAllowed: %v\n", port, newRoot, anonymous, writeAllowed)
+
 	err = initServer("", port, newRoot, writeAllowed, anonymous)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -41,12 +44,10 @@ func initServer(host, port, root, writeAllowed, anonymous string) error {
 	if root == "" {
 		root = config.HomeDir
 	}
-	fmt.Printf("root: %v\n", root)
 
 	if !filepath.IsAbs(root) {
 		root = filepath.Join(config.HomeDir, root)
 	}
-	fmt.Printf("after: %v\n", root)
 
 	if !config.FolderExists(root) {
 		err := fmt.Errorf("\"%v\" folder does not exist", root)
