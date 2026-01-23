@@ -11,5 +11,5 @@ func HandleServerStatus(w http.ResponseWriter, req *http.Request) {
 		config.SendJSON(w, "running")
 		return
 	}
-	config.SendJSON(w, "not running")
+	config.SendJSON(w, "not-running")
 }
