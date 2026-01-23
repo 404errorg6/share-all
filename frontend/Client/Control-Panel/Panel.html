@@ -317,6 +317,13 @@
             toggleAnonymous(anonCheckbox.checked);
             updateUrl();
 
+            // Check if a folder was selected from Local.html
+            const selectedFolder = localStorage.getItem('selectedFolderPath');
+            if (selectedFolder) {
+                document.getElementById('ftp-root').value = selectedFolder;
+                localStorage.removeItem('selectedFolderPath'); // Clear it after use
+            }
+
             // Adaptive toggle initialization
             document.querySelectorAll('.toggle-input').forEach(input => {
                 const label = input.closest('label');
@@ -449,10 +456,10 @@
                                 class="bg-transparent border-0 border-b border-gray-600 focus:border-primary focus:ring-0 text-[#9cb0ba] text-sm font-normal leading-normal w-full px-0 py-1 transition-colors group-hover:border-gray-500 placeholder-gray-700 pr-10" />
 
                             <!-- Folder Picker Trigger -->
-                            <button type="button" onclick="selectFolderPath(); return false;"
+                            <a href="../Local.html?selectMode=true" type="button"
                                 class="absolute right-0 bottom-1 p-1 text-primary hover:text-white transition-colors">
                                 <span class="material-symbols-outlined text-[20px]">folder_open</span>
-                            </button>
+                            </a>
                         </div>
                     </div>
                 </div>

@@ -42,11 +42,11 @@ func HandleStartFTP(w http.ResponseWriter, req *http.Request) {
 
 func initServer(host, port, root, writeAllowed, anonymous string) error {
 	if root == "" {
-		root = config.HomeDir
+		root = config.DefDir
 	}
 
 	if !filepath.IsAbs(root) {
-		root = filepath.Join(config.HomeDir, root)
+		root = filepath.Join(config.DefDir, root)
 	}
 
 	if !config.FolderExists(root) {

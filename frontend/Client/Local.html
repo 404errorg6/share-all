@@ -82,6 +82,14 @@
         </div>
     </div>
     
+    <!-- Select Folder Button (shown only in select mode) -->
+    <div id="select-folder-bar" class="hidden flex items-center gap-3 bg-primary/10 dark:bg-primary/5 px-4 py-3 border-b border-primary/20">
+        <span class="text-primary text-sm font-medium flex-1">Select this folder as root directory</span>
+        <button id="select-folder-btn" class="px-4 py-2 bg-primary hover:bg-primary/90 text-white font-semibold rounded-lg transition-colors active:scale-95">
+            Choose
+        </button>
+    </div>
+    
     <!-- Toolbar -->
     <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/30 px-4 py-2 border-b border-slate-200 dark:border-slate-800">
         <button id="refresh-btn" title="Refresh" class="flex items-center justify-center size-9 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
@@ -129,10 +137,13 @@
     const toggleHiddenBtn = document.getElementById('toggle-hidden-btn');
     const fileCountEl = document.getElementById('file-count');
     const upDirBtn = document.getElementById('up-dir-btn');
+    const selectFolderBar = document.getElementById('select-folder-bar');
+    const selectFolderBtn = document.getElementById('select-folder-btn');
 
     let currentPath = '/';
     let showHiddenFiles = false;
-    let allEntries = []; // Store all entries including hidden
+    let allEntries = [];
+    let selectMode = false; // Check if opened in select mode
 
     /**
      * Format bytes to human-readable size
@@ -364,6 +375,17 @@
     }
 
     /**
+     * Choose current folder (only in select mode)
+     */
+    function chooseFolderAsRoot() {
+        const displayPath = currentPath === '/' ? 'Root' : currentPath;
+        // Store the path in localStorage
+        localStorage.setItem('selectedFolderPath', currentPath);
+        // Go back to Panel.html
+        window.location.href = 'Control-Panel/Panel.html';
+    }
+
+    /**
      * Toggle hidden files visibility
      */
     function toggleHiddenFiles() {
@@ -385,8 +407,22 @@
     
     upDirBtn.addEventListener('click', moveUpDirectory);
 
-    // Initialize page with root directory on load
+    selectFolderBtn.addEventListener('click', chooseFolderAsRoot);
+
+    // Initialize page
     document.addEventListener('DOMContentLoaded', () => {
+        // Check if opened in select mode
+        const urlParams = new URLSearchParams(window.location.search);
+        selectMode = urlParams.get('selectMode') === 'true';
+        
+        // Show/hide select folder bar
+        if (selectMode) {
+            selectFolderBar.classList.remove('hidden');
+        } else {
+            selectFolderBar.classList.add('hidden');
+        }
+        
+        // Load root directory
         loadLocalDirectory('/');
     });
 
