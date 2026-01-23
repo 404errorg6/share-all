@@ -47,6 +47,7 @@ func HandleListDir(w http.ResponseWriter, req *http.Request) {
 		e := config.FSObject{
 			Name: entry.Name,
 		}
+
 		if entry.Type == ftp.EntryTypeFolder {
 			e.IsFolder = true
 		} else {
