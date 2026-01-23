@@ -45,7 +45,6 @@ func initServer(host, port, root, writeAllowed, anonymous string) error {
 		root = config.HomeDir
 	}
 
-	// TODO: Security vulnerablilty with smth like ../Public
 	if !filepath.IsAbs(root) {
 		root = filepath.Join(config.HomeDir, root)
 	}

@@ -12,28 +12,23 @@ import (
 	"github.com/jlaffaye/ftp"
 )
 
-func GetCompletePath(c *ftp.ServerConn, path string) (string, error) {
+func GetCompletePath(c *ftp.ServerConn, path string) (string, *ftp.Entry, error) {
 	if path == "" {
 		err := fmt.Errorf("path is required")
-		return "", err
+		return "", nil, err
 	}
 
-	//Check if file is within accessible range
-	entry, err := c.GetEntry(path)
+	//Check if file/folder is within accessible range
+	entry, err := c.GetEntry(path) //Get from client's accessible filesystem
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
-	if entry.Type != ftp.EntryTypeFile {
-		err := fmt.Errorf("Error: \"%v\" is not a file", path)
-		return "", err
-	}
-
-	//File is safe to send now
+	//File/folder is safe to send now
 	if !filepath.IsAbs(path) {
 		path = filepath.Join(Server.RootDir, path)
 	}
-	return path, nil
+	return path, entry, nil
 }
 
 func GetHostPort(addr string) (string, string, error) {
