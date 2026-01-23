@@ -58,6 +58,288 @@
         /* Small accessibility focus ring */
         .toggle-input:focus + .toggle-track { outline: 2px solid rgba(80,194,247,0.25); outline-offset: 2px; }
     </style>
+    <script>
+        /**
+         * Select folder path - tries multiple methods
+         */
+        async function selectFolderPath() {
+            console.log('selectFolderPath called');
+            
+            // Method 1: Try File System Access API (Chrome/Edge/Safari)
+            if ('showDirectoryPicker' in window) {
+                console.log('Using showDirectoryPicker');
+                try {
+                    const dirHandle = await window.showDirectoryPicker();
+                    const folderName = dirHandle.name;
+                    console.log('Selected folder:', folderName);
+                    document.getElementById('ftp-root').value = folderName;
+                    return;
+                } catch (err) {
+                    if (err.name !== 'AbortError') {
+                        console.error('Error with showDirectoryPicker:', err);
+                    }
+                }
+            }
+            
+            // Method 2: Try native dialog (if in Electron/native app)
+            if (window.electronAPI && window.electronAPI.selectFolder) {
+                console.log('Using electron API');
+                try {
+                    const folderPath = await window.electronAPI.selectFolder();
+                    if (folderPath) {
+                        document.getElementById('ftp-root').value = folderPath;
+                    }
+                    return;
+                } catch (err) {
+                    console.error('Error with electron API:', err);
+                }
+            }
+            
+            // Method 3: Fallback to native input dialog
+            console.log('Using native input dialog');
+            let hiddenInput = document.getElementById('hidden-folder-input');
+            
+            if (!hiddenInput) {
+                hiddenInput = document.createElement('input');
+                hiddenInput.id = 'hidden-folder-input';
+                hiddenInput.type = 'file';
+                hiddenInput.webkitdirectory = true;
+                hiddenInput.mozdirectory = true;
+                hiddenInput.directory = true;
+                document.body.appendChild(hiddenInput);
+                
+                hiddenInput.addEventListener('change', function() {
+                    if (this.files && this.files.length > 0) {
+                        // Get folder name from the first file's path
+                        const firstFile = this.files[0];
+                        let folderPath = firstFile.webkitRelativePath || firstFile.name;
+                        
+                        // Extract just the root folder
+                        if (folderPath.includes('/')) {
+                            folderPath = folderPath.split('/')[0];
+                        }
+                        
+                        console.log('Selected folder path:', folderPath);
+                        document.getElementById('ftp-root').value = folderPath;
+                    }
+                });
+            }
+            
+            hiddenInput.click();
+        }
+
+        /**
+         * Handle Server Start/Stop via Status Toggle
+         */
+        async function toggleServer(checkbox) {
+            const isStarting = checkbox.checked;
+            const statusText = document.getElementById('status-text');
+            
+            if (isStarting) {
+                // Get configuration values
+                const port = document.getElementById('ftp-port').value || '2121';
+                const rootFolder = document.getElementById('ftp-root').value || '';
+                const anonymous = document.getElementById('anonymous-login-toggle').checked;
+                const allowWriting = document.getElementById('allow-writing-toggle').checked;
+                
+                // Validate username/password if not anonymous
+                if (!anonymous) {
+                    const username = document.getElementById('ftp-username').value || '';
+                    const password = document.getElementById('ftp-password').value || '';
+                    
+                    if (!username || !password) {
+                        alert('Username and Password are required when Anonymous login is disabled.');
+                        checkbox.checked = false;
+                        return;
+                    }
+                }
+                
+                // Update status
+                statusText.textContent = 'Starting...';
+                
+                try {
+                    // Call backend start API (use URL-encoded to match curl -d and server ParseForm)
+                    const params = new URLSearchParams();
+                    params.append('server_port', port);
+                    params.append('server_root_dir', rootFolder);
+                    params.append('anonymous_allowed', anonymous ? 'true' : 'false');
+                    params.append('write_allowed', allowWriting ? 'true' : 'false');
+                    
+                    // Add username and password if not anonymous
+                    if (!anonymous) {
+                        const username = document.getElementById('ftp-username').value;
+                        const password = document.getElementById('ftp-password').value;
+                        params.append('username', username);
+                        params.append('password', password);
+                    }
+                    
+                    // Debug: log the payload
+                    console.log('Start FTP params:', params.toString());
+
+                    // Use string body and explicit headers to avoid any platform differences
+                    const fetchOptions = {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+                            'Accept': 'text/plain'
+                        },
+                        body: params.toString()
+                    };
+
+                    console.log('Fetch options:', fetchOptions);
+
+                    const response = await fetch('/api/start-ftp', fetchOptions);
+                    const responseText = await response.text();
+
+                    // Check for success (200 OK or 204 No Content)
+                    if (response.ok) {
+                        statusText.textContent = 'Running';
+                        saveToggleState(true);
+                        console.log('Server started successfully');
+                    } else {
+                        // Try to get error message from response
+                        throw new Error(responseText || 'Failed to start server');
+                    }
+                } catch (error) {
+                    console.error('Error starting server:', error);
+                    alert('Failed to start server: ' + error.message);
+                    checkbox.checked = false;
+                    statusText.textContent = 'Stopped';
+                }
+            } else {
+                // Stop server
+                statusText.textContent = 'Stopping...';
+                
+                try {
+                    const response = await fetch('/api/stop-ftp', {
+                        method: 'POST'
+                    });
+                    
+                    if (response.ok) {
+                        statusText.textContent = 'Stopped';
+                        saveToggleState(false);
+                        console.log('Server stopped successfully');
+                    } else {
+                        const errorText = await response.text();
+                        throw new Error(errorText || 'Failed to stop server');
+                    }
+                } catch (error) {
+                    console.error('Error stopping server:', error);
+                    alert('Failed to stop server: ' + error.message);
+                    checkbox.checked = true;
+                    statusText.textContent = 'Running';
+                }
+            }
+        }
+
+        /**
+         * Save and restore toggle state using localStorage (frontend only)
+         */
+        function saveToggleState(isRunning) {
+            localStorage.setItem('ftpServerRunning', isRunning ? 'true' : 'false');
+        }
+
+        function restoreToggleState() {
+            const savedState = localStorage.getItem('ftpServerRunning');
+            const statusToggle = document.getElementById('status-toggle');
+            const statusText = document.getElementById('status-text');
+            
+            if (savedState === 'true') {
+                statusToggle.checked = true;
+                statusText.textContent = 'Running';
+            } else {
+                statusToggle.checked = false;
+                statusText.textContent = 'Stopped';
+            }
+        }
+
+        // Sync Port with URL
+        function updateUrl() {
+            const portInput = document.getElementById('ftp-port');
+            const urlDisplay = document.getElementById('ftp-url');
+            const ipAddress = "127.0.0.1";
+            const port = portInput.value || '2121';
+            urlDisplay.textContent = `ftp://${ipAddress}:${port}/`;
+        }
+
+        function saveConfig() {
+            // Collect form data
+            const form = document.getElementById('ftp-config-form');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+
+            // Handle toggles manually
+            data.anonymous = form.querySelector('[name="anonymous"]').checked;
+            data.allow_writing = form.querySelector('[name="allow_writing"]').checked;
+
+            console.log('Configuration saved:', data);
+
+            // Visual feedback
+            const btn = form.querySelector('button[type="submit"]');
+            const originalText = btn.innerText;
+            btn.innerText = "Saved!";
+            btn.classList.add('bg-green-500', 'hover:bg-green-600');
+            btn.classList.remove('bg-primary', 'hover:bg-primary/90');
+
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                btn.classList.add('bg-primary', 'hover:bg-primary/90');
+            }, 2000);
+        }
+
+        function toggleAnonymous(isAnonymous) {
+            const usernameInput = document.getElementById('ftp-username');
+            const passwordInput = document.getElementById('ftp-password');
+            const usernameContainer = document.getElementById('username-container');
+            const passwordContainer = document.getElementById('password-container');
+
+            if (isAnonymous) {
+                usernameInput.disabled = true;
+                passwordInput.disabled = true;
+                usernameInput.required = false;
+                passwordInput.required = false;
+                usernameContainer.classList.add('opacity-50', 'pointer-events-none');
+                passwordContainer.classList.add('opacity-50', 'pointer-events-none');
+            } else {
+                usernameInput.disabled = false;
+                passwordInput.disabled = false;
+                usernameInput.required = true;
+                passwordInput.required = true;
+                usernameContainer.classList.remove('opacity-50', 'pointer-events-none');
+                passwordContainer.classList.remove('opacity-50', 'pointer-events-none');
+            }
+        }
+
+        // Initialize state on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const anonCheckbox = document.getElementById('anonymous-login-toggle');
+            toggleAnonymous(anonCheckbox.checked);
+            updateUrl();
+
+            // Adaptive toggle initialization
+            document.querySelectorAll('.toggle-input').forEach(input => {
+                const label = input.closest('label');
+                if (!label) return;
+                const track = label.querySelector('.toggle-track');
+                if (!track) return;
+
+                track.classList.toggle('toggle-on', input.checked);
+
+                input.addEventListener('change', () => {
+                    track.classList.toggle('toggle-on', input.checked);
+                });
+
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === ' ' || e.key === 'Enter') {
+                        setTimeout(() => track.classList.toggle('toggle-on', input.checked), 0);
+                    }
+                });
+            });
+
+            restoreToggleState();
+        });
+    </script>
 </head>
 
 <body class="bg-background-light dark:bg-background-dark font-display text-white antialiased">
@@ -167,219 +449,13 @@
                                 class="bg-transparent border-0 border-b border-gray-600 focus:border-primary focus:ring-0 text-[#9cb0ba] text-sm font-normal leading-normal w-full px-0 py-1 transition-colors group-hover:border-gray-500 placeholder-gray-700 pr-10" />
 
                             <!-- Folder Picker Trigger -->
-                            <button type="button" onclick="selectFolderPath()"
+                            <button type="button" onclick="selectFolderPath(); return false;"
                                 class="absolute right-0 bottom-1 p-1 text-primary hover:text-white transition-colors">
                                 <span class="material-symbols-outlined text-[20px]">folder_open</span>
                             </button>
                         </div>
                     </div>
                 </div>
-
-                <script>
-                    /**
-                     * Handle Server Start/Stop via Status Toggle
-                     */
-                    async function toggleServer(checkbox) {
-                        const isStarting = checkbox.checked;
-                        const statusText = document.getElementById('status-text');
-                        
-                        if (isStarting) {
-                            // Get configuration values
-                            const port = document.getElementById('ftp-port').value || '2121';
-                            const rootFolder = document.getElementById('ftp-root').value || '';
-                            const anonymous = document.getElementById('anonymous-login-toggle').checked;
-                            const allowWriting = document.getElementById('allow-writing-toggle').checked;
-                            
-                            // Validate username/password if not anonymous
-                            if (!anonymous) {
-                                const username = document.getElementById('ftp-username').value || '';
-                                const password = document.getElementById('ftp-password').value || '';
-                                
-                                if (!username || !password) {
-                                    alert('Username and Password are required when Anonymous login is disabled.');
-                                    checkbox.checked = false;
-                                    return;
-                                }
-                            }
-                            
-                            // Update status
-                            statusText.textContent = 'Starting...';
-                            
-                            try {
-                                // Call backend start API (use URL-encoded to match curl -d and server ParseForm)
-                                const params = new URLSearchParams();
-                                params.append('server_port', port);
-                                params.append('server_root_dir', rootFolder);
-                                params.append('anonymous_allowed', anonymous ? 'true' : 'false');
-                                params.append('write_allowed', allowWriting ? 'true' : 'false');
-                                
-                                // Add username and password if not anonymous
-                                if (!anonymous) {
-                                    const username = document.getElementById('ftp-username').value;
-                                    const password = document.getElementById('ftp-password').value;
-                                    params.append('username', username);
-                                    params.append('password', password);
-                                }
-                                
-                                // Debug: log the payload
-                                console.log('Start FTP params:', params.toString());
-
-                                // Use string body and explicit headers to avoid any platform differences
-                                const fetchOptions = {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-                                        'Accept': 'text/plain'
-                                    },
-                                    body: params.toString()
-                                };
-
-                                console.log('Fetch options:', fetchOptions);
-
-                                const response = await fetch('/api/start-ftp', fetchOptions);
-                                const responseText = await response.text();
-
-                                // Check for success (200 OK or 204 No Content)
-                                if (response.ok) {
-                                    statusText.textContent = 'Running';
-                                    saveToggleState(true);
-                                    console.log('Server started successfully');
-                                } else {
-                                    // Try to get error message from response
-                                    throw new Error(responseText || 'Failed to start server');
-                                }
-                            } catch (error) {
-                                console.error('Error starting server:', error);
-                                alert('Failed to start server: ' + error.message);
-                                checkbox.checked = false;
-                                statusText.textContent = 'Stopped';
-                            }
-                        } else {
-                            // Stop server
-                            statusText.textContent = 'Stopping...';
-                            
-                            try {
-                                const response = await fetch('/api/stop-ftp', {
-                                    method: 'POST'
-                                });
-                                
-                                if (response.ok) {
-                                    statusText.textContent = 'Stopped';
-                                    saveToggleState(false);
-                                    console.log('Server stopped successfully');
-                                } else {
-                                    const errorText = await response.text();
-                                    throw new Error(errorText || 'Failed to stop server');
-                                }
-                            } catch (error) {
-                                console.error('Error stopping server:', error);
-                                alert('Failed to stop server: ' + error.message);
-                                checkbox.checked = true;
-                                statusText.textContent = 'Running';
-                            }
-                        }
-                    }
-
-                    /**
-                     * BROWSER-COMPATIBLE FOLDER SELECTION
-                     * Shows friendly message BEFORE browser's scary permission dialog
-                     */
-                    async function selectFolderPath() {
-                        // Show our own friendly message first
-                        const userConfirmed = confirm(
-                            "📁 Need Permission to Get Folder Name\n\n" +
-                            "The browser will ask for permission to 'view files'.\n\n" +
-                            "➡️ We only need the FOLDER NAME, not your files.\n" +
-                            "➡️ We will NOT read, copy, or upload your files.\n\n" +
-                            "Click OK to continue."
-                        );
-
-                        if (!userConfirmed) {
-                            // User cancelled our dialog
-                            return;
-                        }
-
-                        // Try modern File System Access API (Chrome, Edge)
-                        if ('showDirectoryPicker' in window) {
-                            try {
-                                const dirHandle = await window.showDirectoryPicker();
-                                // Browser gives us folder name, not full path (security)
-                                const folderName = dirHandle.name;
-                                document.getElementById('ftp-root').value = "/" + folderName;
-                            } catch (err) {
-                                // User cancelled or denied permission
-                                if (err.name !== 'AbortError') {
-                                    console.error('Error:', err);
-                                }
-                            }
-                        }
-                        // Fallback for browsers that don't support showDirectoryPicker
-                        else {
-                            // Just focus on the input so user can type manually
-                            const input = document.getElementById('ftp-root');
-                            input.focus();
-                            input.select();
-
-                            // Show helpful hint
-                            if (!input.value) {
-                                input.placeholder = "Type path here, e.g., /storage/emulated/0/Download";
-                            }
-                        }
-                    }
-
-                    /**
-                     * Helper function for native environments (if needed later)
-                     */
-                    function setSelectedFolderPath(path) {
-                        document.getElementById('ftp-root').value = path;
-                    }
-
-                    // Helper: Close modal (legacy function, not used anymore)
-                    function closeFileManager() {
-                        // Not needed, but kept for compatibility
-                    }
-
-                    // Helper: Render file list (legacy function, not used anymore)  
-                    function renderFileList() {
-                        // Not needed, but kept for compatibility
-                    }
-
-                    // Helper: Navigate to folder (legacy function, not used anymore)
-                    function navigateTo(folderName) {
-                        // Not needed, but kept for compatibility
-                    }
-
-                    // Helper: Select current folder (legacy function, not used anymore)
-                    function selectCurrentFolder() {
-                        // Not needed, but kept for compatibility
-                    }
-
-                    /**
-                     * Save and restore toggle state using localStorage (frontend only)
-                     */
-                    function saveToggleState(isRunning) {
-                        localStorage.setItem('ftpServerRunning', isRunning ? 'true' : 'false');
-                    }
-
-                    function restoreToggleState() {
-                        const savedState = localStorage.getItem('ftpServerRunning');
-                        const statusToggle = document.getElementById('status-toggle');
-                        const statusText = document.getElementById('status-text');
-                        
-                        if (savedState === 'true') {
-                            statusToggle.checked = true;
-                            statusText.textContent = 'Running';
-                        } else {
-                            statusToggle.checked = false;
-                            statusText.textContent = 'Stopped';
-                        }
-                    }
-
-                    // Initialize state on page load
-                    document.addEventListener('DOMContentLoaded', () => {
-                        restoreToggleState();
-                    });
-                </script>
 
 
 
@@ -405,98 +481,6 @@
                 </div>
 
             </form>
-            <script>
-                // Sync Port with URL
-                const portInput = document.getElementById('ftp-port');
-                const urlDisplay = document.getElementById('ftp-url');
-                const ipAddress = "127.0.0.1"; // Default or dynamic IP
-
-                function updateUrl() {
-                    const port = portInput.value || '2121';
-                    urlDisplay.textContent = `ftp://${ipAddress}:${port}/`;
-                }
-
-                // Add listener
-
-                function saveConfig() {
-                    // Collect form data
-                    const form = document.getElementById('ftp-config-form');
-                    const formData = new FormData(form);
-                    const data = Object.fromEntries(formData.entries());
-
-                    // Handle toggles manually
-                    data.anonymous = form.querySelector('[name="anonymous"]').checked;
-                    data.allow_writing = form.querySelector('[name="allow_writing"]').checked;
-
-                    console.log('Configuration saved:', data);
-
-                    // Visual feedback
-                    const btn = form.querySelector('button[type="submit"]');
-                    const originalText = btn.innerText;
-                    btn.innerText = "Saved!";
-                    btn.classList.add('bg-green-500', 'hover:bg-green-600');
-                    btn.classList.remove('bg-primary', 'hover:bg-primary/90');
-
-                    setTimeout(() => {
-                        btn.innerText = originalText;
-                        btn.classList.remove('bg-green-500', 'hover:bg-green-600');
-                        btn.classList.add('bg-primary', 'hover:bg-primary/90');
-                    }, 2000);
-                }
-
-                function toggleAnonymous(isAnonymous) {
-                    const usernameInput = document.getElementById('ftp-username');
-                    const passwordInput = document.getElementById('ftp-password');
-                    const usernameContainer = document.getElementById('username-container');
-                    const passwordContainer = document.getElementById('password-container');
-
-                    if (isAnonymous) {
-                        usernameInput.disabled = true;
-                        passwordInput.disabled = true;
-                        usernameInput.required = false;
-                        passwordInput.required = false;
-                        usernameContainer.classList.add('opacity-50', 'pointer-events-none');
-                        passwordContainer.classList.add('opacity-50', 'pointer-events-none');
-                    } else {
-                        usernameInput.disabled = false;
-                        passwordInput.disabled = false;
-                        usernameInput.required = true;
-                        passwordInput.required = true;
-                        usernameContainer.classList.remove('opacity-50', 'pointer-events-none');
-                        passwordContainer.classList.remove('opacity-50', 'pointer-events-none');
-                    }
-                }
-
-                // Initialize state on load
-                document.addEventListener('DOMContentLoaded', () => {
-                    const anonCheckbox = document.getElementById('anonymous-login-toggle');
-                    toggleAnonymous(anonCheckbox.checked);
-                    updateUrl(); // Ensure URL is correct on load
-
-                    // Adaptive toggle initialization for reliable animation
-                    document.querySelectorAll('.toggle-input').forEach(input => {
-                        const label = input.closest('label');
-                        if (!label) return;
-                        const track = label.querySelector('.toggle-track');
-                        if (!track) return;
-
-                        // Sync initial visual state
-                        track.classList.toggle('toggle-on', input.checked);
-
-                        // Update visual state on change
-                        input.addEventListener('change', () => {
-                            track.classList.toggle('toggle-on', input.checked);
-                        });
-
-                        // Ensure keyboard toggles (Space/Enter) update visuals
-                        input.addEventListener('keydown', (e) => {
-                            if (e.key === ' ' || e.key === 'Enter') {
-                                setTimeout(() => track.classList.toggle('toggle-on', input.checked), 0);
-                            }
-                        });
-                    });
-                });
-            </script>
         </main>
     </div>
 </body>
