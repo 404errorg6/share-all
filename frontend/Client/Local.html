@@ -77,11 +77,23 @@
             <div class="flex items-center justify-center rounded-lg bg-primary/20 text-primary shrink-0 size-9 transition-transform active:scale-95 cursor-pointer">
                 <span class="material-symbols-outlined text-[20px]">smartphone</span>
             </div>
-            <div class="flex items-center gap-2 overflow-x-auto whitespace-nowrap">
+            <div class="flex items-center gap-2 overflow-x-auto whitespace-nowrap" id="breadcrumb-path">
                 <span class="text-slate-400"><span class="material-symbols-outlined text-[18px] align-middle">chevron_right</span></span>
-                <p class="text-sm font-medium text-slate-600 dark:text-slate-300">Internal Memory</p>
+                <p class="text-sm font-medium text-slate-600 dark:text-slate-300">Root</p>
             </div>
         </div>
+    </div>
+    
+    <!-- Toolbar -->
+    <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/30 px-4 py-2 border-b border-slate-200 dark:border-slate-800">
+        <button id="refresh-btn" title="Refresh" class="flex items-center justify-center size-9 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+            <span class="material-symbols-outlined text-[20px]">refresh</span>
+        </button>
+        <button id="toggle-hidden-btn" title="Show Hidden Files" class="flex items-center justify-center size-9 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors opacity-50">
+            <span class="material-symbols-outlined text-[20px]">visibility_off</span>
+        </button>
+        <div class="flex-1"></div>
+        <p id="file-count" class="text-xs text-slate-500">0 items</p>
     </div>
     <!-- File List (Empty State / Populated) -->
     <main class="flex-1 flex flex-col pb-24" id="local-file-list">
@@ -115,9 +127,88 @@
     const browseBtn = document.getElementById('browse-btn');
     const emptyState = document.getElementById('empty-state');
     const listContainer = document.getElementById('file-list-container');
-    const breadcrumbPath = document.querySelector('p.text-sm.font-medium');
+    const breadcrumbPathContainer = document.getElementById('breadcrumb-path');
+    const refreshBtn = document.getElementById('refresh-btn');
+    const toggleHiddenBtn = document.getElementById('toggle-hidden-btn');
+    const fileCountEl = document.getElementById('file-count');
 
-    let currentPath = '/'; // Track current directory
+    let currentPath = '/';
+    let showHiddenFiles = false;
+    let allEntries = []; // Store all entries including hidden
+
+    /**
+     * Format bytes to human-readable size
+     */
+    function formatFileSize(bytes) {
+        if (!bytes || bytes === 0) return '—';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+    }
+
+    /**
+     * Format date
+     */
+    function formatDate(dateString) {
+        if (!dateString) return '—';
+        const date = new Date(dateString);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    /**
+     * Check if file is hidden (starts with dot)
+     */
+    function isHiddenFile(name) {
+        return name.startsWith('.');
+    }
+
+    /**
+     * Get file type icon
+     */
+    function getFileIcon(name, isFolder) {
+        if (isFolder) return 'folder';
+        if (name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) return 'image';
+        if (name.match(/\.(mp4|mov|avi|mkv|flv|wmv)$/i)) return 'movie';
+        if (name.match(/\.(mp3|wav|flac|aac|ogg)$/i)) return 'audio_file';
+        if (name.match(/\.(pdf|doc|docx|txt|xlsx|xls|ppt|pptx)$/i)) return 'article';
+        if (name.match(/\.(zip|rar|7z|tar|gz|bz2)$/i)) return 'folder_zip';
+        if (name.match(/\.(exe|msi|dmg|pkg|deb|rpm)$/i)) return 'install_desktop';
+        if (name.match(/\.(html|css|js|json|xml|yaml|py|go|java|cpp)$/i)) return 'code';
+        return 'description';
+    }
+
+    /**
+     * Get color class for file icon
+     */
+    function getColorClass(name, isFolder) {
+        if (isFolder) return 'bg-primary/10 text-primary';
+        if (name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) return 'bg-purple-500/10 text-purple-500';
+        if (name.match(/\.(mp4|mov|avi|mkv)$/i)) return 'bg-red-500/10 text-red-500';
+        if (name.match(/\.(mp3|wav|flac)$/i)) return 'bg-green-500/10 text-green-500';
+        if (name.match(/\.(pdf|doc|docx)$/i)) return 'bg-orange-500/10 text-orange-500';
+        if (name.match(/\.(zip|rar|7z)$/i)) return 'bg-yellow-500/10 text-yellow-500';
+        return 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400';
+    }
+
+    /**
+     * Update breadcrumb navigation
+     */
+    function updateBreadcrumb(path) {
+        const parts = path.split('/').filter(p => p);
+        let html = '<span class="text-slate-400"><span class="material-symbols-outlined text-[18px] align-middle">chevron_right</span></span>';
+        html += '<p class="text-sm font-medium text-slate-600 dark:text-slate-300 cursor-pointer hover:text-primary" onclick="loadLocalDirectory(\'/\')">Root</p>';
+        
+        let currentPath = '';
+        parts.forEach((part, i) => {
+            currentPath += '/' + part;
+            html += '<span class="text-slate-400"><span class="material-symbols-outlined text-[18px] align-middle">chevron_right</span></span>';
+            const isLast = i === parts.length - 1;
+            const classStr = isLast ? 'text-slate-600 dark:text-slate-300' : 'text-slate-600 dark:text-slate-300 cursor-pointer hover:text-primary';
+            html += `<p class="text-sm font-medium ${classStr}" ${!isLast ? `onclick="loadLocalDirectory('${currentPath}')` : ''}>${part}</p>`;
+        });
+        breadcrumbPathContainer.innerHTML = html;
+    }
 
     /**
      * Fetch and display local directory entries from backend
@@ -127,11 +218,10 @@
             emptyState.classList.add('hidden');
             listContainer.classList.remove('hidden');
             listContainer.classList.add('flex');
-            listContainer.innerHTML = '<p class="px-4 py-3 text-slate-400">Loading...</p>';
+            listContainer.innerHTML = '<div class="px-4 py-8 text-center text-slate-400"><span class="material-symbols-outlined text-4xl mb-2">hourglass_empty</span><p>Loading...</p></div>';
             
-            // Update Breadcrumb
-            breadcrumbPath.textContent = (path === '/' ? 'Root' : path) + " /";
             currentPath = path;
+            updateBreadcrumb(path);
 
             // Fetch from backend
             const params = new URLSearchParams();
@@ -158,89 +248,99 @@
             }
 
             console.log('Parsed entries:', entries);
-
-            listContainer.innerHTML = ''; // clear loading state
-
-            if (!entries || entries.length === 0) {
-                listContainer.innerHTML = '<p class="px-4 py-3 text-slate-400">Empty folder</p>';
-                return;
-            }
-
-            // Render each entry
-            entries.forEach((entry, index) => {
-                console.log(`Rendering entry ${index}:`, entry);
-                
-                const item = document.createElement('div');
-                item.className = "flex items-center gap-4 px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer border-b border-slate-100 dark:border-slate-800/50";
-                
-                // Icon & Color Logic based on IsFolder flag
-                let icon = 'description';
-                let colorClass = 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400';
-                
-                if (entry.IsFolder) {
-                    icon = 'folder';
-                    colorClass = 'bg-primary/10 text-primary';
-                } else if (entry.Name && entry.Name.match(/\.(jpg|jpeg|png|gif)$/i)) {
-                    icon = 'image';
-                    colorClass = 'bg-purple-500/10 text-purple-500';
-                } else if (entry.Name && entry.Name.match(/\.(mp4|mov|avi)$/i)) {
-                    icon = 'movie';
-                    colorClass = 'bg-red-500/10 text-red-500';
-                } else if (entry.Name && entry.Name.match(/\.(pdf|doc|docx|txt)$/i)) {
-                    icon = 'article';
-                    colorClass = 'bg-blue-500/10 text-blue-500';
-                }
-
-                // Get file size if available
-                const sizeStr = entry.Size ? formatFileSize(entry.Size) : '';
-                const kindStr = entry.IsFolder ? 'folder' : sizeStr;
-
-                item.innerHTML = `
-                    <div class="flex items-center flex-1 gap-4">
-                        <div class="flex items-center justify-center rounded-xl shrink-0 size-12 ${colorClass} transition-colors">
-                            <span class="material-symbols-outlined">${icon}</span>
-                        </div>
-                        <div class="flex flex-col justify-center overflow-hidden">
-                            <p class="text-base font-semibold truncate text-slate-900 dark:text-gray-100">${entry.Name}</p>
-                            <p class="text-slate-500 dark:text-slate-400 text-xs capitalize">${kindStr}</p>
-                        </div>
-                    </div>
-                `;
-
-                // Add click handler for directories
-                if (entry.IsFolder) {
-                    item.onclick = () => {
-                        const newPath = path === '/' ? '/' + entry.Name : path + '/' + entry.Name;
-                        loadLocalDirectory(newPath);
-                    };
-                }
-
-                listContainer.appendChild(item);
-            });
+            allEntries = entries || [];
+            renderFileList();
 
         } catch (error) {
             console.error('Error loading directory:', error);
-            listContainer.innerHTML = `<p class="px-4 py-3 text-red-500">Error: ${error.message}</p>`;
+            listContainer.innerHTML = `<div class="px-4 py-8 text-center text-red-500"><span class="material-symbols-outlined text-4xl mb-2">error</span><p>${error.message}</p></div>`;
             emptyState.classList.remove('hidden');
             listContainer.classList.add('hidden');
         }
     }
 
     /**
-     * Format bytes to human-readable size
+     * Render file list based on visibility settings
      */
-    function formatFileSize(bytes) {
-        if (!bytes) return '0 B';
-        const k = 1024;
-        const sizes = ['B', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+    function renderFileList() {
+        listContainer.innerHTML = '';
+        
+        // Filter entries based on hidden files setting
+        const visibleEntries = allEntries.filter(entry => {
+            if (showHiddenFiles) return true;
+            return !isHiddenFile(entry.Name);
+        });
+
+        if (visibleEntries.length === 0) {
+            listContainer.innerHTML = '<div class="px-4 py-8 text-center text-slate-400"><span class="material-symbols-outlined text-4xl mb-2">folder_open</span><p>Folder is empty</p></div>';
+            fileCountEl.textContent = '0 items';
+            return;
+        }
+
+        // Sort: folders first, then alphabetically
+        visibleEntries.sort((a, b) => {
+            if (a.IsFolder !== b.IsFolder) return b.IsFolder - a.IsFolder;
+            return a.Name.localeCompare(b.Name);
+        });
+
+        // Render entries
+        visibleEntries.forEach((entry, index) => {
+            const item = document.createElement('div');
+            item.className = "flex items-center gap-3 px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors cursor-pointer border-b border-slate-100 dark:border-slate-800/50";
+            
+            const icon = getFileIcon(entry.Name, entry.IsFolder);
+            const colorClass = getColorClass(entry.Name, entry.IsFolder);
+            const isHidden = isHiddenFile(entry.Name);
+            const opacity = isHidden ? 'opacity-60' : '';
+
+            item.innerHTML = `
+                <div class="flex items-center justify-center rounded-lg shrink-0 size-11 ${colorClass} transition-colors">
+                    <span class="material-symbols-outlined">${icon}</span>
+                </div>
+                <div class="flex flex-col justify-center overflow-hidden flex-1 ${opacity}">
+                    <p class="text-sm font-semibold truncate text-slate-900 dark:text-gray-100">${entry.Name}</p>
+                    <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                        <span>${entry.IsFolder ? '—' : formatFileSize(entry.Size)}</span>
+                        <span>•</span>
+                        <span>${formatDate(entry.LastModified)}</span>
+                    </div>
+                </div>
+                <span class="material-symbols-outlined text-slate-400 text-[20px] group-hover:text-slate-600">chevron_right</span>
+            `;
+
+            // Add click handler for directories
+            if (entry.IsFolder) {
+                item.onclick = () => {
+                    const newPath = currentPath === '/' ? '/' + entry.Name : currentPath + '/' + entry.Name;
+                    loadLocalDirectory(newPath);
+                };
+            }
+
+            listContainer.appendChild(item);
+        });
+
+        fileCountEl.textContent = `${visibleEntries.length} item${visibleEntries.length !== 1 ? 's' : ''}`;
     }
 
-    // Handle Browse Button
+    /**
+     * Toggle hidden files visibility
+     */
+    function toggleHiddenFiles() {
+        showHiddenFiles = !showHiddenFiles;
+        toggleHiddenBtn.style.opacity = showHiddenFiles ? '1' : '0.5';
+        renderFileList();
+    }
+
+    // Event Listeners
     browseBtn.addEventListener('click', () => {
         loadLocalDirectory('/');
     });
+
+    refreshBtn.addEventListener('click', () => {
+        loadLocalDirectory(currentPath);
+    });
+
+    toggleHiddenBtn.addEventListener('click', toggleHiddenFiles);
 
     // Back Button Logic
     const backArrow = Array.from(document.querySelectorAll('.material-symbols-outlined')).find(el => el.textContent.includes('arrow_back'));

@@ -26,14 +26,31 @@ func HandleGetLocalFolderEntries(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	dirObj, err := getDirObj(dir)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	config.SendJSON(w, dirObj)
+}
+
+func getDirObj(dir []os.DirEntry) ([]config.FSObject, error) {
 	dirObj := []config.FSObject{}
 	for _, entry := range dir {
+		info, err := entry.Info()
+		if err != nil {
+			return nil, err
+		}
+
 		e := config.FSObject{
-			Name:     entry.Name(),
-			IsFolder: entry.IsDir(),
+			Name:         entry.Name(),
+			IsFolder:     entry.IsDir(),
+			LastModified: info.ModTime(),
+			Size:         int(info.Size()),
 		}
 		dirObj = append(dirObj, e)
 	}
 
-	config.SendJSON(w, dirObj)
+	return dirObj, nil
 }
