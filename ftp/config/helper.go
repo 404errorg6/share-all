@@ -8,7 +8,33 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jlaffaye/ftp"
 )
+
+func GetCompletePath(c *ftp.ServerConn, path string) (string, error) {
+	if path == "" {
+		err := fmt.Errorf("path is required")
+		return "", err
+	}
+
+	//Check if file is within accessible range
+	entry, err := c.GetEntry(path)
+	if err != nil {
+		return "", err
+	}
+
+	if entry.Type != ftp.EntryTypeFile {
+		err := fmt.Errorf("Error: \"%v\" is not a file", path)
+		return "", err
+	}
+
+	//File is safe to send now
+	if !filepath.IsAbs(path) {
+		path = filepath.Join(Server.RootDir, path)
+	}
+	return path, nil
+}
 
 func GetHostPort(addr string) (string, string, error) {
 	host, port, found := strings.Cut(addr, ":")

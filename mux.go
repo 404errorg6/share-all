@@ -19,7 +19,7 @@ func Mux() *http.ServeMux {
 	mux.HandleFunc("POST /api/stop-ftp", serverhandlers.HandleStopFTP)   //stop ftp server	// TODO: change path to api/ftp/server/
 	mux.HandleFunc("GET /api/ftp/server/status", serverhandlers.HandleServerStatus)
 	mux.HandleFunc("GET /api/ftp/server/ls", serverhandlers.HandleListDir)                            //list other server directory
-	mux.HandleFunc("GET /api/ftp/server/get-file", serverhandlers.HandleStreamFile)                   //get file from other server
+	mux.HandleFunc("GET /api/ftp/server/get-file", serverhandlers.HandleServeFile)                    //get file from other server
 	mux.HandleFunc("GET /api/ftp/server/connected-clients", serverhandlers.HandleGetConnectedClients) //get clients connected to own server
 	//FTP client Handles
 	mux.HandleFunc("POST /api/ftp/client/connect-to-server", clienthandlers.HandleConnectToServer) //connect to other server

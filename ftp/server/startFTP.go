@@ -7,6 +7,8 @@ import (
 	ftpserver "github.com/fclairamb/ftpserverlib"
 )
 
+// TODO: Restrict api so attacker on same network can't start this server on personal dir
+
 func StartFTP() error {
 	if config.Server.Conn != nil {
 		err := fmt.Errorf("server already running")
