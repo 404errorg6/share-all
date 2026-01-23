@@ -9,7 +9,9 @@ import (
 
 func StartFTP() error {
 	if config.Server.Conn != nil {
-		return fmt.Errorf("server already running")
+		err := fmt.Errorf("server already running")
+		config.LogsCh <- err.Error()
+		return err
 	}
 
 	mydriver := &AndroidMainDriver{}

@@ -13,7 +13,7 @@ func StopFTP() error {
 
 	config.Server.ConnectedClients.Range(rmClients)
 	if err := config.Server.Conn.Stop(); err != nil {
-		config.LogsCh <- fmt.Sprintf("Error occured while stopping server: %v", err.Error())
+		config.LogsCh <- err.Error()
 		return err
 	}
 	config.Server.Conn = nil

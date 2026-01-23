@@ -30,7 +30,6 @@ type MyServer struct {
 type Client struct {
 	Name    string
 	Host    string
-	Port    string
 	Msg     string
 	Root    string
 	Context ftpserver.ClientContext

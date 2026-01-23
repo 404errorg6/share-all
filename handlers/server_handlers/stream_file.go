@@ -51,7 +51,7 @@ func HandleStreamFile(w http.ResponseWriter, req *http.Request) {
 	}
 	defer response.Close()
 
-	//Set headers for file download
+	//Set headers according to mode
 	mode := req.URL.Query().Get("mode")
 	fileName := filepath.Base(path)
 	contentType := config.GetContentType(fileName)
