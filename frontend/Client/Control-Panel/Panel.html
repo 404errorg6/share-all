@@ -37,6 +37,26 @@
         body {
             min-height: max(884px, 100dvh);
         }
+
+        /* Toggle fallback styles for reliable animation across devices */
+        .toggle-track { position: relative; display: inline-block; overflow: hidden; }
+        .toggle-track.toggle-on { background-color: #50c2f7; }
+        .toggle-track .toggle-knob {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 27px;
+            height: calc(100% - 8px);
+            border-radius: 9999px;
+            background: #ffffff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            transition: transform 180ms ease, left 180ms ease;
+            transform: translateX(0);
+        }
+        .toggle-track.toggle-on .toggle-knob { transform: translateX(20px); }
+
+        /* Small accessibility focus ring */
+        .toggle-input:focus + .toggle-track { outline: 2px solid rgba(80,194,247,0.25); outline-offset: 2px; }
     </style>
 </head>
 
@@ -63,10 +83,11 @@
                     <p id="status-text" class="text-[#9cb0ba] text-xs font-normal">Not started</p>
                 </div>
                 <div class="shrink-0">
-                    <label
-                        class="relative flex h-[31px] w-[51px] cursor-pointer items-center rounded-full border-none bg-[#283439] p-0.5 has-[:checked]:justify-end has-[:checked]:bg-primary">
-                        <div class="h-full w-[27px] rounded-full bg-white shadow-md"></div>
-                        <input id="status-toggle" class="invisible absolute" type="checkbox" onchange="toggleServer(this)" />
+                    <label class="relative inline-flex cursor-pointer">
+                        <input id="status-toggle" class="peer sr-only toggle-input" type="checkbox" onchange="toggleServer(this)" />
+                        <span class="block h-[31px] w-[51px] rounded-full p-0.5 bg-[#283439] peer-checked:bg-primary transition-colors toggle-track" aria-hidden="true">
+                            <span class="toggle-knob"></span>
+                        </span>
                     </label>
                 </div>
             </div>
@@ -92,11 +113,11 @@
                 <div class="flex items-center gap-4 px-4 min-h-14 justify-between">
                     <p class="text-white text-base font-normal leading-normal flex-1">Anonymous login</p>
                     <div class="shrink-0">
-                        <label
-                            class="relative flex h-[31px] w-[51px] cursor-pointer items-center rounded-full border-none bg-primary p-0.5 justify-end">
-                            <div class="h-full w-[27px] rounded-full bg-white shadow-md"></div>
-                            <input id="anonymous-login-toggle" name="anonymous" checked="" class="invisible absolute"
-                                type="checkbox" onchange="toggleAnonymous(this.checked)" />
+                        <label class="relative inline-flex cursor-pointer">
+                            <input id="anonymous-login-toggle" name="anonymous" checked class="peer sr-only toggle-input" type="checkbox" onchange="toggleAnonymous(this.checked)" />
+                            <span class="block h-[31px] w-[51px] rounded-full p-0.5 bg-[#283439] peer-checked:bg-primary transition-colors toggle-track">
+                                <span class="toggle-knob"></span>
+                            </span>
                         </label>
                     </div>
                 </div>
@@ -185,26 +206,39 @@
                             statusText.textContent = 'Starting...';
                             
                             try {
-                                // Call backend start API
-                                const formData = new FormData();
-                                formData.append('server_port', port);
-                                formData.append('server_root_dir', rootFolder);
-                                formData.append('anonymous_allowed', anonymous ? 'true' : 'false');
-                                formData.append('write_allowed', allowWriting ? 'true' : 'false');
+                                // Call backend start API (use URL-encoded to match curl -d and server ParseForm)
+                                const params = new URLSearchParams();
+                                params.append('server_port', port);
+                                params.append('server_root_dir', rootFolder);
+                                params.append('anonymous_allowed', anonymous ? 'true' : 'false');
+                                params.append('write_allowed', allowWriting ? 'true' : 'false');
                                 
                                 // Add username and password if not anonymous
                                 if (!anonymous) {
                                     const username = document.getElementById('ftp-username').value;
                                     const password = document.getElementById('ftp-password').value;
-                                    formData.append('username', username);
-                                    formData.append('password', password);
+                                    params.append('username', username);
+                                    params.append('password', password);
                                 }
                                 
-                                const response = await fetch('/api/start-ftp', {
+                                // Debug: log the payload
+                                console.log('Start FTP params:', params.toString());
+
+                                // Use string body and explicit headers to avoid any platform differences
+                                const fetchOptions = {
                                     method: 'POST',
-                                    body: formData
-                                });
-                                
+                                    headers: {
+                                        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+                                        'Accept': 'text/plain'
+                                    },
+                                    body: params.toString()
+                                };
+
+                                console.log('Fetch options:', fetchOptions);
+
+                                const response = await fetch('/api/start-ftp', fetchOptions);
+                                const responseText = await response.text();
+
                                 // Check for success (200 OK or 204 No Content)
                                 if (response.ok) {
                                     statusText.textContent = 'Running';
@@ -212,8 +246,7 @@
                                     console.log('Server started successfully');
                                 } else {
                                     // Try to get error message from response
-                                    const errorText = await response.text();
-                                    throw new Error(errorText || 'Failed to start server');
+                                    throw new Error(responseText || 'Failed to start server');
                                 }
                             } catch (error) {
                                 console.error('Error starting server:', error);
@@ -354,11 +387,11 @@
                 <div class="flex items-center gap-4 px-4 min-h-14 justify-between">
                     <p class="text-white text-base font-normal leading-normal flex-1">Allow writing</p>
                     <div class="shrink-0">
-                        <label
-                            class="relative flex h-[31px] w-[51px] cursor-pointer items-center rounded-full border-none bg-primary p-0.5 justify-end">
-                            <div class="h-full w-[27px] rounded-full bg-white shadow-md"></div>
-                            <input id="allow-writing-toggle" name="allow_writing" checked="" class="invisible absolute"
-                                type="checkbox" />
+                        <label class="relative inline-flex cursor-pointer">
+                            <input id="allow-writing-toggle" name="allow_writing" checked class="peer sr-only toggle-input" type="checkbox" />
+                            <span class="block h-[31px] w-[51px] rounded-full p-0.5 bg-[#283439] peer-checked:bg-primary transition-colors toggle-track">
+                                <span class="toggle-knob"></span>
+                            </span>
                         </label>
                     </div>
                 </div>
@@ -439,6 +472,29 @@
                     const anonCheckbox = document.getElementById('anonymous-login-toggle');
                     toggleAnonymous(anonCheckbox.checked);
                     updateUrl(); // Ensure URL is correct on load
+
+                    // Adaptive toggle initialization for reliable animation
+                    document.querySelectorAll('.toggle-input').forEach(input => {
+                        const label = input.closest('label');
+                        if (!label) return;
+                        const track = label.querySelector('.toggle-track');
+                        if (!track) return;
+
+                        // Sync initial visual state
+                        track.classList.toggle('toggle-on', input.checked);
+
+                        // Update visual state on change
+                        input.addEventListener('change', () => {
+                            track.classList.toggle('toggle-on', input.checked);
+                        });
+
+                        // Ensure keyboard toggles (Space/Enter) update visuals
+                        input.addEventListener('keydown', (e) => {
+                            if (e.key === ' ' || e.key === 'Enter') {
+                                setTimeout(() => track.classList.toggle('toggle-on', input.checked), 0);
+                            }
+                        });
+                    });
                 });
             </script>
         </main>
