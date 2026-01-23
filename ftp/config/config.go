@@ -3,13 +3,16 @@ package config
 import (
 	"os"
 	"sync"
+	"time"
 
 	ftpserver "github.com/fclairamb/ftpserverlib"
 )
 
 type FSObject struct {
-	Name     string
-	IsFolder bool
+	Name         string
+	IsFolder     bool
+	LastModified time.Time
+	Size         int
 }
 
 type MyServer struct {
