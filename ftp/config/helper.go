@@ -13,8 +13,9 @@ import (
 func GetHostPort(addr string) (string, string, error) {
 	host, port, found := strings.Cut(addr, ":")
 	if !found {
-		LogsCh <- fmt.Sprintf("[FATAL]: %v doesn't contain \":\"", addr)
-		return "", "", fmt.Errorf("\"%v\" doesn't contain \":\"", addr)
+		err := fmt.Errorf("[INFO]: \":\" not found. Using \"%v\" as host", addr)
+		LogsCh <- err.Error()
+		return addr, "", err
 	}
 	return host, port, nil
 }

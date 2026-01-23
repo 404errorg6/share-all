@@ -27,7 +27,6 @@ func alreadyConnected(addr string) bool {
 	host, _, err := config.GetHostPort(addr)
 	if err != nil {
 		config.LogsCh <- err.Error()
-		return true
 	}
 	var matchFound bool
 

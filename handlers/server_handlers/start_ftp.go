@@ -33,8 +33,8 @@ func HandleStartFTP(w http.ResponseWriter, req *http.Request) {
 
 	err = server.StartFTP()
 	if err != nil {
-		config.LogsCh <- err.Error()
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
