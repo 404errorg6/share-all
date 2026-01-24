@@ -19,7 +19,7 @@ func Mux() *http.ServeMux {
 	mux.HandleFunc("POST /api/start-ftp", serverhandlers.HandleStartFTP) //start ftp server
 	mux.HandleFunc("POST /api/stop-ftp", serverhandlers.HandleStopFTP)   //stop ftp server	// TODO: change path to api/ftp/server/
 	//returns string responses: "running" and "not-running"
-	mux.HandleFunc("GET /api/ftp/server/status", serverhandlers.HandleServerStatus)
+	mux.HandleFunc("GET /api/ftp/server/running-status", serverhandlers.HandleServerStatus)
 	//required query variables: path, returns the folder's entries in a list of FSObject, see ftp/config/config.go for FSObject
 	mux.HandleFunc("GET /api/ftp/server/ls", serverhandlers.HandleListDir) //list other server directory
 	//required query variables: path, returns the file at path

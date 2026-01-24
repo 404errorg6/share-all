@@ -39,8 +39,16 @@
         }
 
         /* Toggle fallback styles for reliable animation across devices */
-        .toggle-track { position: relative; display: inline-block; overflow: hidden; }
-        .toggle-track.toggle-on { background-color: #50c2f7; }
+        .toggle-track {
+            position: relative;
+            display: inline-block;
+            overflow: hidden;
+        }
+
+        .toggle-track.toggle-on {
+            background-color: #50c2f7;
+        }
+
         .toggle-track .toggle-knob {
             position: absolute;
             top: 4px;
@@ -49,14 +57,20 @@
             height: calc(100% - 8px);
             border-radius: 9999px;
             background: #ffffff;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
             transition: transform 180ms ease, left 180ms ease;
             transform: translateX(0);
         }
-        .toggle-track.toggle-on .toggle-knob { transform: translateX(20px); }
+
+        .toggle-track.toggle-on .toggle-knob {
+            transform: translateX(20px);
+        }
 
         /* Small accessibility focus ring */
-        .toggle-input:focus + .toggle-track { outline: 2px solid rgba(80,194,247,0.25); outline-offset: 2px; }
+        .toggle-input:focus+.toggle-track {
+            outline: 2px solid rgba(80, 194, 247, 0.25);
+            outline-offset: 2px;
+        }
     </style>
     <script>
         /**
@@ -64,7 +78,7 @@
          */
         async function selectFolderPath() {
             console.log('selectFolderPath called');
-            
+
             // Method 1: Try File System Access API (Chrome/Edge/Safari)
             if ('showDirectoryPicker' in window) {
                 console.log('Using showDirectoryPicker');
@@ -80,7 +94,7 @@
                     }
                 }
             }
-            
+
             // Method 2: Try native dialog (if in Electron/native app)
             if (window.electronAPI && window.electronAPI.selectFolder) {
                 console.log('Using electron API');
@@ -94,11 +108,11 @@
                     console.error('Error with electron API:', err);
                 }
             }
-            
+
             // Method 3: Fallback to native input dialog
             console.log('Using native input dialog');
             let hiddenInput = document.getElementById('hidden-folder-input');
-            
+
             if (!hiddenInput) {
                 hiddenInput = document.createElement('input');
                 hiddenInput.id = 'hidden-folder-input';
@@ -107,24 +121,24 @@
                 hiddenInput.mozdirectory = true;
                 hiddenInput.directory = true;
                 document.body.appendChild(hiddenInput);
-                
-                hiddenInput.addEventListener('change', function() {
+
+                hiddenInput.addEventListener('change', function () {
                     if (this.files && this.files.length > 0) {
                         // Get folder name from the first file's path
                         const firstFile = this.files[0];
                         let folderPath = firstFile.webkitRelativePath || firstFile.name;
-                        
+
                         // Extract just the root folder
                         if (folderPath.includes('/')) {
                             folderPath = folderPath.split('/')[0];
                         }
-                        
+
                         console.log('Selected folder path:', folderPath);
                         document.getElementById('ftp-root').value = folderPath;
                     }
                 });
             }
-            
+
             hiddenInput.click();
         }
 
@@ -134,29 +148,31 @@
         async function toggleServer(checkbox) {
             const isStarting = checkbox.checked;
             const statusText = document.getElementById('status-text');
-            
+            const statusToggle = document.getElementById('status-toggle');
+
             if (isStarting) {
                 // Get configuration values
                 const port = document.getElementById('ftp-port').value || '2121';
                 const rootFolder = document.getElementById('ftp-root').value || '';
                 const anonymous = document.getElementById('anonymous-login-toggle').checked;
                 const allowWriting = document.getElementById('allow-writing-toggle').checked;
-                
+
                 // Validate username/password if not anonymous
                 if (!anonymous) {
                     const username = document.getElementById('ftp-username').value || '';
                     const password = document.getElementById('ftp-password').value || '';
-                    
+
                     if (!username || !password) {
                         alert('Username and Password are required when Anonymous login is disabled.');
                         checkbox.checked = false;
+                        updateToggleUI(false);
                         return;
                     }
                 }
-                
+
                 // Update status
                 statusText.textContent = 'Starting...';
-                
+
                 try {
                     // Call backend start API (use URL-encoded to match curl -d and server ParseForm)
                     const params = new URLSearchParams();
@@ -164,7 +180,7 @@
                     params.append('server_root_dir', rootFolder);
                     params.append('anonymous_allowed', anonymous ? 'true' : 'false');
                     params.append('write_allowed', allowWriting ? 'true' : 'false');
-                    
+
                     // Add username and password if not anonymous
                     if (!anonymous) {
                         const username = document.getElementById('ftp-username').value;
@@ -172,7 +188,7 @@
                         params.append('username', username);
                         params.append('password', password);
                     }
-                    
+
                     // Debug: log the payload
                     console.log('Start FTP params:', params.toString());
 
@@ -194,7 +210,7 @@
                     // Check for success (200 OK or 204 No Content)
                     if (response.ok) {
                         statusText.textContent = 'Running';
-                        saveToggleState(true);
+                        updateToggleUI(true);
                         console.log('Server started successfully');
                     } else {
                         // Try to get error message from response
@@ -205,19 +221,20 @@
                     alert('Failed to start server: ' + error.message);
                     checkbox.checked = false;
                     statusText.textContent = 'Stopped';
+                    updateToggleUI(false);
                 }
             } else {
                 // Stop server
                 statusText.textContent = 'Stopping...';
-                
+
                 try {
                     const response = await fetch('/api/stop-ftp', {
                         method: 'POST'
                     });
-                    
+
                     if (response.ok) {
                         statusText.textContent = 'Stopped';
-                        saveToggleState(false);
+                        updateToggleUI(false);
                         console.log('Server stopped successfully');
                     } else {
                         const errorText = await response.text();
@@ -228,28 +245,48 @@
                     alert('Failed to stop server: ' + error.message);
                     checkbox.checked = true;
                     statusText.textContent = 'Running';
+                    updateToggleUI(true);
+                }
+            }
+            // Fetch status again to verify and sync
+            fetchServerStatus();
+        }
+
+        /**
+         * Update the visual state of the toggle track
+         */
+        function updateToggleUI(isOn) {
+            const statusToggle = document.getElementById('status-toggle');
+            const label = statusToggle.closest('label');
+            if (label) {
+                const track = label.querySelector('.toggle-track');
+                if (track) {
+                    track.classList.toggle('toggle-on', isOn);
                 }
             }
         }
 
         /**
-         * Save and restore toggle state using localStorage (frontend only)
+         * Fetch server status from API and update UI
          */
-        function saveToggleState(isRunning) {
-            localStorage.setItem('ftpServerRunning', isRunning ? 'true' : 'false');
-        }
+        async function fetchServerStatus() {
+            try {
+                const response = await fetch('/api/ftp/server/running-status');
+                if (response.ok) {
+                    const isRunning = await response.json(); // Now returns true/false
 
-        function restoreToggleState() {
-            const savedState = localStorage.getItem('ftpServerRunning');
-            const statusToggle = document.getElementById('status-toggle');
-            const statusText = document.getElementById('status-text');
-            
-            if (savedState === 'true') {
-                statusToggle.checked = true;
-                statusText.textContent = 'Running';
-            } else {
-                statusToggle.checked = false;
-                statusText.textContent = 'Stopped';
+                    const statusToggle = document.getElementById('status-toggle');
+                    const statusText = document.getElementById('status-text');
+
+                    // Only update if not in the middle of a transition
+                    if (statusText.textContent !== 'Starting...' && statusText.textContent !== 'Stopping...') {
+                        statusToggle.checked = isRunning;
+                        statusText.textContent = isRunning ? 'Running' : 'Stopped';
+                        updateToggleUI(isRunning);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching server status:', error);
             }
         }
 
@@ -344,7 +381,7 @@
                 });
             });
 
-            restoreToggleState();
+            fetchServerStatus();
         });
     </script>
 </head>
@@ -356,7 +393,7 @@
         <!-- TopAppBar -->
         <header
             class="sticky top-0 z-10 flex items-center bg-background-light/90 dark:bg-background-dark/90 px-4 py-3 backdrop-blur-md">
-            <a href="../Dashboard.html"
+            <a href="../Main.html"
                 class="flex size-10 shrink-0 items-center justify-center cursor-pointer hover:bg-white/10 rounded-full transition-colors">
                 <span class="material-symbols-outlined text-white text-[24px]">arrow_back_ios_new</span>
             </a>
@@ -373,8 +410,11 @@
                 </div>
                 <div class="shrink-0">
                     <label class="relative inline-flex cursor-pointer">
-                        <input id="status-toggle" class="peer sr-only toggle-input" type="checkbox" onchange="toggleServer(this)" />
-                        <span class="block h-[31px] w-[51px] rounded-full p-0.5 bg-[#283439] peer-checked:bg-primary transition-colors toggle-track" aria-hidden="true">
+                        <input id="status-toggle" class="peer sr-only toggle-input" type="checkbox"
+                            onchange="toggleServer(this)" />
+                        <span
+                            class="block h-[31px] w-[51px] rounded-full p-0.5 bg-[#283439] peer-checked:bg-primary transition-colors toggle-track"
+                            aria-hidden="true">
                             <span class="toggle-knob"></span>
                         </span>
                     </label>
@@ -403,8 +443,11 @@
                     <p class="text-white text-base font-normal leading-normal flex-1">Anonymous login</p>
                     <div class="shrink-0">
                         <label class="relative inline-flex cursor-pointer">
-                            <input id="anonymous-login-toggle" name="anonymous" checked class="peer sr-only toggle-input" type="checkbox" onchange="toggleAnonymous(this.checked)" />
-                            <span class="block h-[31px] w-[51px] rounded-full p-0.5 bg-[#283439] peer-checked:bg-primary transition-colors toggle-track">
+                            <input id="anonymous-login-toggle" name="anonymous" checked
+                                class="peer sr-only toggle-input" type="checkbox"
+                                onchange="toggleAnonymous(this.checked)" />
+                            <span
+                                class="block h-[31px] w-[51px] rounded-full p-0.5 bg-[#283439] peer-checked:bg-primary transition-colors toggle-track">
                                 <span class="toggle-knob"></span>
                             </span>
                         </label>
@@ -456,7 +499,7 @@
                                 class="bg-transparent border-0 border-b border-gray-600 focus:border-primary focus:ring-0 text-[#9cb0ba] text-sm font-normal leading-normal w-full px-0 py-1 transition-colors group-hover:border-gray-500 placeholder-gray-700 pr-10" />
 
                             <!-- Folder Picker Trigger -->
-                            <a href="../Local.html?selectMode=true" type="button"
+                            <a href="../Main.html?selectMode=true" type="button"
                                 class="absolute right-0 bottom-1 p-1 text-primary hover:text-white transition-colors">
                                 <span class="material-symbols-outlined text-[20px]">folder_open</span>
                             </a>
@@ -471,8 +514,10 @@
                     <p class="text-white text-base font-normal leading-normal flex-1">Allow writing</p>
                     <div class="shrink-0">
                         <label class="relative inline-flex cursor-pointer">
-                            <input id="allow-writing-toggle" name="allow_writing" checked class="peer sr-only toggle-input" type="checkbox" />
-                            <span class="block h-[31px] w-[51px] rounded-full p-0.5 bg-[#283439] peer-checked:bg-primary transition-colors toggle-track">
+                            <input id="allow-writing-toggle" name="allow_writing" checked
+                                class="peer sr-only toggle-input" type="checkbox" />
+                            <span
+                                class="block h-[31px] w-[51px] rounded-full p-0.5 bg-[#283439] peer-checked:bg-primary transition-colors toggle-track">
                                 <span class="toggle-knob"></span>
                             </span>
                         </label>

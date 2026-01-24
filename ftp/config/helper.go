@@ -31,6 +31,18 @@ func GetCompletePath(c *ftp.ServerConn, path string) (string, *ftp.Entry, error)
 	return path, entry, nil
 }
 
+func ResolveLocalPath(path string) string {
+	if path == "" {
+		return DefRootDir
+	}
+
+	if filepath.IsAbs(path) {
+		return filepath.Clean(path)
+	}
+
+	return filepath.Join(DefRootDir, path)
+}
+
 func GetHostPort(addr string) (string, string, error) {
 	host, port, found := strings.Cut(addr, ":")
 	if !found {

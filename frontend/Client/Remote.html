@@ -118,7 +118,7 @@
     // Find the back arrow button by content since :contains() is not a valid CSS selector
     const backArrow = Array.from(document.querySelectorAll('.material-symbols-outlined')).find(el => el.textContent.includes('arrow_back'));
     if(backArrow) {
-        backArrow.parentElement.onclick = () => window.location.href = 'Dashboard.html';
+        backArrow.parentElement.onclick = () => window.location.href = 'Main.html';
     }
 </script>
 </body></html>
