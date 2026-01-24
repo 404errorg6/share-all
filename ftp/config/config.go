@@ -1,7 +1,6 @@
 package config
 
 import (
-	"os"
 	"sync"
 	"time"
 
@@ -47,6 +46,6 @@ var (
 	HTTPHost          = "127.0.0.1"
 	LogsTestingCount  = 0
 	LogsCh            = make(chan string, 100) //Channel that sends logs
-	DefRootDir, _     = os.UserHomeDir()
+	DefRootDir        = getDefRootDir()
 	Server            = MyServer{}
 )
