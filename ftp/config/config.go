@@ -47,6 +47,6 @@ var (
 	HTTPHost          = "127.0.0.1"
 	LogsTestingCount  = 0
 	LogsCh            = make(chan string, 100) //Channel that sends logs
-	DefDir, _         = os.UserHomeDir()
+	DefRootDir, _     = os.UserHomeDir()
 	Server            = MyServer{}
 )

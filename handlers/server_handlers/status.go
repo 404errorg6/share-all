@@ -8,8 +8,8 @@ import (
 
 func HandleServerStatus(w http.ResponseWriter, req *http.Request) {
 	if config.Server.IsRunning {
-		config.SendJSON(w, "running")
+		config.SendJSON(w, true)
 		return
 	}
-	config.SendJSON(w, "not-running")
+	config.SendJSON(w, false)
 }
