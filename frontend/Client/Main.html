@@ -230,7 +230,7 @@
         const selectFolderBar = document.getElementById('select-folder-bar');
         const selectFolderBtn = document.getElementById('select-folder-btn');
 
-        let currentPath = '/';
+        let currentPath = '';
         let showHiddenFiles = false;
         let allEntries = [];
         let selectMode = false;
@@ -303,36 +303,36 @@
             }
 
             let html = '<span class="text-slate-400"><span class="material-symbols-outlined text-[16px] align-middle">chevron_right</span></span>';
-            html += '<p class="text-sm font-medium text-slate-600 dark:text-slate-300 cursor-pointer hover:text-primary whitespace-nowrap" onclick="loadLocalDirectory(\'/\')">Root</p>';
+            html += '<p class="text-sm font-medium text-slate-600 dark:text-slate-300 cursor-pointer hover:text-primary whitespace-nowrap" onclick="loadLocalDirectory(\'\')">Root</p>';
 
             // If more than 3 parts, show first, ellipsis, and last
             if (parts.length > 3) {
-                let currentPath = '';
+                let tempPath = '';
                 // First part
-                currentPath = '/' + parts[0];
+                tempPath = parts[0];
                 html += '<span class="text-slate-400"><span class="material-symbols-outlined text-[16px] align-middle">chevron_right</span></span>';
-                html += `<p class="text-sm font-medium text-slate-600 dark:text-slate-300 cursor-pointer hover:text-primary whitespace-nowrap" onclick="loadLocalDirectory('${currentPath}')">${parts[0]}</p>`;
+                html += `<p class="text-sm font-medium text-slate-600 dark:text-slate-300 cursor-pointer hover:text-primary whitespace-nowrap" onclick="loadLocalDirectory('${tempPath}')">${parts[0]}</p>`;
 
                 // Ellipsis
                 html += '<span class="text-slate-400"><span class="material-symbols-outlined text-[16px] align-middle">more_horiz</span></span>';
 
                 // Last parts (last 2)
                 for (let i = parts.length - 2; i < parts.length; i++) {
-                    currentPath = '/' + parts.slice(0, i + 1).join('/');
+                    tempPath = parts.slice(0, i + 1).join('/');
                     html += '<span class="text-slate-400"><span class="material-symbols-outlined text-[16px] align-middle">chevron_right</span></span>';
                     const isLast = i === parts.length - 1;
-                    const clickHandler = !isLast ? `onclick="loadLocalDirectory('${currentPath}')"` : '';
+                    const clickHandler = !isLast ? `onclick="loadLocalDirectory('${tempPath}')"` : '';
                     const classStr = isLast ? 'text-slate-600 dark:text-slate-300' : 'text-slate-600 dark:text-slate-300 cursor-pointer hover:text-primary';
                     html += `<p class="text-sm font-medium ${classStr} whitespace-nowrap" ${clickHandler}>${parts[i]}</p>`;
                 }
             } else {
                 // Show all parts
-                let currentPath = '';
+                let tempPath = '';
                 parts.forEach((part, i) => {
-                    currentPath = '/' + parts.slice(0, i + 1).join('/');
+                    tempPath = parts.slice(0, i + 1).join('/');
                     html += '<span class="text-slate-400"><span class="material-symbols-outlined text-[16px] align-middle">chevron_right</span></span>';
                     const isLast = i === parts.length - 1;
-                    const clickHandler = !isLast ? `onclick="loadLocalDirectory('${currentPath}')"` : '';
+                    const clickHandler = !isLast ? `onclick="loadLocalDirectory('${tempPath}')"` : '';
                     const classStr = isLast ? 'text-slate-600 dark:text-slate-300' : 'text-slate-600 dark:text-slate-300 cursor-pointer hover:text-primary';
                     html += `<p class="text-sm font-medium ${classStr} whitespace-nowrap" ${clickHandler}>${part}</p>`;
                 });
@@ -344,7 +344,7 @@
         /**
          * Fetch and display local directory entries from backend
          */
-        async function loadLocalDirectory(path = '/') {
+        async function loadLocalDirectory(path = '') {
             try {
                 emptyState.classList.add('hidden');
                 listContainer.classList.remove('hidden');
@@ -442,7 +442,7 @@
                 // Add click handler for directories
                 if (entry.IsFolder) {
                     item.onclick = () => {
-                        const newPath = currentPath === '/' ? '/' + entry.Name : currentPath + '/' + entry.Name;
+                        const newPath = currentPath === '' ? entry.Name : currentPath + '/' + entry.Name;
                         loadLocalDirectory(newPath);
                     };
                 }
@@ -457,10 +457,10 @@
          * Move to parent directory
          */
         function moveUpDirectory() {
-            if (currentPath === '/') return;
+            if (currentPath === '') return;
             const parts = currentPath.split('/').filter(p => p);
             parts.pop();
-            const parentPath = parts.length === 0 ? '/' : '/' + parts.join('/');
+            const parentPath = parts.join('/');
             loadLocalDirectory(parentPath);
         }
 
@@ -477,7 +477,7 @@
          * Choose current folder (only in select mode)
          */
         function chooseFolderAsRoot() {
-            const displayPath = currentPath === '/' ? 'Root' : currentPath;
+            const displayPath = currentPath === '' ? 'Root' : currentPath;
             // Store the path in localStorage
             localStorage.setItem('selectedFolderPath', currentPath);
             // Go back to Panel.html
@@ -486,7 +486,7 @@
 
         // Event Listeners
         browseBtn.addEventListener('click', () => {
-            loadLocalDirectory('/');
+            loadLocalDirectory('');
         });
 
         refreshBtn.addEventListener('click', () => {
@@ -567,7 +567,7 @@
             }
 
             // Auto-load root directory on page load
-            loadLocalDirectory('/');
+            loadLocalDirectory('');
         });
     </script>
 </body>
