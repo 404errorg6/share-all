@@ -127,6 +127,84 @@
         </main>
     </div>
 
+    <!-- File Actions Modal -->
+    <div id="options-modal"
+        class="fixed inset-0 z-40 hidden flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+        <div id="options-modal-content"
+            class="bg-[#1b2327] border border-white/10 rounded-[2rem] w-full max-w-xs overflow-hidden shadow-2xl transition-all transform scale-95 opacity-0">
+            <div class="p-6 border-b border-white/5 bg-white/5">
+                <p id="options-filename" class="text-sm font-bold text-white truncate"></p>
+                <p class="text-[10px] text-slate-500 uppercase tracking-widest font-black mt-1">Remote File Actions</p>
+            </div>
+            <div class="p-4 flex flex-col gap-2">
+                <button id="btn-preview"
+                    class="flex items-center gap-3 w-full px-5 py-4 rounded-2xl hover:bg-primary/10 text-primary transition-all active:scale-95">
+                    <span class="material-symbols-outlined">visibility</span>
+                    <span class="text-sm font-bold">Preview</span>
+                </button>
+                <button id="btn-copy"
+                    class="flex items-center gap-3 w-full px-5 py-4 rounded-2xl hover:bg-white/5 text-white transition-all active:scale-95">
+                    <span class="material-symbols-outlined">content_copy</span>
+                    <span class="text-sm font-bold">Copy to Local</span>
+                </button>
+                <button id="btn-download"
+                    class="flex items-center gap-3 w-full px-5 py-4 rounded-2xl hover:bg-white/5 text-slate-400 transition-all active:scale-95">
+                    <span class="material-symbols-outlined">download</span>
+                    <span class="text-sm font-bold">Download</span>
+                </button>
+            </div>
+            <button onclick="closeOptionsModal()"
+                class="w-full py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-white border-t border-white/5 transition-colors">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div id="preview-modal" class="fixed inset-0 z-50 hidden flex flex-col bg-background-dark transition-all">
+        <header
+            class="flex items-center justify-between p-4 border-b border-white/5 bg-background-dark/95 backdrop-blur-md">
+            <div class="flex items-center gap-3 overflow-hidden">
+                <button onclick="closePreviewModal()"
+                    class="size-10 flex items-center justify-center rounded-full hover:bg-white/10 text-slate-200">
+                    <span class="material-symbols-outlined text-2xl">arrow_back</span>
+                </button>
+                <div class="flex flex-col overflow-hidden">
+                    <p id="preview-filename" class="text-sm font-bold text-white truncate"></p>
+                    <p class="text-[10px] text-primary font-black uppercase tracking-widest">Remote Preview</p>
+                </div>
+            </div>
+            <button id="btn-preview-download-direct"
+                class="px-4 py-2 rounded-lg bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest hover:bg-primary/20">Download</button>
+        </header>
+        <div class="flex-1 overflow-auto bg-black/40 flex items-center justify-center relative">
+            <div id="preview-container" class="w-full h-full p-4 flex items-center justify-center overflow-auto">
+                <!-- Content goes here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Paste Bar -->
+    <div id="paste-bar" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-30 hidden w-[calc(100%-48px)] max-w-sm">
+        <div class="bg-primary shadow-2xl shadow-primary/30 rounded-2xl p-4 flex items-center justify-between">
+            <div class="flex items-center gap-3 overflow-hidden">
+                <div class="size-9 bg-white/20 rounded-lg flex items-center justify-center text-white">
+                    <span class="material-symbols-outlined text-xl">content_paste</span>
+                </div>
+                <div class="flex flex-col overflow-hidden">
+                    <p class="text-[10px] font-black uppercase tracking-widest text-white/70">Ready to Paste</p>
+                    <p id="paste-current-file" class="text-xs font-bold text-white truncate"></p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="clearClipboard()" class="p-2 text-white/70 hover:text-white">
+                    <span class="material-symbols-outlined text-xl">close</span>
+                </button>
+                <button onclick="pasteFile()"
+                    class="px-5 py-2 bg-white text-primary rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg">Paste
+                    Here</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Core Scripts -->
     <script src="../assets/js/utils.js"></script>
     <script src="../assets/js/components.js"></script>
@@ -139,6 +217,12 @@
         let currentLocalPath = '.';
         let showHidden = false;
 
+        // Clipboard for Copy-Paste
+        let clipboard = {
+            remotePath: null,
+            name: null
+        };
+
         // UI Elements
         const rList = document.getElementById('remote-list');
         const lList = document.getElementById('local-list');
@@ -148,6 +232,13 @@
         const loader = document.getElementById('sync-overlay');
         const hBtn = document.getElementById('toggle-hidden-btn');
         const paneInd = document.getElementById('pane-selection-indicator');
+
+        // Modal Elements
+        const optModal = document.getElementById('options-modal');
+        const optContent = document.getElementById('options-modal-content');
+        const prevModal = document.getElementById('preview-modal');
+        const prevContainer = document.getElementById('preview-container');
+        const pasteBar = document.getElementById('paste-bar');
 
         /**
          * Pane Management
@@ -175,6 +266,7 @@
                 lPane.classList.remove('hidden'); rPane.classList.add('hidden');
                 paneInd.innerText = 'Local View';
                 renderBreadcrumbs(currentLocalPath);
+                updatePasteBarVisibility();
             }
         }
 
@@ -231,17 +323,23 @@
                 `;
 
                 item.onclick = () => {
-                    const newPath = path === '/' || path === '.' ? `/${entry.Name}` : `${path}/${entry.Name}`;
+                    const fullPath = (path === '/' || path === '.') ? `${path === '/' ? '' : path}/${entry.Name}` : `${path}/${entry.Name}`;
+                    const normalizedPath = fullPath.replace('//', '/');
+
                     if (entry.IsFolder) {
                         if (type === 'remote') {
-                            currentRemotePath = newPath;
+                            currentRemotePath = normalizedPath;
                             fetchFiles('remote', currentRemotePath);
                         } else {
-                            currentLocalPath = newPath;
+                            currentLocalPath = normalizedPath;
                             fetchFiles('local', currentLocalPath);
                         }
                     } else {
-                        Components.showToast(`${type === 'remote' ? 'Downloading' : 'Opening'} ${entry.Name}`);
+                        if (type === 'remote') {
+                            openFileOptions(entry, normalizedPath);
+                        } else {
+                            Components.showToast(`Opening ${entry.Name}`);
+                        }
                     }
                 };
                 container.appendChild(item);
@@ -285,6 +383,143 @@
         }
 
         /**
+         * File Actions Logic
+         */
+        function openFileOptions(entry, path) {
+            document.getElementById('options-filename').innerText = entry.Name;
+            optModal.classList.remove('hidden');
+            setTimeout(() => {
+                optContent.classList.remove('scale-95', 'opacity-0');
+                optContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+
+            // Bind Actions
+            document.getElementById('btn-preview').onclick = () => { closeOptionsModal(); previewFile(path, entry.Name); };
+            document.getElementById('btn-copy').onclick = () => { closeOptionsModal(); copyFile(path, entry.Name); };
+            document.getElementById('btn-download').onclick = () => {
+                closeOptionsModal();
+                window.open(`/api/ftp/server/get-file?path=${encodeURIComponent(path)}`, '_blank');
+            };
+        }
+
+        function closeOptionsModal() {
+            optContent.classList.add('scale-95', 'opacity-0');
+            optContent.classList.remove('scale-100', 'opacity-100');
+            setTimeout(() => { optModal.classList.add('hidden'); }, 300);
+        }
+
+        /**
+         * Preview Logic
+         */
+        async function previewFile(path, name) {
+            document.getElementById('preview-filename').innerText = name;
+            document.getElementById('btn-preview-download-direct').onclick = () => {
+                window.open(`/api/ftp/server/get-file?path=${encodeURIComponent(path)}`, '_blank');
+            };
+
+            prevModal.classList.remove('hidden');
+            prevContainer.innerHTML = `
+                <div class="flex flex-col items-center gap-4">
+                    <div class="animate-spin size-10 border-4 border-primary border-t-transparent rounded-full"></div>
+                    <p class="text-xs font-black text-primary uppercase">Fetching Content...</p>
+                </div>
+            `;
+
+            const ext = name.split('.').pop().toLowerCase();
+            const previewUrl = `/api/ftp/server/get-file?path=${encodeURIComponent(path)}`;
+
+            try {
+                if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) {
+                    prevContainer.innerHTML = `<img src="${previewUrl}" class="max-w-full max-h-full object-contain shadow-2xl rounded-lg">`;
+                } else if (['mp4', 'webm', 'ogg'].includes(ext)) {
+                    prevContainer.innerHTML = `<video controls src="${previewUrl}" class="max-w-full max-h-full"></video>`;
+                } else if (['pdf'].includes(ext)) {
+                    prevContainer.innerHTML = `<iframe src="${previewUrl}" class="w-full h-full border-0"></iframe>`;
+                } else {
+                    // Try to fetch as text
+                    const res = await fetch(previewUrl);
+                    if (res.ok) {
+                        const text = await res.text();
+                        prevContainer.innerHTML = `<pre class="w-full h-full p-4 text-xs font-mono text-slate-300 overflow-auto whitespace-pre-wrap selection:bg-primary/30">${Utils.escapeHtml(text)}</pre>`;
+                    } else {
+                        prevContainer.innerHTML = `<div class="text-center"><p class="text-slate-500 italic">Preview not available for this file type.</p></div>`;
+                    }
+                }
+            } catch (e) {
+                prevContainer.innerHTML = `<div class="text-center text-red-400 font-bold"><p>Error loading preview</p></div>`;
+            }
+        }
+
+        function closePreviewModal() {
+            prevModal.classList.add('hidden');
+            prevContainer.innerHTML = '';
+        }
+
+        // Helper to escape HTML for preview
+        Utils.escapeHtml = (text) => {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        };
+
+        /**
+         * Copy-Paste Logic
+         */
+        function copyFile(path, name) {
+            clipboard.remotePath = path;
+            clipboard.name = name;
+            Components.showToast(`Path copied: ${name}`);
+            updatePasteBarVisibility();
+        }
+
+        function clearClipboard() {
+            clipboard.remotePath = null;
+            clipboard.name = null;
+            updatePasteBarVisibility();
+        }
+
+        function updatePasteBarVisibility() {
+            if (activePane === 'local' && clipboard.remotePath) {
+                document.getElementById('paste-current-file').innerText = clipboard.name;
+                pasteBar.classList.remove('hidden');
+            } else {
+                pasteBar.classList.add('hidden');
+            }
+        }
+
+        async function pasteFile() {
+            if (!clipboard.remotePath) return;
+
+            const targetLocalPath = (currentLocalPath === '.' ? '' : currentLocalPath) + '/' + clipboard.name;
+            const normalizedLocalPath = targetLocalPath.replace('//', '/');
+
+            loader.classList.remove('hidden');
+            try {
+                const params = new URLSearchParams();
+                params.append('remote_path', clipboard.remotePath);
+                params.append('local_path', normalizedLocalPath);
+
+                const res = await fetch('/api/ftp/client/download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params.toString()
+                });
+
+                if (res.ok) {
+                    Components.showToast('File downloaded successfully');
+                    fetchFiles('local', currentLocalPath);
+                } else {
+                    const err = await res.text();
+                    throw new Error(err || 'Failed to download file');
+                }
+            } catch (e) {
+                Components.showToast(e.message, 'error');
+            } finally {
+                loader.classList.add('hidden');
+            }
+        }
+
+        /**
          * Controls
          */
         function refreshCurrent() {
@@ -296,12 +531,13 @@
             let path = activePane === 'remote' ? currentRemotePath : currentLocalPath;
             const parts = path.split('/').filter(p => p && p !== '.');
             parts.pop();
-            const newPath = activePane === 'remote' ?
-                (parts.length === 0 ? '/' : '/' + parts.join('/')) :
-                (parts.length === 0 ? '.' : './' + parts.join('/'));
+            const isLocal = activePane === 'local';
+            const newPath = isLocal ?
+                (parts.length === 0 ? '.' : './' + parts.join('/')) :
+                (parts.length === 0 ? '/' : '/' + parts.join('/'));
 
-            if (activePane === 'remote') { currentRemotePath = newPath; fetchFiles('remote', newPath); }
-            else { currentLocalPath = newPath; fetchFiles('local', newPath); }
+            if (isLocal) { currentLocalPath = newPath; fetchFiles('local', newPath); }
+            else { currentRemotePath = newPath; fetchFiles('remote', newPath); }
         }
 
         function toggleHiddenFiles() {
