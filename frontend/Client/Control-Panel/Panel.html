@@ -390,15 +390,15 @@
     <!-- Container for Phone Form Factor -->
     <div
         class="relative mx-auto flex h-full min-h-screen max-w-[430px] flex-col overflow-x-hidden border-x border-white/5 shadow-2xl">
-        <!-- TopAppBar -->
         <header
-            class="sticky top-0 z-10 flex items-center bg-background-light/90 dark:bg-background-dark/90 px-4 py-3 backdrop-blur-md">
-            <a href="../Main.html"
-                class="flex size-10 shrink-0 items-center justify-center cursor-pointer hover:bg-white/10 rounded-full transition-colors">
-                <span class="material-symbols-outlined text-white text-[24px]">arrow_back_ios_new</span>
-            </a>
-            <h1 class="flex-1 text-center pr-10 text-lg font-bold leading-tight tracking-tight text-white">FTP Server
-            </h1>
+            class="sticky top-0 z-10 flex items-center bg-background-light/90 dark:bg-background-dark/90 px-4 py-3 backdrop-blur-md border-b border-white/5">
+            <div class="flex items-center gap-3">
+                <button id="menu-btn" onclick="toggleMenu()"
+                    class="flex size-10 shrink-0 items-center justify-center cursor-pointer hover:bg-white/10 rounded-full transition-colors text-primary">
+                    <span class="material-symbols-outlined text-[30px]">menu</span>
+                </button>
+                <h1 class="text-lg font-bold leading-tight tracking-tight text-white">FTP Server</h1>
+            </div>
         </header>
         <!-- Section A: Status + URL -->
         <main class="flex flex-col gap-1 p-2">
@@ -534,6 +534,157 @@
 
             </form>
         </main>
+
+        <!-- Side Menu Drawer (Added) -->
+        <!-- Backdrop -->
+        <div id="drawer-backdrop" onclick="toggleMenu()"
+            class="fixed inset-0 bg-black/50 z-40 hidden opacity-0 transition-opacity duration-300"></div>
+
+        <!-- Sidebar -->
+        <div id="drawer-sidebar"
+            class="fixed inset-y-0 left-0 z-50 w-[75%] max-w-[300px] bg-white dark:bg-[#1b2327] shadow-2xl transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col text-slate-900 dark:text-white">
+            <!-- Drawer Header -->
+            <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800/50">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white tracking-tight">Fahad ki ma ki chut(100
+                    Time)
+                </h3>
+                <button onclick="toggleMenu()"
+                    class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <!-- Drawer Content -->
+            <div class="flex-1 overflow-y-auto py-2">
+                <!-- Local Storage -->
+                <a href="../Main.html"
+                    class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="flex items-center justify-center size-10 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-500">
+                            <span class="material-symbols-outlined">sd_storage</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-sm font-semibold text-slate-900 dark:text-white">Local Storage</span>
+                            <span class="text-xs text-slate-500 dark:text-slate-400">Manage files on this device</span>
+                        </div>
+                    </div>
+                    <span
+                        class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">chevron_right</span>
+                </a>
+
+                <!-- FTP Server Control Panel Link -->
+                <a href="Panel.html"
+                    class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="flex items-center justify-center size-10 rounded-full bg-blue-50 dark:bg-blue-500/10 text-primary">
+                            <span class="material-symbols-outlined">wifi</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-sm font-semibold text-slate-900 dark:text-white">FTP Server</span>
+                            <span class="text-xs text-slate-500 dark:text-slate-400">Manage server status &
+                                config</span>
+                        </div>
+                    </div>
+                    <span
+                        class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">chevron_right</span>
+                </a>
+
+                <!-- Connect to Server -->
+                <a href="../Connect-to-server.html"
+                    class="flex items-center justify-between px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="flex items-center justify-center size-10 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-500">
+                            <span class="material-symbols-outlined">add_link</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-sm font-semibold text-slate-900 dark:text-white">Connect to Server</span>
+                            <span class="text-xs text-slate-500 dark:text-slate-400">Add a new connection</span>
+                        </div>
+                    </div>
+                    <span
+                        class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">chevron_right</span>
+                </a>
+
+                <!-- Connected Users (Placeholder) -->
+                <a href="#"
+                    class="flex items-center justify-between px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="flex items-center justify-center size-10 rounded-full bg-green-50 dark:bg-green-500/10 text-green-500">
+                            <span class="material-symbols-outlined">group</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-sm font-semibold text-slate-900 dark:text-white">Connected Users</span>
+                            <span class="text-xs text-slate-500 dark:text-slate-400">View active sessions</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span
+                            class="flex items-center justify-center bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-[10px] font-bold px-2 py-0.5 rounded-full">LIVE</span>
+                        <span
+                            class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">chevron_right</span>
+                    </div>
+                </a>
+
+            </div>
+
+            <div class="p-4 border-t border-slate-100 dark:border-slate-800/50">
+                <p class="text-xs text-center text-slate-400">Fahad ki ma ka bhosra(746hp)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script to handle Sidebar toggle (Added) -->
+    <script>
+        // Menu Drawer Logic
+        const drawerBackdrop = document.getElementById('drawer-backdrop');
+        const drawerSidebar = document.getElementById('drawer-sidebar');
+        let isMenuOpen = false;
+
+        function toggleMenu() {
+            isMenuOpen = !isMenuOpen;
+
+            if (isMenuOpen) {
+                drawerBackdrop.classList.remove('hidden');
+                setTimeout(() => {
+                    drawerBackdrop.classList.remove('opacity-0');
+                    drawerSidebar.classList.remove('-translate-x-full');
+                }, 10);
+            } else {
+                drawerBackdrop.classList.add('opacity-0');
+                drawerSidebar.classList.add('-translate-x-full');
+                setTimeout(() => {
+                    drawerBackdrop.classList.add('hidden');
+                }, 300);
+            }
+        }
+
+        // Swipe Gesture Logic
+        let touchStartX = 0;
+        let touchEndX = 0;
+        const SWIPE_THRESHOLD = 100;
+
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        document.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, { passive: true });
+
+        function handleSwipe() {
+            if (touchEndX > touchStartX + SWIPE_THRESHOLD && touchStartX < 50) {
+                if (!isMenuOpen) toggleMenu();
+            }
+            if (touchEndX < touchStartX - SWIPE_THRESHOLD) {
+                if (isMenuOpen) toggleMenu();
+            }
+        }
+    </script>
     </div>
 </body>
 

@@ -207,6 +207,7 @@
             transform: translateX(100%);
             transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         }
+
         .toast.show {
             transform: translateX(0);
         }
@@ -217,7 +218,7 @@
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            
+
             const bgClass = type === 'error' ? 'bg-red-500' : 'bg-green-500';
             const icon = type === 'error' ? 'error' : 'check_circle';
 
@@ -245,9 +246,9 @@
         const userInput = document.querySelector('input[value="admin"]');
         const passInput = document.querySelector('input[value="password123"]');
         const anonCheckbox = document.querySelector('input[type="checkbox"]'); // The anonymous toggle
-        
+
         // Set IDs for easier access (optional since we have refs)
-        
+
         // Clear default values
         nameInput.value = '';
         hostInput.value = '';
@@ -256,11 +257,11 @@
         passInput.value = '';
 
         // Toggle Anonymous Mode
-        anonCheckbox.addEventListener('change', function() {
+        anonCheckbox.addEventListener('change', function () {
             const isAnon = this.checked;
             userInput.disabled = isAnon;
             passInput.disabled = isAnon;
-            
+
             if (isAnon) {
                 userInput.parentElement.parentElement.classList.add('opacity-50');
                 passInput.parentElement.parentElement.classList.add('opacity-50');
@@ -270,12 +271,12 @@
             }
         });
 
-        document.getElementById('save-btn').addEventListener('click', function() {
+        document.getElementById('save-btn').addEventListener('click', function () {
             // Validation
             if (!nameInput.value.trim()) { showToast('Please enter a connection name', 'error'); return; }
             if (!hostInput.value.trim()) { showToast('Please enter a host address', 'error'); return; }
             if (!portInput.value.trim()) { showToast('Please enter a port number', 'error'); return; }
-            
+
             if (!anonCheckbox.checked) {
                 if (!userInput.value.trim()) { showToast('Please enter a username', 'error'); return; }
                 if (!passInput.value.trim()) { showToast('Please enter a password', 'error'); return; }
@@ -288,6 +289,7 @@
                 host: hostInput.value,
                 port: portInput.value,
                 user: anonCheckbox.checked ? 'Anonymous' : userInput.value,
+                password: anonCheckbox.checked ? 'anonymous' : passInput.value,
                 type: document.querySelector('select').value,
                 mode: document.querySelector('input[name="mode"]:checked').value,
                 isAnon: anonCheckbox.checked
@@ -299,14 +301,14 @@
             localStorage.setItem('ftp_servers', JSON.stringify(servers));
 
             showToast('Connection saved successfully');
-            
+
             setTimeout(() => {
-                window.location.href = 'Main.html';
+                window.location.href = 'Connect-to-server.html';
             }, 1000);
         });
-        
-        document.getElementById('cancel-btn').addEventListener('click', function() {
-            window.location.href = 'Main.html';
+
+        document.getElementById('cancel-btn').addEventListener('click', function () {
+            window.location.href = 'Connect-to-server.html';
         });
     </script>
 </body>

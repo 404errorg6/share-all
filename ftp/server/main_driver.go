@@ -16,8 +16,10 @@ type AndroidMainDriver struct {
 
 func (d *AndroidMainDriver) GetSettings() (*ftpserver.Settings, error) {
 	settings := ftpserver.Settings{
-		ListenAddr: config.Server.FTPHost + ":" + config.Server.FTPPort,
-		PublicHost: config.Server.FTPHost,
+		ListenAddr:             config.Server.FTPHost + ":" + config.Server.FTPPort,
+		PublicHost:             config.Server.FTPHost,
+		ActiveConnectionsCheck: ftpserver.IPMatchRequired,
+		PasvConnectionsCheck:   ftpserver.IPMatchRequired,
 	}
 	return &settings, nil
 }
@@ -34,7 +36,6 @@ func (d *AndroidMainDriver) AuthUser(cc ftpserver.ClientContext, user, pass stri
 
 	if config.Server.AnonymousAccessAllowed {
 		if user == "anonymous" {
-			config.Server.WriteAllowed = true
 			cDriver.Fs = afero.NewBasePathFs(afero.NewOsFs(), config.Server.RootDir)
 			isAuthorized = true
 		}
