@@ -54,6 +54,7 @@ func HandleDownloadFile(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	defer localFile.Close()
 
 	_, err = io.Copy(localFile, remoteFile)
 	if err != nil {
