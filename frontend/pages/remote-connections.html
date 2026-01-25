@@ -134,7 +134,7 @@
                 const text = await response.text();
                 if (response.ok || text.includes('already connected')) {
                     localStorage.setItem('current_server_id', server.id);
-                    window.location.href = 'browse-remote.html';
+                    window.location.href = 'browse-remote-local.html';
                 } else {
                     Components.showToast(`Connection failed: ${text}`, 'error');
                 }
