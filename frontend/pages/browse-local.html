@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Browse Local - FTP Manager</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: { "primary": "#50c2f7", "background-light": "#f5f7f8", "background-dark": "#101c22" },
+                    fontFamily: { "display": ["Inter"] },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased overflow-x-hidden">
+    <div
+        class="relative flex min-h-screen w-full flex-col max-w-md mx-auto shadow-2xl bg-background-light dark:bg-background-dark">
+        <!-- Header -->
+        <header
+            class="sticky top-0 z-20 bg-background-light dark:bg-background-dark/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+            <div class="flex items-center p-4 justify-between">
+                <div class="flex items-center gap-3">
+                    <button onclick="Components.toggleMenu()"
+                        class="text-primary flex size-10 items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                        <span class="material-symbols-outlined text-3xl">menu</span>
+                    </button>
+                    <h2 class="text-xl font-bold leading-tight tracking-tight">Local Storage</h2>
+                </div>
+                <button
+                    class="flex size-10 items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <span class="material-symbols-outlined">search</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Path Breadcrumbs -->
+        <div
+            class="flex items-center gap-2 bg-slate-100 dark:bg-slate-900/50 px-4 py-3 border-b border-slate-200 dark:border-slate-800">
+            <button id="up-dir-btn" title="Parent Directory"
+                class="flex items-center justify-center size-9 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shrink-0">
+                <span class="material-symbols-outlined text-[20px]">arrow_upward</span>
+            </button>
+            <div id="breadcrumb-path" class="flex items-center gap-1 overflow-hidden flex-1 min-w-0">
+                <span class="text-slate-400"><span
+                        class="material-symbols-outlined text-[16px] align-middle">chevron_right</span></span>
+                <p class="text-sm font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">Root</p>
+            </div>
+        </div>
+        <!-- Select Folder Button (shown only in select mode) -->
+        <div id="select-folder-bar"
+            class="hidden flex items-center gap-3 bg-primary/10 dark:bg-primary/5 px-4 py-3 border-b border-primary/20">
+            <span class="text-primary text-xs font-medium flex-1">Select this folder as root directory</span>
+            <button id="select-folder-btn"
+                class="px-4 py-2 bg-primary hover:bg-primary/90 text-white font-semibold rounded-lg transition-colors active:scale-95">
+                Choose
+            </button>
+        </div>
+
+        <!-- Toolbar -->
+        <div
+            class="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/30 px-4 py-2 border-b border-slate-200 dark:border-slate-800">
+            <button id="refresh-btn"
+                class="flex items-center justify-center size-9 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                <span class="material-symbols-outlined text-[20px]">refresh</span>
+            </button>
+            <button id="toggle-hidden-btn"
+                class="flex items-center justify-center size-9 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors opacity-50">
+                <span class="material-symbols-outlined text-[20px]">visibility_off</span>
+            </button>
+            <div class="flex-1"></div>
+            <p id="file-count" class="text-xs text-slate-500">0 items</p>
+        </div>
+
+        <main class="flex-1 flex flex-col pb-24" id="local-file-list">
+            <div id="empty-state"
+                class="flex flex-col items-center justify-center h-full text-slate-400 p-8 text-center">
+                <span class="material-symbols-outlined text-6xl mb-4 opacity-20">sd_storage</span>
+                <p class="font-bold text-xl text-slate-600 dark:text-slate-300">Local Storage</p>
+                <p class="text-sm opacity-60 mt-2 max-w-[240px]">Grant access or select a root directory to begin.</p>
+                <button id="browse-btn"
+                    class="mt-8 px-6 py-2 bg-primary/10 text-primary rounded-xl font-bold hover:bg-primary/20 transition-colors">
+                    Browse Folders
+                </button>
+            </div>
+            <div id="file-list-container" class="hidden flex-col"></div>
+        </main>
+
+        <div class="bg-background-light dark:bg-background-dark pb-2 flex justify-center sticky bottom-0">
+            <div class="h-1 w-32 bg-slate-300 dark:bg-slate-700 rounded-full mb-1"></div>
+        </div>
+    </div>
+
+    <!-- Core Scripts -->
+    <script src="../assets/js/utils.js"></script>
+    <script src="../assets/js/components.js"></script>
+    <script>
+        Components.injectSidebar('browse-local');
+        Components.injectModal();
+
+        const listContainer = document.getElementById('file-list-container');
+        const emptyState = document.getElementById('empty-state');
+        const fileCountEl = document.getElementById('file-count');
+        const breadcrumbEl = document.getElementById('breadcrumb-path');
+        const upDirBtn = document.getElementById('up-dir-btn');
+
+        let currentPath = '';
+        let showHiddenFiles = false;
+
+        async function loadDirectory(path) {
+            try {
+                const response = await fetch(`/api/ftp/client/ls?path=${encodeURIComponent(path)}`);
+                if (!response.ok) throw new Error('Failed to load path');
+                const entries = await response.json();
+                renderEntries(entries, path);
+            } catch (err) {
+                Components.showToast(err.message, 'error');
+            }
+        }
+
+        function renderEntries(entries, path) {
+            currentPath = path;
+            listContainer.innerHTML = '';
+            listContainer.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+
+            entries.filter(e => showHiddenFiles || !Utils.isHiddenFile(e.Name))
+                .sort((a, b) => (b.IsFolder - a.IsFolder) || a.Name.localeCompare(b.Name))
+                .forEach(entry => {
+                    const item = document.createElement('div');
+                    item.className = "flex items-center gap-3 px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-800/50 cursor-pointer border-b border-slate-100 dark:border-slate-800/50 group";
+                    const icon = Utils.getFileIcon(entry.Name, entry.IsFolder);
+                    const color = Utils.getColorClass(entry.Name, entry.IsFolder);
+
+                    item.innerHTML = `
+                    <div class="flex items-center justify-center rounded-lg size-11 ${color}">
+                        <span class="material-symbols-outlined">${icon}</span>
+                    </div>
+                    <div class="flex flex-col flex-1 overflow-hidden">
+                        <p class="text-sm font-semibold truncate text-slate-900 dark:text-gray-100">${entry.Name}</p>
+                        <p class="text-[11px] text-slate-500">${entry.IsFolder ? 'Folder' : Utils.formatFileSize(entry.Size)} • ${Utils.formatDate(entry.LastModified)}</p>
+                    </div>
+                `;
+                    item.onclick = () => entry.IsFolder ? loadDirectory(path + '/' + entry.Name) : alert('File clicked');
+                    listContainer.appendChild(item);
+                });
+            fileCountEl.innerText = `${entries.length} items`;
+            updateBreadcrumb(path);
+        }
+
+        function updateBreadcrumb(path) {
+            breadcrumbEl.innerHTML = '<span class="text-slate-400"><span class="material-symbols-outlined text-[16px] align-middle">chevron_right</span></span>';
+            const parts = path.split('/').filter(p => p);
+            let currentPathBuild = '';
+
+            const rootNode = document.createElement('p');
+            rootNode.className = "text-sm font-medium text-slate-600 dark:text-slate-300 cursor-pointer hover:text-primary";
+            rootNode.innerText = "Root";
+            rootNode.onclick = () => loadDirectory('');
+            breadcrumbEl.appendChild(rootNode);
+
+            parts.forEach(part => {
+                currentPathBuild += '/' + part;
+                const separator = document.createElement('span');
+                separator.className = "text-slate-400";
+                separator.innerHTML = '<span class="material-symbols-outlined text-[16px] align-middle">chevron_right</span>';
+                breadcrumbEl.appendChild(separator);
+
+                const node = document.createElement('p');
+                node.className = "text-sm font-medium text-slate-600 dark:text-slate-300 cursor-pointer hover:text-primary";
+                node.innerText = part;
+                const target = currentPathBuild;
+                node.onclick = () => loadDirectory(target);
+                breadcrumbEl.appendChild(node);
+            });
+        }
+
+        document.getElementById('browse-btn').onclick = () => loadDirectory('.');
+        document.getElementById('refresh-btn').onclick = () => loadDirectory(currentPath);
+
+        const toggleHiddenBtn = document.getElementById('toggle-hidden-btn');
+        toggleHiddenBtn.onclick = () => {
+            showHiddenFiles = !showHiddenFiles;
+            toggleHiddenBtn.classList.toggle('opacity-50', !showHiddenFiles);
+            toggleHiddenBtn.querySelector('span').innerText = showHiddenFiles ? 'visibility' : 'visibility_off';
+            loadDirectory(currentPath);
+        };
+
+        upDirBtn.onclick = () => {
+            const parts = currentPath.split('/').filter(p => p);
+            parts.pop();
+            loadDirectory(parts.join('/'));
+        };
+
+        // Select Folder functionality
+        const selectFolderBar = document.getElementById('select-folder-bar');
+        const selectFolderBtn = document.getElementById('select-folder-btn');
+        let selectMode = false;
+
+        function chooseFolderAsRoot() {
+            localStorage.setItem('selectedFolderPath', currentPath);
+            window.location.href = 'hosting-panel.html';
+        }
+
+        selectFolderBtn.onclick = chooseFolderAsRoot;
+
+        // Auto-load root on start
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            selectMode = urlParams.get('selectMode') === 'true';
+            if (selectMode) {
+                selectFolderBar.classList.remove('hidden');
+            }
+            loadDirectory('.');
+        });
+    </script>
+</body>
+
+</html>

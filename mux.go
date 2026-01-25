@@ -10,9 +10,18 @@ import (
 
 func Mux() *http.ServeMux {
 	mux := http.NewServeMux()
+	// Static Assets & Pages
 	fs := http.FileServer(http.Dir("./frontend"))
-	//http Handles
-	mux.Handle("/", fs)                                      //serve frontend
+
+	// Root Redirect to Browse Local
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" {
+			http.Redirect(w, r, "/pages/browse-local.html", http.StatusTemporaryRedirect)
+			return
+		}
+		fs.ServeHTTP(w, r)
+	})
+
 	mux.HandleFunc("GET /api/logs", httphandlers.HandleLogs) //get logs
 	//FTP server Handles
 	//required Form variables: server_port, server_root_dir, anonymous_allowed, write_allowed
