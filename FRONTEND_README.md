@@ -42,9 +42,9 @@ A large, terminal-like area to display server logs.
 ## 2. Frontend Logic (JavaScript)
 
 ### A. API Interaction
-*   **Start Server**: Call `POST /api/start-ftp`.
+*   **Start Server**: Call `POST /api/ftp/server/start-ftp`.
     *   *On Success*: Disable Start button, Enable Stop button, Show Status Label (with URL from response).
-*   **Stop Server**: Call `POST /api/stop-ftp`.
+*   **Stop Server**: Call `POST /api/ftp/server/stop-ftp`.
     *   *On Success*: Enable Start button, Disable Stop button, Hide Status Label.
 *   **Listen to Logs**: Connect to `GET /api/logs` (EventStream).
 

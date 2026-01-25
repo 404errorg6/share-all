@@ -204,7 +204,7 @@
 
                     console.log('Fetch options:', fetchOptions);
 
-                    const response = await fetch('/api/start-ftp', fetchOptions);
+                    const response = await fetch('/api/ftp/server/start-ftp', fetchOptions);
                     const responseText = await response.text();
 
                     // Check for success (200 OK or 204 No Content)
@@ -228,7 +228,7 @@
                 statusText.textContent = 'Stopping...';
 
                 try {
-                    const response = await fetch('/api/stop-ftp', {
+                    const response = await fetch('/api/ftp/server/stop-ftp', {
                         method: 'POST'
                     });
 
