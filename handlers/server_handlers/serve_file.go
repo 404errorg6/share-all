@@ -10,7 +10,6 @@ import (
 )
 
 func HandleServeFile(w http.ResponseWriter, req *http.Request) {
-	client.AuthClient("127.0.0.1:2121", "anonymous", "123")
 	c, err := client.GetClient()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusForbidden)

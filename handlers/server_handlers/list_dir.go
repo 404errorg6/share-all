@@ -18,6 +18,10 @@ func HandleListDir(w http.ResponseWriter, req *http.Request) {
 
 	//Get entry at path
 	path := req.URL.Query().Get("path")
+	if path == "" {
+		path = "."
+	}
+
 	entry, err := c.GetEntry(path)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
