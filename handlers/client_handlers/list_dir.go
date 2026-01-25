@@ -10,7 +10,6 @@ import (
 
 func HandleGetLocalFolderEntries(w http.ResponseWriter, req *http.Request) {
 	path := req.URL.Query().Get("path")
-	//TODO: Fix bug here
 	path = config.ResolveLocalPath(path)
 
 	fullPath, err := filepath.Abs(path)

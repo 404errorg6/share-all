@@ -18,24 +18,24 @@ Base URL: `http://localhost:8085` (adjust if you run the server on a different p
 
 1) Start FTP server ✅
 
-- **Endpoint:** `POST /api/start-ftp`
+- **Endpoint:** `POST /api/ftp/server/start-ftp`
 - **Description:** Start the local FTP server.
 - **Request:** No body required.
 - **Response:** `204 No Content` on success. `500` with error message on failure.
 - **Example (curl):**
 
-  curl -X POST http://localhost:8085/api/start-ftp
+  curl -X POST http://localhost:8085/api/ftp/server/start-ftp
 
 
 2) Stop FTP server ✅
 
-- **Endpoint:** `POST /api/stop-ftp`
+- **Endpoint:** `POST /api/ftp/server/stop-ftp`
 - **Description:** Stop the running FTP server.
 - **Request:** No body required.
 - **Response:** `204 No Content` on success.
 - **Example (curl):**
 
-  curl -X POST http://localhost:8085/api/stop-ftp
+  curl -X POST http://localhost:8085/api/ftp/server/stop-ftp
 
 
 3) Live server logs (SSE) ✅
@@ -126,8 +126,8 @@ Base URL: `http://localhost:8085` (adjust if you run the server on a different p
 
 - Start/Stop from front-end (POST no body):
 
-  await fetch('/api/start-ftp', { method: 'POST' });
-  await fetch('/api/stop-ftp', { method: 'POST' });
+  await fetch('/api/ftp/server/start-ftp', { method: 'POST' });
+  await fetch('/api/ftp/server/stop-ftp', { method: 'POST' });
 
 - Logs using EventSource:
 
@@ -139,7 +139,7 @@ Base URL: `http://localhost:8085` (adjust if you run the server on a different p
 
 ## Backend notes / TODOs 🔧
 
-- mux.go uses `mux.HandleFunc("POST /api/start-ftp", handleStart)` etc. The `http.ServeMux` pattern should be the path only (e.g., `"/api/start-ftp"`). HTTP method checks should be done inside the handler or by using a router that supports method-based routes (e.g., gorilla/mux).
+- mux.go uses `mux.HandleFunc("POST /api/ftp/server/start-ftp", handleStart)` etc. The `http.ServeMux` pattern should be the path only (e.g., `"/api/ftp/server/start-ftp"`). HTTP method checks should be done inside the handler or by using a router that supports method-based routes (e.g., gorilla/mux).
 - Several routes referenced in `mux.go` are missing implementations: `handleStreamFile`, `handleConnectedClients`, `handleConnectToServer`, `handleAuthClient`.
 - `sendJSON` writes JSON using Go exported field names (capitalized). Consider adding explicit JSON tags to structs for predictable keys (e.g., `json:"name"`).
 - CORS: only the logs handler sets `Access-Control-Allow-Origin: *`. If the frontend is served from a different origin, add CORS headers globally or to the relevant endpoints.
