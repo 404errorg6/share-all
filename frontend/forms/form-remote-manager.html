@@ -4,78 +4,112 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Manage Remote - FTP Manager</title>
+    <title>Server Manager - FTP Manager</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap"
         rel="stylesheet" />
     <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
         rel="stylesheet" />
     <link rel="stylesheet" href="../assets/css/main.css">
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: { "primary": "#50c2f7", "background-dark": "#101c22", "surface-dark": "#1b2327" },
+                    fontFamily: { "display": ["Inter"] },
+                },
+            },
+        }
+    </script>
 </head>
 
-<body class="bg-background-dark font-display text-slate-100 p-6 flex items-center justify-center min-h-screen">
-    <div class="w-full max-w-sm bg-slate-800/40 rounded-[2.5rem] border border-white/5 p-8 shadow-2xl backdrop-blur-xl">
-        <header class="flex flex-col items-center mb-10">
+<body
+    class="bg-background-dark font-display text-slate-100 p-6 flex items-center justify-center min-h-screen selection:bg-primary/30">
+    <!-- Background Accents -->
+    <div class="fixed top-[-10%] left-[-10%] size-96 bg-primary/20 rounded-full blur-[120px] pointer-events-none"></div>
+    <div
+        class="fixed bottom-[-10%] right-[-10%] size-96 bg-purple-500/10 rounded-full blur-[120px] pointer-events-none">
+    </div>
+
+    <div
+        class="w-full max-w-sm bg-surface-dark border border-white/10 rounded-[3rem] overflow-hidden shadow-2xl relative z-10 animate-fade-in shadow-primary/5">
+        <header class="flex flex-col items-center pt-10 pb-8 bg-white/5 border-b border-white/5">
             <div
-                class="size-16 rounded-3xl bg-primary/10 flex items-center justify-center text-primary mb-4 shadow-inner">
-                <span class="material-symbols-outlined text-4xl">add_link</span>
+                class="size-20 rounded-[2rem] bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white mb-6 shadow-xl shadow-primary/20 ring-4 ring-white/5">
+                <span id="header-icon" class="material-symbols-outlined text-4xl">add_link</span>
             </div>
-            <h1 id="page-title" class="text-2xl font-black text-white">Add Connection</h1>
-            <p class="text-slate-500 text-xs mt-1 uppercase tracking-tighter">Remote FTP Server details</p>
+            <h1 id="page-title" class="text-2xl font-black text-white tracking-tight">New Connection</h1>
+            <p id="page-subtitle" class="text-slate-500 text-[10px] mt-1 uppercase font-black tracking-[0.2em]">
+                Configure Remote Server</p>
         </header>
 
-        <form id="server-form" class="space-y-5">
-            <div class="space-y-1.5 px-1">
-                <label class="text-[10px] uppercase font-black text-slate-500 flex items-center gap-1.5">
-                    <span class="material-symbols-outlined text-[14px]">label</span> Display Name
+        <form id="server-form" class="p-8 space-y-6">
+            <!-- Name Input -->
+            <div class="space-y-2">
+                <label class="text-[10px] uppercase font-black text-slate-500 flex items-center gap-2 px-1">
+                    <span class="material-symbols-outlined text-[16px] text-primary">label</span> Display Name
                 </label>
-                <input type="text" id="name" required placeholder="My Home NAS"
-                    class="w-full bg-black/40 border-white/5 rounded-2xl px-5 py-4 text-sm focus:ring-primary focus:border-primary placeholder:text-slate-700">
+                <input type="text" id="name" required placeholder="Production Server"
+                    class="w-full bg-black/20 border-white/5 rounded-2xl px-6 py-4 text-sm focus:ring-primary focus:border-primary placeholder:text-slate-700 transition-all focus:bg-black/40">
             </div>
 
-            <div class="grid grid-cols-3 gap-3 px-1">
-                <div class="col-span-2 space-y-1.5">
-                    <label class="text-[10px] uppercase font-black text-slate-500">Host Address</label>
-                    <input type="text" id="host" required placeholder="192.168.1.1"
-                        class="w-full bg-black/40 border-white/5 rounded-2xl px-5 py-4 text-sm focus:ring-primary focus:border-primary placeholder:text-slate-700">
+            <!-- Host & Port Grid -->
+            <div class="grid grid-cols-12 gap-4">
+                <div class="col-span-8 space-y-2">
+                    <label class="text-[10px] uppercase font-black text-slate-500 px-1">Host Address</label>
+                    <input type="text" id="host" required placeholder="127.0.0.1"
+                        class="w-full bg-black/20 border-white/5 rounded-2xl px-6 py-4 text-sm focus:ring-primary focus:border-primary placeholder:text-slate-700 transition-all focus:bg-black/40">
                 </div>
-                <div class="space-y-1.5">
-                    <label class="text-[10px] uppercase font-black text-slate-500">Port</label>
-                    <input type="number" id="port" value="2121"
-                        class="w-full bg-black/40 border-white/5 rounded-2xl px-4 py-4 text-sm focus:ring-primary placeholder:text-slate-700">
-                </div>
-            </div>
-
-            <div id="auth-fields" class="space-y-5">
-                <div class="space-y-1.5 px-1">
-                    <label class="text-[10px] uppercase font-black text-slate-500">Username</label>
-                    <input type="text" id="user" value="anonymous"
-                        class="w-full bg-black/40 border-white/5 rounded-2xl px-5 py-4 text-sm focus:ring-primary focus:border-primary">
-                </div>
-                <div class="space-y-1.5 px-1">
-                    <label class="text-[10px] uppercase font-black text-slate-500">Password</label>
-                    <input type="password" id="password" value="anonymous"
-                        class="w-full bg-black/40 border-white/5 rounded-2xl px-5 py-4 text-sm focus:ring-primary focus:border-primary">
+                <div class="col-span-4 space-y-2">
+                    <label class="text-[10px] uppercase font-black text-slate-500 px-1">Port</label>
+                    <input type="number" id="port" value="21"
+                        class="w-full bg-black/20 border-white/5 rounded-2xl px-4 py-4 text-sm focus:ring-primary focus:border-primary text-center transition-all focus:bg-black/40">
                 </div>
             </div>
 
-            <div class="p-4 bg-primary/5 rounded-3xl border border-primary/10 flex items-center justify-between">
+            <!-- Anonymous Toggle -->
+            <div
+                class="p-5 bg-white/5 rounded-3xl border border-white/5 flex items-center justify-between transition-all hover:bg-white/10 group">
                 <div class="flex flex-col">
-                    <span class="text-xs font-bold text-white">Anonymous Login</span>
-                    <span class="text-[10px] text-primary/60 font-medium">No credentials required</span>
+                    <span class="text-xs font-bold text-white group-hover:text-primary transition-colors">Anonymous
+                        Access</span>
+                    <span class="text-[9px] text-slate-500 font-black uppercase tracking-widest mt-0.5">Guest
+                        Login</span>
                 </div>
-                <div id="toggle-anon"
-                    class="w-12 h-6 bg-primary rounded-full relative cursor-pointer p-1 transition-all">
-                    <div id="toggle-knob" class="size-4 bg-white rounded-full absolute right-1"></div>
+                <button type="button" id="toggle-anon"
+                    class="relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none ring-2 ring-white/10">
+                    <span id="toggle-knob"
+                        class="inline-block size-5 transform rounded-full bg-white transition-transform duration-200"></span>
+                </button>
+            </div>
+
+            <!-- Credentials Section -->
+            <div id="auth-fields" class="space-y-4 transition-all duration-300">
+                <div class="space-y-2">
+                    <label class="text-[10px] uppercase font-black text-slate-500 px-1">Username</label>
+                    <input type="text" id="user" placeholder="admin"
+                        class="w-full bg-black/20 border-white/5 rounded-2xl px-6 py-4 text-sm focus:ring-primary focus:border-primary transition-all focus:bg-black/40">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[10px] uppercase font-black text-slate-500 px-1">Password</label>
+                    <input type="password" id="password" placeholder="••••••••"
+                        class="w-full bg-black/20 border-white/5 rounded-2xl px-6 py-4 text-sm focus:ring-primary focus:border-primary transition-all focus:bg-black/40">
                 </div>
             </div>
 
-            <div class="pt-4 flex gap-3">
-                <button type="button" onclick="window.history.back()"
-                    class="flex-1 h-14 rounded-2xl font-bold text-slate-400 hover:text-white transition-colors">Cancel</button>
+            <!-- Submit Area -->
+            <div class="flex flex-col gap-3 pt-4">
                 <button type="submit"
-                    class="flex-[2] h-14 rounded-2xl bg-primary text-white font-black text-lg shadow-lg shadow-primary/20 transition-all active:scale-95">SAVE</button>
+                    class="w-full h-16 rounded-2xl bg-primary text-white font-black text-lg shadow-2xl shadow-primary/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined">save</span>
+                    SAVE CONNECTION
+                </button>
+                <button type="button" onclick="window.history.back()"
+                    class="w-full py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-white transition-colors">
+                    Go Back
+                </button>
             </div>
         </form>
     </div>
@@ -87,33 +121,49 @@
         const toggleAnon = document.getElementById('toggle-anon');
         const toggleKnob = document.getElementById('toggle-knob');
         const authFields = document.getElementById('auth-fields');
-        let isAnon = true;
+        const hIcon = document.getElementById('header-icon');
+
+        let isAnon = false;
         let editId = new URLSearchParams(window.location.search).get('id');
 
+        // Initial Logic
         if (editId) {
-            document.getElementById('page-title').innerText = 'Edit Connection';
+            document.getElementById('page-title').innerText = 'Edit Server';
+            document.getElementById('page-subtitle').innerText = 'Update Saved Details';
+            hIcon.innerText = 'settings';
+
             const servers = JSON.parse(localStorage.getItem('ftp_servers') || '[]');
             const server = servers.find(s => s.id == editId);
             if (server) {
                 document.getElementById('name').value = server.name;
                 document.getElementById('host').value = server.host;
                 document.getElementById('port').value = server.port;
-                document.getElementById('user').value = server.user;
-                document.getElementById('password').value = server.password;
+                document.getElementById('user').value = server.user === 'anonymous' ? '' : server.user;
+                document.getElementById('password').value = server.password === 'anonymous' ? '' : server.password;
                 isAnon = server.isAnon;
-                updateAnonUI();
             }
         }
 
+        /**
+         * Update Toggle UI
+         */
         function updateAnonUI() {
             if (isAnon) {
-                toggleAnon.className = "w-12 h-6 bg-primary rounded-full relative cursor-pointer p-1 transition-all";
-                toggleKnob.className = "size-4 bg-white rounded-full absolute right-1";
-                authFields.classList.add('hidden');
+                toggleAnon.classList.remove('bg-slate-700');
+                toggleAnon.classList.add('bg-primary');
+                toggleKnob.classList.add('translate-x-6');
+                toggleKnob.classList.remove('translate-x-1');
+                authFields.classList.add('opacity-0', 'pointer-events-none', 'h-0', 'invisible');
+                document.getElementById('user').required = false;
+                document.getElementById('password').required = false;
             } else {
-                toggleAnon.className = "w-12 h-6 bg-slate-700 rounded-full relative cursor-pointer p-1 transition-all";
-                toggleKnob.className = "size-4 bg-white rounded-full absolute left-1";
-                authFields.classList.remove('hidden');
+                toggleAnon.classList.add('bg-slate-700');
+                toggleAnon.classList.remove('bg-primary');
+                toggleKnob.classList.remove('translate-x-6');
+                toggleKnob.classList.add('translate-x-1');
+                authFields.classList.remove('opacity-0', 'pointer-events-none', 'h-0', 'invisible');
+                document.getElementById('user').required = true;
+                document.getElementById('password').required = true;
             }
         }
 
@@ -122,19 +172,20 @@
         form.onsubmit = (e) => {
             e.preventDefault();
             const servers = JSON.parse(localStorage.getItem('ftp_servers') || '[]');
+
             const entry = {
-                id: editId || Date.now(),
+                id: editId ? Number(editId) : Date.now(),
                 name: document.getElementById('name').value,
                 host: document.getElementById('host').value,
                 port: document.getElementById('port').value,
                 user: isAnon ? 'anonymous' : document.getElementById('user').value,
                 password: isAnon ? 'anonymous' : document.getElementById('password').value,
-                isAnon
+                isAnon: isAnon
             };
 
             if (editId) {
                 const idx = servers.findIndex(s => s.id == editId);
-                servers[idx] = entry;
+                if (idx !== -1) servers[idx] = entry;
             } else {
                 servers.push(entry);
             }
@@ -143,8 +194,27 @@
             window.location.href = '../pages/remote-connections.html';
         };
 
+        // Initialize UI
         updateAnonUI();
     </script>
+
+    <style>
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
 </body>
 
 </html>
