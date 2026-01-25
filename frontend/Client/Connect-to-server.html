@@ -82,7 +82,7 @@
             <div class="flex items-center gap-3">
                 <button id="menu-btn" onclick="toggleMenu()"
                     class="text-primary flex size-10 items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20">
-                    <span class="material-symbols-outlined text-3xl">storage</span>
+                    <span class="material-symbols-outlined text-3xl">menu</span>
                 </button>
                 <!-- Dynamic Title -->
                 <h2 class="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-tight">Remote</h2>
@@ -258,6 +258,23 @@
         <!-- Drawer Content -->
         <div class="flex-1 overflow-y-auto py-2">
 
+            <!-- Local Storage -->
+            <a href="Main.html"
+                class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="flex items-center justify-center size-10 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-500">
+                        <span class="material-symbols-outlined">sd_storage</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-sm font-semibold text-slate-900 dark:text-white">Local Storage</span>
+                        <span class="text-xs text-slate-500 dark:text-slate-400">Manage files on this device</span>
+                    </div>
+                </div>
+                <span
+                    class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">chevron_right</span>
+            </a>
+
             <!-- FTP Server Control Panel Link -->
             <a href="Control-Panel/Panel.html"
                 class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
@@ -276,7 +293,7 @@
             </a>
 
             <!-- Connect to Server -->
-            <a href="Form-Add-conn.html"
+            <a href="Connect-to-server.html"
                 class="flex items-center justify-between px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
                 <div class="flex items-center gap-3">
                     <div
@@ -384,10 +401,7 @@
                 servers.forEach(server => {
                     const item = document.createElement('div');
                     item.className = "flex items-center gap-4 bg-white dark:bg-[#1a262e] p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow cursor-pointer";
-                    item.onclick = () => {
-                        localStorage.setItem('current_server_id', server.id);
-                        window.location.href = 'Remote.html';
-                    };
+                    item.onclick = () => handleServerClick(server);
 
                     let icon = 'dns';
                     if (server.type === 'ftp') icon = 'folder';
@@ -419,6 +433,43 @@
 
                 emptyState.classList.remove('hidden');
                 emptyState.classList.add('flex');
+            }
+        }
+
+        async function handleServerClick(server) {
+            showToast(`Connecting to ${server.name}...`);
+
+            try {
+                const params = new URLSearchParams();
+                params.append('server_host', server.host);
+                params.append('server_port', server.port);
+                params.append('user', server.isAnon ? 'anonymous' : server.user);
+                params.append('password', server.password || 'anonymous');
+                params.append('anonymous', server.isAnon ? 'true' : 'false');
+
+                const response = await fetch('/api/ftp/client/connect-to-server', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: params.toString()
+                });
+
+                if (response.ok) {
+                    localStorage.setItem('current_server_id', server.id);
+                    window.location.href = 'Remote.html';
+                } else {
+                    const errorMsg = await response.text();
+                    if (errorMsg.includes('already connected')) {
+                        localStorage.setItem('current_server_id', server.id);
+                        window.location.href = 'Remote.html';
+                    } else {
+                        showToast(`Connection failed: ${errorMsg}`, 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Connection error:', error);
+                showToast('Network error or server unreachable', 'error');
             }
         }
 
