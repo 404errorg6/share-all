@@ -17,7 +17,7 @@ func Mux() *http.ServeMux {
 	//FTP server Handles
 	//required Form variables: server_port, server_root_dir, anonymous_allowed, write_allowed
 	mux.HandleFunc("POST /api/ftp/server/start-ftp", serverhandlers.HandleStartFTP) //start ftp server
-	mux.HandleFunc("POST /api/ftp/server/stop-ftp", serverhandlers.HandleStopFTP)   //stop ftp server	// TODO: change path to api/ftp/server/
+	mux.HandleFunc("POST /api/ftp/server/stop-ftp", serverhandlers.HandleStopFTP)   //stop ftp server
 	//returns string responses: "running" and "not-running"
 	mux.HandleFunc("GET /api/ftp/server/running-status", serverhandlers.HandleServerStatus)
 	//required query variables: path, returns the folder's entries in a list of FSObject, see ftp/config/config.go for FSObject
@@ -26,6 +26,11 @@ func Mux() *http.ServeMux {
 	mux.HandleFunc("GET /api/ftp/server/get-file", serverhandlers.HandleServeFile) //get file from other server
 	//nothing required, returns a list of addresses of connected clients
 	mux.HandleFunc("GET /api/ftp/server/connected-clients", serverhandlers.HandleGetConnectedClients) //get clients connected to own server
+	//required Form variables: host, returns err or nothing
+	mux.HandleFunc("POST /api/ftp/server/disconnect-client", serverhandlers.BlockClient) //disconnect connected client
+	mux.HandleFunc("GET /api/ftp/server/blacklist-client", serverhandlers.HandlerGetBlacklist)
+	mux.HandleFunc("POST /api/ftp/server/blocklist-client", serverhandlers.BlockClient)
+	mux.HandleFunc("POST /api/ftp/server/whitelist-client", serverhandlers.WhitelistClient)
 	//FTP client Handles
 	//required Form variables: server_host, server_port, user, password, anonymous
 	mux.HandleFunc("POST /api/ftp/client/connect-to-server", clienthandlers.HandleConnectToServer) //connect to other server
