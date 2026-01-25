@@ -3,6 +3,7 @@ package server
 import (
 	"crypto/tls"
 	"fmt"
+	"slices"
 
 	"github.com/404errorg6/FTP-server/ftp/config"
 	"github.com/fclairamb/ftpserverlib"
@@ -32,6 +33,10 @@ func (d *AndroidMainDriver) AuthUser(cc ftpserver.ClientContext, user, pass stri
 
 	if alreadyConnected(host) {
 		return nil, fmt.Errorf("%v is already connected", host)
+	}
+
+	if slices.Contains(config.Server.BlackList, host) {
+		return nil, fmt.Errorf("%v is blocked", host)
 	}
 
 	if config.Server.AnonymousAccessAllowed {

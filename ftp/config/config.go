@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -23,17 +24,16 @@ type MyServer struct {
 	IsRunning              bool
 	Conn                   *ftpserver.FtpServer
 	ConnectedClients       sync.Map
+	BlackList              []string
 	// TODO: Add users support
 	//	Users            []Client
 }
 
-//func (s *MyServer) AddUser() {}
-
 type Client struct {
 	Name    string
 	Host    string
+	Port    string
 	Msg     string
-	Root    string
 	Context ftpserver.ClientContext
 }
 
@@ -49,3 +49,31 @@ var (
 	DefRootDir        = getDefRootDir()
 	Server            = MyServer{}
 )
+
+func (s *MyServer) BlockUser(host string) {
+	s.ConnectedClients.Range(func(serverID, value any) bool {
+		client, ok := value.(Client)
+		if !ok {
+			LogsCh <- fmt.Sprintf("Could not convert to client: %v", value)
+			return false
+		}
+
+		if client.Host == host {
+			Server.BlackList = append(Server.BlackList, host)
+			client.Context.Close()
+			return false
+		}
+		return true
+	})
+}
+
+func (s *MyServer) UnblockUser(host string) []string {
+	newBL := []string{}
+	for _, s := range s.BlackList {
+		if host == s {
+			continue
+		}
+		newBL = append(newBL, s)
+	}
+	return newBL
+}

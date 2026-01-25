@@ -7,8 +7,8 @@ import (
 	ftpserver "github.com/fclairamb/ftpserverlib"
 )
 
-func GetConnectedHosts() []string {
-	hostsAddr := []string{}
+func GetConnectedHosts() []config.Client {
+	connectedClients := []config.Client{}
 	fmt.Printf("Connected Clients:\n")
 	config.Server.ConnectedClients.Range(func(key, value any) bool {
 		client, ok := value.(config.Client)
@@ -18,10 +18,10 @@ func GetConnectedHosts() []string {
 		}
 
 		fmt.Printf("	%v is connected\n", client.Msg)
-		hostsAddr = append(hostsAddr, client.Context.RemoteAddr().String())
+		connectedClients = append(connectedClients, client)
 		return true
 	})
-	return hostsAddr
+	return connectedClients
 }
 
 func alreadyConnected(addr string) bool {

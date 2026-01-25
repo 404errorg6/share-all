@@ -11,7 +11,7 @@ func StopFTP() error {
 		return nil
 	}
 
-	config.Server.ConnectedClients.Range(rmClients)
+	config.Server.ConnectedClients.Range(disconnectClients)
 	if err := config.Server.Conn.Stop(); err != nil {
 		config.LogsCh <- err.Error()
 		return err
@@ -23,7 +23,7 @@ func StopFTP() error {
 	return nil
 }
 
-func rmClients(key any, val any) bool {
+func disconnectClients(key any, val any) bool {
 	client, ok := val.(config.Client)
 	if !ok {
 		config.LogsCh <- fmt.Sprintf("Unable to type-cast(Client): %v", val)
