@@ -45,6 +45,7 @@ func Mux() *http.ServeMux {
 	mux.HandleFunc("POST /api/ftp/client/connect-to-server", clienthandlers.HandleConnectToServer) //connect to other server
 	//Required query variables: path, return list of FSObject
 	mux.HandleFunc("GET /api/ftp/client/ls", clienthandlers.HandleGetLocalFolderEntries) //Get local folder info
+	mux.HandleFunc("GET /api/ftp/client/get-file", clienthandlers.HandleServeFile)
 	mux.HandleFunc("POST /api/ftp/client/download", clienthandlers.HandleDownload)
 	mux.HandleFunc("POST /api/ftp/client/upload", clienthandlers.HandleUploadFile)
 	mux.HandleFunc("POST /api/ftp/client/delete", clienthandlers.HandleDelete)
