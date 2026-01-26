@@ -186,7 +186,7 @@
         <header
             class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-white/5 bg-white/95 dark:bg-background-dark/95 backdrop-blur-md">
             <div class="flex items-center gap-3 overflow-hidden">
-                <button onclick="closePreviewModal()"
+                <button onclick="Preview.close()"
                     class="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-200">
                     <span class="material-symbols-outlined text-2xl">arrow_back</span>
                 </button>
@@ -204,6 +204,7 @@
     <!-- Core Scripts -->
     <script src="../assets/js/utils.js"></script>
     <script src="../assets/js/components.js"></script>
+    <script src="../assets/js/preview.js"></script>
     <script>
         Components.injectSidebar('browse-local');
         Components.injectModal();
@@ -277,7 +278,7 @@
                         toggleSelection(normalizedPath, entry.Name, entry.IsFolder);
                     } else {
                         if (entry.IsFolder) loadDirectory(normalizedPath);
-                        else previewLocalFile(normalizedPath, entry.Name);
+                        else Preview.show(normalizedPath, entry.Name, false);
                     }
                 };
 
@@ -371,7 +372,7 @@
             }, 10);
 
             document.getElementById('btn-preview').classList.toggle('hidden', entry.IsFolder);
-            document.getElementById('btn-preview').onclick = () => { closeOptionsModal(); previewLocalFile(path, entry.Name); };
+            document.getElementById('btn-preview').onclick = () => { closeOptionsModal(); Preview.show(path, entry.Name, false); };
             document.getElementById('btn-delete').onclick = () => { closeOptionsModal(); confirmDelete(path, entry.Name); };
         }
 
@@ -444,35 +445,6 @@
                     }
                 }
             });
-        }
-
-        /**
-         * Preview (Limited for local)
-         */
-        function previewLocalFile(path, name) {
-            document.getElementById('preview-filename').innerText = name;
-            prevModal.classList.remove('hidden');
-            prevContainer.innerHTML = `
-                <div class="flex flex-col items-center gap-6 p-8 text-center max-w-xs animate-fade-in">
-                    <div class="size-20 rounded-[2rem] bg-slate-200 dark:bg-white/5 border border-slate-300 dark:border-white/10 flex items-center justify-center text-slate-400 shadow-inner">
-                        <span class="material-symbols-outlined text-[40px]">visibility_off</span>
-                    </div>
-                    <div class="space-y-2">
-                        <h3 class="text-lg font-bold dark:text-white">Local Preview Unavailable</h3>
-                        <p class="text-xs text-slate-500 leading-relaxed font-medium">
-                            Direct preview of local files is restricted for security. Please use your system's file manager to open this file.
-                        </p>
-                    </div>
-                    <button onclick="closePreviewModal()" class="w-full h-14 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest active:scale-95 transition-all">
-                        Got it
-                    </button>
-                </div>
-            `;
-        }
-
-        function closePreviewModal() {
-            prevModal.classList.add('hidden');
-            prevContainer.innerHTML = '';
         }
 
         // Global Events
