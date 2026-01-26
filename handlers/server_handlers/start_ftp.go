@@ -48,7 +48,7 @@ func initServer(host, port, root, writeAllowed, anonymous string) error {
 		root = filepath.Join(config.DefRootDir, root)
 	}
 
-	if !config.FolderExists(root) {
+	if !config.LocalFolderExists(root) {
 		err := fmt.Errorf("\"%v\" folder does not exist", root)
 		return err
 	}

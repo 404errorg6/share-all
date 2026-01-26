@@ -12,10 +12,9 @@ import (
 	"github.com/jlaffaye/ftp"
 )
 
-func GetCompletePath(c *ftp.ServerConn, path string) (string, *ftp.Entry, error) {
+func ResolveRemotePath(c *ftp.ServerConn, path string) (string, *ftp.Entry, error) {
 	if path == "" {
-		err := fmt.Errorf("path is required")
-		return "", nil, err
+		return ".", nil, nil
 	}
 
 	//Check if file/folder is within accessible range
@@ -65,7 +64,20 @@ func SendJSON(w http.ResponseWriter, data any) {
 	w.WriteHeader(200)
 }
 
-func FolderExists(path string) bool {
+func RemoteFolderExists(path string, c *ftp.ServerConn) bool {
+	info, err := c.GetEntry(path)
+	if err != nil {
+		return false
+	}
+
+	if info.Type == ftp.EntryTypeFolder {
+		return true
+	}
+
+	return false
+}
+
+func LocalFolderExists(path string) bool {
 	info, err := os.Stat(path)
 	if err != nil {
 		if os.IsExist(err) {
