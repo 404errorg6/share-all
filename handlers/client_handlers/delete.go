@@ -10,12 +10,6 @@ import (
 )
 
 func HandleDelete(w http.ResponseWriter, req *http.Request) {
-	c, err := client.GetClient()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusForbidden)
-		return
-	}
-
 	localPath := req.FormValue("local_path")
 	remotePath := req.FormValue("remote_path")
 
@@ -30,6 +24,12 @@ func HandleDelete(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if remotePath != "" {
+		c, err := client.GetClient()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
+
 		remotePath, entry, err := config.ResolveRemotePath(c, remotePath)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
