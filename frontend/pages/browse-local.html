@@ -17,13 +17,39 @@
             darkMode: "class",
             theme: {
                 extend: {
-                    colors: { "primary": "#50c2f7", "background-light": "#f5f7f8", "background-dark": "#101c22" },
+                    colors: { "primary": "#50c2f7", "background-light": "#f5f7f8", "background-dark": "#101c22", "danger": "#ff4d4d" },
                     fontFamily: { "display": ["Inter"] },
                     borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
                 },
             },
         }
     </script>
+    <style>
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
 </head>
 
 <body
@@ -55,20 +81,8 @@
                 class="flex items-center justify-center size-9 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shrink-0">
                 <span class="material-symbols-outlined text-[20px]">arrow_upward</span>
             </button>
-            <div id="breadcrumb-path" class="flex items-center gap-1 overflow-hidden flex-1 min-w-0">
-                <span class="text-slate-400"><span
-                        class="material-symbols-outlined text-[16px] align-middle">chevron_right</span></span>
-                <p class="text-sm font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">Root</p>
+            <div id="breadcrumb-path" class="flex items-center gap-1 overflow-x-auto scrollbar-hide flex-1 min-w-0">
             </div>
-        </div>
-        <!-- Select Folder Button (shown only in select mode) -->
-        <div id="select-folder-bar"
-            class="hidden flex items-center gap-3 bg-primary/10 dark:bg-primary/5 px-4 py-3 border-b border-primary/20">
-            <span class="text-primary text-xs font-medium flex-1">Select this folder as root directory</span>
-            <button id="select-folder-btn"
-                class="px-4 py-2 bg-primary hover:bg-primary/90 text-white font-semibold rounded-lg transition-colors active:scale-95">
-                Choose
-            </button>
         </div>
 
         <!-- Toolbar -->
@@ -83,10 +97,16 @@
                 <span class="material-symbols-outlined text-[20px]">visibility_off</span>
             </button>
             <div class="flex-1"></div>
-            <p id="file-count" class="text-xs text-slate-500">0 items</p>
+            <button id="toggle-select-mode" onclick="toggleSelectionMode()"
+                class="flex items-center justify-center gap-1.5 px-3 h-9 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-white/5 text-slate-400"
+                title="Selection Mode">
+                <span class="material-symbols-outlined text-[18px]">rule</span>
+                <span class="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Select</span>
+            </button>
+            <p id="file-count" class="text-xs text-slate-500 font-bold uppercase tracking-widest ml-2">0 items</p>
         </div>
 
-        <main class="flex-1 flex flex-col pb-24" id="local-file-list">
+        <main class="flex-1 flex flex-col pb-24 relative" id="local-file-list">
             <div id="empty-state"
                 class="flex flex-col items-center justify-center h-full text-slate-400 p-8 text-center">
                 <span class="material-symbols-outlined text-6xl mb-4 opacity-20">sd_storage</span>
@@ -98,10 +118,86 @@
                 </button>
             </div>
             <div id="file-list-container" class="hidden flex-col"></div>
-        </main>
 
-        <div class="bg-background-light dark:bg-background-dark pb-2 flex justify-center sticky bottom-0">
-            <div class="h-1 w-32 bg-slate-300 dark:bg-slate-700 rounded-full mb-1"></div>
+            <!-- Loading Indicator Overlay -->
+            <div id="sync-overlay"
+                class="absolute inset-0 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm z-30 flex items-center justify-center hidden">
+                <div class="flex flex-col items-center gap-4">
+                    <div class="animate-spin size-10 border-4 border-primary border-t-transparent rounded-full"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Floating Selection Bar -->
+    <div id="selection-bar"
+        class="fixed bottom-24 left-1/2 -translate-x-1/2 z-30 hidden w-[calc(100%-48px)] max-w-sm transition-all duration-300">
+        <div class="bg-primary shadow-2xl shadow-primary/30 rounded-2xl p-4 flex items-center justify-between">
+            <div class="flex items-center gap-3 overflow-hidden">
+                <div class="size-9 bg-white/20 rounded-lg flex items-center justify-center text-white">
+                    <span class="material-symbols-outlined text-xl">rule</span>
+                </div>
+                <div class="flex flex-col overflow-hidden">
+                    <p class="text-[10px] font-black uppercase tracking-widest text-white/70">Selected Items</p>
+                    <p id="selection-info" class="text-xs font-bold text-white truncate"></p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="clearSelection()" class="p-2 text-white/70 hover:text-white">
+                    <span class="material-symbols-outlined text-xl">close</span>
+                </button>
+                <button onclick="deleteSelected()"
+                    class="px-5 py-2 bg-danger text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg active:scale-95 transition-all">Delete
+                    All</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Options Modal -->
+    <div id="options-modal"
+        class="fixed inset-0 z-40 hidden flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+        <div id="options-modal-content"
+            class="bg-white dark:bg-[#1b2327] rounded-[2rem] w-full max-w-xs overflow-hidden shadow-2xl transition-all transform scale-95 opacity-0">
+            <div class="p-6 border-b border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/5">
+                <p id="options-filename" class="text-sm font-bold truncate dark:text-white"></p>
+                <p id="options-type" class="text-[10px] text-slate-500 uppercase tracking-widest font-black mt-1">Local
+                    Actions</p>
+            </div>
+            <div class="p-4 flex flex-col gap-2">
+                <button id="btn-preview"
+                    class="flex items-center gap-3 w-full px-5 py-4 rounded-2xl hover:bg-primary/10 text-primary transition-all active:scale-95">
+                    <span class="material-symbols-outlined">visibility</span>
+                    <span class="text-sm font-bold">Preview</span>
+                </button>
+                <button id="btn-delete"
+                    class="flex items-center gap-3 w-full px-5 py-4 rounded-2xl hover:bg-danger/10 text-danger transition-all active:scale-95">
+                    <span class="material-symbols-outlined">delete</span>
+                    <span class="text-sm font-bold">Delete Item</span>
+                </button>
+            </div>
+            <button onclick="closeOptionsModal()"
+                class="w-full py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-primary dark:hover:text-white border-t border-slate-100 dark:border-white/5 transition-colors">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div id="preview-modal"
+        class="fixed inset-0 z-50 hidden flex flex-col bg-slate-50 dark:bg-background-dark transition-all">
+        <header
+            class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-white/5 bg-white/95 dark:bg-background-dark/95 backdrop-blur-md">
+            <div class="flex items-center gap-3 overflow-hidden">
+                <button onclick="closePreviewModal()"
+                    class="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-200">
+                    <span class="material-symbols-outlined text-2xl">arrow_back</span>
+                </button>
+                <div class="flex flex-col overflow-hidden">
+                    <p id="preview-filename" class="text-sm font-bold dark:text-white truncate"></p>
+                    <p class="text-[10px] text-primary font-black uppercase tracking-widest">Local Preview</p>
+                </div>
+            </div>
+        </header>
+        <div class="flex-1 overflow-auto bg-slate-200 dark:bg-black/40 flex items-center justify-center relative">
+            <div id="preview-container" class="w-full h-full p-4 flex items-center justify-center overflow-auto"></div>
         </div>
     </div>
 
@@ -110,18 +206,30 @@
     <script src="../assets/js/components.js"></script>
     <script>
         Components.injectSidebar('browse-local');
-        Components.injectModal();
 
         const listContainer = document.getElementById('file-list-container');
         const emptyState = document.getElementById('empty-state');
         const fileCountEl = document.getElementById('file-count');
         const breadcrumbEl = document.getElementById('breadcrumb-path');
         const upDirBtn = document.getElementById('up-dir-btn');
+        const loader = document.getElementById('sync-overlay');
+        const hBtn = document.getElementById('toggle-hidden-btn');
+        const sBtn = document.getElementById('toggle-select-mode');
 
-        let currentPath = '';
+        const optModal = document.getElementById('options-modal');
+        const optContent = document.getElementById('options-modal-content');
+        const prevModal = document.getElementById('preview-modal');
+        const prevContainer = document.getElementById('preview-container');
+        const selectionBar = document.getElementById('selection-bar');
+
+        let currentPath = '.';
         let showHiddenFiles = false;
+        let selectionMode = false;
+        let selection = []; // Array of { path, name, isFolder }
 
         async function loadDirectory(path) {
+            currentPath = path;
+            loader.classList.remove('hidden');
             try {
                 const response = await fetch(`/api/ftp/client/ls?path=${encodeURIComponent(path)}`);
                 if (!response.ok) throw new Error('Failed to load path');
@@ -129,102 +237,262 @@
                 renderEntries(entries, path);
             } catch (err) {
                 Components.showToast(err.message, 'error');
+            } finally {
+                loader.classList.add('hidden');
             }
         }
 
         function renderEntries(entries, path) {
-            currentPath = path;
             listContainer.innerHTML = '';
             listContainer.classList.remove('hidden');
             emptyState.classList.add('hidden');
 
-            entries.filter(e => showHiddenFiles || !Utils.isHiddenFile(e.Name))
-                .sort((a, b) => (b.IsFolder - a.IsFolder) || a.Name.localeCompare(b.Name))
-                .forEach(entry => {
-                    const item = document.createElement('div');
-                    item.className = "flex items-center gap-3 px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-800/50 cursor-pointer border-b border-slate-100 dark:border-slate-800/50 group";
-                    const icon = Utils.getFileIcon(entry.Name, entry.IsFolder);
-                    const color = Utils.getColorClass(entry.Name, entry.IsFolder);
+            const visible = entries.filter(e => showHiddenFiles || !Utils.isHiddenFile(e.Name))
+                .sort((a, b) => (b.IsFolder - a.IsFolder) || a.Name.localeCompare(b.Name));
 
-                    item.innerHTML = `
-                    <div class="flex items-center justify-center rounded-lg size-11 ${color}">
-                        <span class="material-symbols-outlined">${icon}</span>
+            visible.forEach(entry => {
+                const fullPath = (path === '.' || path === '') ? entry.Name : `${path}/${entry.Name}`;
+                const normalizedPath = fullPath.replace('//', '/');
+                const isSelected = selection.some(s => s.path === normalizedPath);
+
+                const item = document.createElement('div');
+                item.className = `flex items-center gap-3 px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-800/50 cursor-pointer border-b border-slate-100 dark:border-slate-800/50 group transition-all ${isSelected ? 'bg-primary/10 ring-1 ring-inset ring-primary/30' : ''}`;
+                const icon = Utils.getFileIcon(entry.Name, entry.IsFolder);
+                const color = Utils.getColorClass(entry.Name, entry.IsFolder);
+
+                item.innerHTML = `
+                    <div class="flex items-center justify-center rounded-xl size-11 ${color} shadow-sm relative">
+                        <span class="material-symbols-outlined">${isSelected ? 'check_circle' : icon}</span>
                     </div>
                     <div class="flex flex-col flex-1 overflow-hidden">
-                        <p class="text-sm font-semibold truncate text-slate-900 dark:text-gray-100">${entry.Name}</p>
-                        <p class="text-[11px] text-slate-500">${entry.IsFolder ? 'Folder' : Utils.formatFileSize(entry.Size)} • ${Utils.formatDate(entry.LastModified)}</p>
+                        <p class="text-sm font-bold truncate ${isSelected ? 'text-primary' : 'text-slate-900 dark:text-gray-100'}">${entry.Name}</p>
+                        <p class="text-[10px] text-slate-500 font-medium uppercase">${entry.IsFolder ? 'Folder' : Utils.formatFileSize(entry.Size)} • ${Utils.formatDate(entry.LastModified)}</p>
                     </div>
+                    <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">chevron_right</span>
                 `;
-                    item.onclick = () => entry.IsFolder ? loadDirectory(path + '/' + entry.Name) : alert('File clicked');
-                    listContainer.appendChild(item);
-                });
-            fileCountEl.innerText = `${entries.length} items`;
+
+                item.onclick = () => {
+                    if (selectionMode) {
+                        toggleSelection(normalizedPath, entry.Name, entry.IsFolder);
+                    } else {
+                        if (entry.IsFolder) loadDirectory(normalizedPath);
+                        else previewLocalFile(normalizedPath, entry.Name);
+                    }
+                };
+
+                item.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    openOptions(entry, normalizedPath);
+                };
+
+                listContainer.appendChild(item);
+            });
+            fileCountEl.innerText = `${visible.length} items`;
             updateBreadcrumb(path);
         }
 
         function updateBreadcrumb(path) {
-            breadcrumbEl.innerHTML = '<span class="text-slate-400"><span class="material-symbols-outlined text-[16px] align-middle">chevron_right</span></span>';
-            const parts = path.split('/').filter(p => p);
-            let currentPathBuild = '';
+            breadcrumbEl.innerHTML = '';
+            const parts = path.split('/').filter(p => p && p !== '.');
 
             const rootNode = document.createElement('p');
-            rootNode.className = "text-sm font-medium text-slate-600 dark:text-slate-300 cursor-pointer hover:text-primary";
-            rootNode.innerText = "Root";
-            rootNode.onclick = () => loadDirectory('');
+            rootNode.className = "text-xs font-black uppercase tracking-widest text-primary cursor-pointer hover:bg-primary/10 px-2 py-1 rounded transition-colors";
+            rootNode.innerText = "Local";
+            rootNode.onclick = () => loadDirectory('.');
             breadcrumbEl.appendChild(rootNode);
 
+            let build = '.';
             parts.forEach(part => {
-                currentPathBuild += '/' + part;
-                const separator = document.createElement('span');
-                separator.className = "text-slate-400";
-                separator.innerHTML = '<span class="material-symbols-outlined text-[16px] align-middle">chevron_right</span>';
-                breadcrumbEl.appendChild(separator);
+                build += `/${part}`;
+                const sep = document.createElement('span');
+                sep.className = "text-slate-400 px-1";
+                sep.innerHTML = '<span class="material-symbols-outlined text-xs">chevron_right</span>';
+                breadcrumbEl.appendChild(sep);
 
                 const node = document.createElement('p');
-                node.className = "text-sm font-medium text-slate-600 dark:text-slate-300 cursor-pointer hover:text-primary";
+                node.className = "text-xs font-bold text-slate-500 dark:text-slate-300 hover:text-primary cursor-pointer px-2 py-1 rounded transition-colors truncate max-w-[100px]";
                 node.innerText = part;
-                const target = currentPathBuild;
+                const target = build;
                 node.onclick = () => loadDirectory(target);
                 breadcrumbEl.appendChild(node);
             });
         }
 
+        /**
+         * Selection Logic
+         */
+        function toggleSelectionMode() {
+            selectionMode = !selectionMode;
+            sBtn.classList.toggle('bg-primary', selectionMode);
+            sBtn.classList.toggle('text-white', selectionMode);
+            sBtn.classList.toggle('text-slate-400', !selectionMode);
+            sBtn.querySelector('span').innerText = selectionMode ? 'done_all' : 'rule';
+            updateSelectionBar();
+            loadDirectory(currentPath);
+        }
+
+        function toggleSelection(path, name, isFolder) {
+            const index = selection.findIndex(s => s.path === path);
+            if (index > -1) selection.splice(index, 1);
+            else selection.push({ path, name, isFolder });
+            updateSelectionBar();
+            loadDirectory(currentPath);
+        }
+
+        function clearSelection() {
+            selection = [];
+            updateSelectionBar();
+            loadDirectory(currentPath);
+        }
+
+        function updateSelectionBar() {
+            const hasSelection = selection.length > 0;
+            if (hasSelection && selectionMode) {
+                document.getElementById('selection-info').innerText = selection.length === 1 ? selection[0].name : `${selection.length} items`;
+                selectionBar.classList.remove('hidden');
+                setTimeout(() => selectionBar.classList.add('opacity-100', 'translate-y-0'), 10);
+            } else {
+                selectionBar.classList.remove('opacity-100', 'translate-y-0');
+                setTimeout(() => { if (selection.length === 0 || !selectionMode) selectionBar.classList.add('hidden'); }, 300);
+            }
+        }
+
+        /**
+         * File Options
+         */
+        function openOptions(entry, path) {
+            document.getElementById('options-filename').innerText = entry.Name;
+            document.getElementById('options-type').innerText = "Local " + (entry.IsFolder ? "Folder" : "File") + " Actions";
+            optModal.classList.remove('hidden');
+            setTimeout(() => {
+                optContent.classList.remove('scale-95', 'opacity-0');
+                optContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+
+            document.getElementById('btn-preview').classList.toggle('hidden', entry.IsFolder);
+            document.getElementById('btn-preview').onclick = () => { closeOptionsModal(); previewLocalFile(path, entry.Name); };
+            document.getElementById('btn-delete').onclick = () => { closeOptionsModal(); confirmDelete(path, entry.Name); };
+        }
+
+        function closeOptionsModal() {
+            optContent.classList.add('scale-95', 'opacity-0');
+            optContent.classList.remove('scale-100', 'opacity-100');
+            setTimeout(() => { optModal.classList.add('hidden'); }, 300);
+        }
+
+        /**
+         * Delete Logic
+         */
+        function confirmDelete(path, name) {
+            Components.openGuiModal({
+                title: 'Delete Local Item?',
+                message: `Are you sure you want to delete ${name}? This action is permanent.`,
+                icon: 'delete_forever',
+                type: 'danger',
+                primaryText: 'Delete',
+                onPrimary: () => performDelete(path)
+            });
+        }
+
+        async function performDelete(path) {
+            loader.classList.remove('hidden');
+            try {
+                const params = new URLSearchParams();
+                params.append('local_path', path);
+                const res = await fetch('/api/ftp/client/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params.toString()
+                });
+                if (!res.ok) throw new Error(await res.text());
+                Components.showToast('Item deleted');
+                loadDirectory(currentPath);
+            } catch (e) {
+                Components.showToast(e.message, 'error');
+            } finally {
+                loader.classList.add('hidden');
+            }
+        }
+
+        async function deleteSelected() {
+            Components.openGuiModal({
+                title: 'Delete Selected?',
+                message: `Are you sure you want to delete ${selection.length} local items?`,
+                icon: 'delete_sweep',
+                type: 'danger',
+                primaryText: 'Delete All',
+                onPrimary: async () => {
+                    loader.classList.remove('hidden');
+                    try {
+                        for (const item of selection) {
+                            const params = new URLSearchParams();
+                            params.append('local_path', item.path);
+                            await fetch('/api/ftp/client/delete', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                body: params.toString()
+                            });
+                        }
+                        Components.showToast('Selected items deleted');
+                        clearSelection();
+                        loadDirectory(currentPath);
+                    } catch (e) {
+                        Components.showToast(e.message, 'error');
+                    } finally {
+                        loader.classList.add('hidden');
+                    }
+                }
+            });
+        }
+
+        /**
+         * Preview (Limited for local)
+         */
+        function previewLocalFile(path, name) {
+            document.getElementById('preview-filename').innerText = name;
+            prevModal.classList.remove('hidden');
+            prevContainer.innerHTML = `
+                <div class="flex flex-col items-center gap-6 p-8 text-center max-w-xs animate-fade-in">
+                    <div class="size-20 rounded-[2rem] bg-slate-200 dark:bg-white/5 border border-slate-300 dark:border-white/10 flex items-center justify-center text-slate-400 shadow-inner">
+                        <span class="material-symbols-outlined text-[40px]">visibility_off</span>
+                    </div>
+                    <div class="space-y-2">
+                        <h3 class="text-lg font-bold dark:text-white">Local Preview Unavailable</h3>
+                        <p class="text-xs text-slate-500 leading-relaxed font-medium">
+                            Direct preview of local files is restricted for security. Please use your system's file manager to open this file.
+                        </p>
+                    </div>
+                    <button onclick="closePreviewModal()" class="w-full h-14 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest active:scale-95 transition-all">
+                        Got it
+                    </button>
+                </div>
+            `;
+        }
+
+        function closePreviewModal() {
+            prevModal.classList.add('hidden');
+            prevContainer.innerHTML = '';
+        }
+
+        // Global Events
         document.getElementById('browse-btn').onclick = () => loadDirectory('.');
         document.getElementById('refresh-btn').onclick = () => loadDirectory(currentPath);
 
-        const toggleHiddenBtn = document.getElementById('toggle-hidden-btn');
-        toggleHiddenBtn.onclick = () => {
+        hBtn.onclick = () => {
             showHiddenFiles = !showHiddenFiles;
-            toggleHiddenBtn.classList.toggle('opacity-50', !showHiddenFiles);
-            toggleHiddenBtn.querySelector('span').innerText = showHiddenFiles ? 'visibility' : 'visibility_off';
+            hBtn.classList.toggle('opacity-50', !showHiddenFiles);
+            hBtn.querySelector('span').innerText = showHiddenFiles ? 'visibility' : 'visibility_off';
             loadDirectory(currentPath);
         };
 
         upDirBtn.onclick = () => {
-            const parts = currentPath.split('/').filter(p => p);
+            const parts = currentPath.split('/').filter(p => p && p !== '.');
             parts.pop();
-            loadDirectory(parts.join('/'));
+            loadDirectory(parts.length === 0 ? '.' : parts.join('/'));
         };
-
-        // Select Folder functionality
-        const selectFolderBar = document.getElementById('select-folder-bar');
-        const selectFolderBtn = document.getElementById('select-folder-btn');
-        let selectMode = false;
-
-        function chooseFolderAsRoot() {
-            localStorage.setItem('selectedFolderPath', currentPath);
-            window.location.href = 'hosting-panel.html';
-        }
-
-        selectFolderBtn.onclick = chooseFolderAsRoot;
 
         // Auto-load root on start
         document.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            selectMode = urlParams.get('selectMode') === 'true';
-            if (selectMode) {
-                selectFolderBar.classList.remove('hidden');
-            }
             loadDirectory('.');
         });
     </script>

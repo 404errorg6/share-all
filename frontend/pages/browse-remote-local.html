@@ -17,7 +17,7 @@
             darkMode: "class",
             theme: {
                 extend: {
-                    colors: { "primary": "#50c2f7", "background-dark": "#101c22" },
+                    colors: { "primary": "#50c2f7", "background-dark": "#101c22", "danger": "#ff4d4d", "success": "#00db84" },
                     fontFamily: { "display": ["Inter"] },
                 },
             },
@@ -31,6 +31,22 @@
         .scrollbar-hide {
             -ms-overflow-style: none;
             scrollbar-width: none;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
@@ -79,6 +95,12 @@
                     <span class="material-symbols-outlined text-[20px]">visibility_off</span>
                 </button>
                 <div class="flex-1"></div>
+                <button id="toggle-select-mode" onclick="toggleSelectionMode()"
+                    class="flex items-center justify-center gap-1.5 px-3 h-9 rounded-lg hover:bg-slate-700 transition-all border border-white/5 text-slate-400"
+                    title="Selection Mode">
+                    <span class="material-symbols-outlined text-[18px]">rule</span>
+                    <span class="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Select</span>
+                </button>
                 <div id="pane-selection-indicator"
                     class="bg-primary/10 text-primary px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
                     Remote View</div>
@@ -134,7 +156,8 @@
             class="bg-[#1b2327] border border-white/10 rounded-[2rem] w-full max-w-xs overflow-hidden shadow-2xl transition-all transform scale-95 opacity-0">
             <div class="p-6 border-b border-white/5 bg-white/5">
                 <p id="options-filename" class="text-sm font-bold text-white truncate"></p>
-                <p class="text-[10px] text-slate-500 uppercase tracking-widest font-black mt-1">Remote File Actions</p>
+                <p id="options-type" class="text-[10px] text-slate-500 uppercase tracking-widest font-black mt-1">
+                    Actions</p>
             </div>
             <div class="p-4 flex flex-col gap-2">
                 <button id="btn-preview"
@@ -145,7 +168,12 @@
                 <button id="btn-copy"
                     class="flex items-center gap-3 w-full px-5 py-4 rounded-2xl hover:bg-white/5 text-white transition-all active:scale-95">
                     <span class="material-symbols-outlined">content_copy</span>
-                    <span class="text-sm font-bold">Copy to Local</span>
+                    <span class="text-sm font-bold">Add to Selection</span>
+                </button>
+                <button id="btn-delete"
+                    class="flex items-center gap-3 w-full px-5 py-4 rounded-2xl hover:bg-danger/10 text-danger transition-all active:scale-95">
+                    <span class="material-symbols-outlined">delete</span>
+                    <span class="text-sm font-bold">Delete Item</span>
                 </button>
             </div>
             <button onclick="closeOptionsModal()"
@@ -165,9 +193,11 @@
                 <div class="flex flex-col overflow-hidden">
                     <p id="preview-filename" class="text-sm font-bold text-white truncate"></p>
                     <div class="flex flex-col overflow-hidden text-right">
-                        <p class="text-[10px] text-primary font-black uppercase tracking-widest">Remote Preview</p>
-                        <p class="text-[8px] text-slate-500 font-bold">Read-only Mode</p>
+                        <p class="text-[10px] text-primary font-black uppercase tracking-widest">Instant Preview</p>
+                        <p class="text-[8px] text-slate-500 font-bold uppercase tracking-widest">Read-only</p>
                     </div>
+                </div>
+            </div>
         </header>
         <div class="flex-1 overflow-auto bg-black/40 flex items-center justify-center relative">
             <div id="preview-container" class="w-full h-full p-4 flex items-center justify-center overflow-auto">
@@ -194,8 +224,11 @@
                 <button onclick="clearClipboard()" class="p-2 text-white/70 hover:text-white">
                     <span class="material-symbols-outlined text-xl">close</span>
                 </button>
+                <button id="btn-delete-selected" onclick="deleteSelected()"
+                    class="hidden px-5 py-2 bg-danger text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg active:scale-95 transition-all">Delete
+                    All</button>
                 <button id="btn-paste-action" onclick="pasteFiles()"
-                    class="px-5 py-2 bg-white text-primary rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg">Paste
+                    class="px-5 py-2 bg-white text-primary rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg active:scale-95 transition-all">Paste
                     All</button>
             </div>
         </div>
@@ -209,12 +242,13 @@
 
         // State
         let activePane = 'remote'; // 'remote' or 'local'
-        let currentRemotePath = '';
-        let currentLocalPath = '';
+        let currentRemotePath = '.';
+        let currentLocalPath = '.';
         let showHidden = false;
+        let selectionMode = false;
 
-        // Clipboard for Copy-Paste
-        let clipboard = []; // Array of { remotePath, name }
+        // Clipboard for Copy-Paste / Selection
+        let clipboard = []; // Array of { path, name, isFolder, pane }
 
         // UI Elements
         const rList = document.getElementById('remote-list');
@@ -224,6 +258,7 @@
         const bc = document.getElementById('breadcrumb-path');
         const loader = document.getElementById('sync-overlay');
         const hBtn = document.getElementById('toggle-hidden-btn');
+        const sBtn = document.getElementById('toggle-select-mode');
         const paneInd = document.getElementById('pane-selection-indicator');
 
         // Modal Elements
@@ -246,21 +281,21 @@
             const iLoc = document.getElementById('local-indicator');
 
             if (pane === 'remote') {
-                tRem.classList.remove('text-slate-400'); tRem.classList.add('text-primary');
+                tRem.classList.remove('text-slate-400', 'text-slate-500'); tRem.classList.add('text-primary');
                 tLoc.classList.remove('text-primary'); tLoc.classList.add('text-slate-400');
                 iRem.classList.remove('hidden'); iLoc.classList.add('hidden');
                 rPane.classList.remove('hidden'); lPane.classList.add('hidden');
                 paneInd.innerText = 'Remote View';
                 renderBreadcrumbs(currentRemotePath);
             } else {
-                tLoc.classList.remove('text-slate-400'); tLoc.classList.add('text-primary');
+                tLoc.classList.remove('text-slate-400', 'text-slate-500'); tLoc.classList.add('text-primary');
                 tRem.classList.remove('text-primary'); tRem.classList.add('text-slate-400');
                 iLoc.classList.remove('hidden'); iRem.classList.add('hidden');
                 lPane.classList.remove('hidden'); rPane.classList.add('hidden');
                 paneInd.innerText = 'Local View';
                 renderBreadcrumbs(currentLocalPath);
-                updatePasteBarVisibility();
             }
+            updatePasteBarVisibility();
         }
 
         /**
@@ -303,17 +338,15 @@
                 const fullPath = (path === '/' || path === '.') ? `${path === '/' ? '' : path}/${entry.Name}` : `${path}/${entry.Name}`;
                 const normalizedPath = fullPath.replace('//', '/');
 
-                // Check if selected
-                const isSelected = type === 'remote' && clipboard.some(f => f.remotePath === normalizedPath);
+                const isSelected = clipboard.some(f => f.path === normalizedPath && f.pane === type);
 
-                item.className = `flex items-center gap-4 px-4 py-3 hover:bg-white/5 cursor-pointer border-b border-white/5 group transition-colors ${isSelected ? 'bg-primary/5' : ''}`;
+                item.className = `flex items-center gap-4 px-4 py-3 hover:bg-white/5 cursor-pointer border-b border-white/5 group transition-colors ${isSelected ? 'bg-primary/10 ring-1 ring-inset ring-primary/30 shadow-sm' : ''}`;
                 const icon = Utils.getFileIcon(entry.Name, entry.IsFolder);
                 const color = Utils.getColorClass(entry.Name, entry.IsFolder);
 
                 item.innerHTML = `
                     <div class="size-11 rounded-xl flex items-center justify-center ${color} shadow-sm relative">
-                        <span class="material-symbols-outlined">${icon}</span>
-                        ${isSelected ? '<div class="absolute -top-1 -right-1 size-5 bg-primary rounded-full flex items-center justify-center border-2 border-background-dark"><span class="material-symbols-outlined text-[12px] text-white font-black">check</span></div>' : ''}
+                        <span class="material-symbols-outlined">${isSelected ? 'check_circle' : icon}</span>
                     </div>
                     <div class="flex flex-col flex-1 overflow-hidden">
                         <span class="text-sm font-bold truncate ${isSelected ? 'text-primary' : 'text-white'}">${entry.Name}</span>
@@ -323,30 +356,29 @@
                 `;
 
                 item.onclick = () => {
-                    if (entry.IsFolder) {
-                        if (type === 'remote') {
-                            currentRemotePath = normalizedPath;
-                            fetchFiles('remote', currentRemotePath);
-                        } else {
-                            currentLocalPath = normalizedPath;
-                            fetchFiles('local', currentLocalPath);
-                        }
+                    if (selectionMode) {
+                        toggleSelection(normalizedPath, entry.Name, entry.IsFolder, type);
                     } else {
-                        if (type === 'remote') {
-                            // For remote files, a click now toggles selection for copy
-                            toggleClipboardSelection(normalizedPath, entry.Name);
+                        if (entry.IsFolder) {
+                            if (type === 'remote') {
+                                currentRemotePath = normalizedPath;
+                                fetchFiles('remote', currentRemotePath);
+                            } else {
+                                currentLocalPath = normalizedPath;
+                                fetchFiles('local', currentLocalPath);
+                            }
                         } else {
-                            Components.showToast(`Opening ${entry.Name}`);
+                            previewFile(normalizedPath, entry.Name, type === 'remote');
                         }
                     }
                 };
-                // Add a long-press or right-click for options modal for remote files
-                if (type === 'remote' && !entry.IsFolder) {
-                    item.oncontextmenu = (e) => {
-                        e.preventDefault();
-                        openFileOptions(entry, normalizedPath);
-                    };
-                }
+
+                item.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    if (type === 'remote') openRemoteOptions(entry, normalizedPath);
+                    else openLocalOptions(entry, normalizedPath);
+                };
+
                 container.appendChild(item);
             });
 
@@ -363,7 +395,7 @@
             root.innerText = isLocal ? "Local" : "Remote";
             root.onclick = () => {
                 if (isLocal) { currentLocalPath = '.'; fetchFiles('local', '.'); }
-                else { currentRemotePath = ''; fetchFiles('remote', ''); }
+                else { currentRemotePath = '.'; fetchFiles('remote', '.'); }
             };
             bc.appendChild(root);
 
@@ -388,23 +420,102 @@
         }
 
         /**
+         * Selection Mode
+         */
+        function toggleSelectionMode() {
+            selectionMode = !selectionMode;
+            sBtn.classList.toggle('bg-primary', selectionMode);
+            sBtn.classList.toggle('text-white', selectionMode);
+            sBtn.classList.toggle('text-slate-400', !selectionMode);
+            sBtn.querySelector('span').innerText = selectionMode ? 'done_all' : 'rule';
+            updatePasteBarVisibility();
+            refreshCurrent();
+        }
+
+        function toggleSelection(path, name, isFolder, pane) {
+            const index = clipboard.findIndex(f => f.path === path && f.pane === pane);
+            if (index > -1) {
+                clipboard.splice(index, 1);
+            } else {
+                if (clipboard.length > 0 && clipboard[0].pane !== pane) clipboard = [];
+                clipboard.push({ path, name, isFolder, pane });
+            }
+            updatePasteBarVisibility();
+            refreshCurrent();
+        }
+
+        function clearClipboard() {
+            clipboard = [];
+            updatePasteBarVisibility();
+            refreshCurrent();
+        }
+
+        function updatePasteBarVisibility() {
+            const hasSelection = clipboard.length > 0;
+            const pb = document.getElementById('paste-bar');
+            const btnPaste = document.getElementById('btn-paste-action');
+            const btnDelete = document.getElementById('btn-delete-selected');
+            const msg = document.getElementById('paste-message');
+            const info = document.getElementById('paste-info');
+
+            if (hasSelection) {
+                pb.classList.remove('hidden');
+                setTimeout(() => pb.classList.add('opacity-100', 'translate-y-0'), 10);
+
+                const selectedPane = clipboard[0].pane;
+                info.innerText = clipboard.length === 1 ? clipboard[0].name : `${clipboard.length} items`;
+
+                if (selectionMode) {
+                    btnDelete.classList.remove('hidden');
+                    btnPaste.classList.add('hidden');
+                    msg.innerText = "Items Selected";
+                } else {
+                    btnDelete.classList.add('hidden');
+                    if (selectedPane !== activePane) {
+                        btnPaste.classList.remove('hidden');
+                        msg.innerText = `Ready to ${selectedPane === 'remote' ? 'Copy' : 'Upload'}`;
+                    } else {
+                        btnPaste.classList.add('hidden');
+                        msg.innerText = "Items in Clipboard";
+                    }
+                }
+            } else {
+                pb.classList.remove('opacity-100', 'translate-y-0');
+                setTimeout(() => { if (clipboard.length === 0) pb.classList.add('hidden'); }, 300);
+            }
+        }
+
+        /**
          * File Actions Logic
          */
-        function openFileOptions(entry, path) {
+        function openRemoteOptions(entry, path) {
             document.getElementById('options-filename').innerText = entry.Name;
+            document.getElementById('options-type').innerText = "Remote " + (entry.IsFolder ? "Folder" : "File") + " Actions";
             optModal.classList.remove('hidden');
             setTimeout(() => {
                 optContent.classList.remove('scale-95', 'opacity-0');
                 optContent.classList.add('scale-100', 'opacity-100');
             }, 10);
 
-            // Bind Actions
-            document.getElementById('btn-preview').onclick = () => { closeOptionsModal(); previewFile(path, entry.Name); };
-            document.getElementById('btn-copy').onclick = () => { closeOptionsModal(); toggleClipboardSelection(path, entry.Name); };
-            document.getElementById('btn-download').onclick = () => {
-                closeOptionsModal();
-                window.open(`/api/ftp/server/get-file?path=${encodeURIComponent(path)}`, '_blank');
-            };
+            document.getElementById('btn-preview').classList.toggle('hidden', entry.IsFolder);
+            document.getElementById('btn-preview').onclick = () => { closeOptionsModal(); previewFile(path, entry.Name, true); };
+            document.getElementById('btn-copy').onclick = () => { closeOptionsModal(); toggleSelection(path, entry.Name, entry.IsFolder, 'remote'); };
+            document.getElementById('btn-delete').onclick = () => { closeOptionsModal(); confirmDelete(path, entry.Name, true); };
+        }
+
+        function openLocalOptions(entry, path) {
+            document.getElementById('options-filename').innerText = entry.Name;
+            document.getElementById('options-type').innerText = "Local " + (entry.IsFolder ? "Folder" : "File") + " Actions";
+            optModal.classList.remove('hidden');
+            setTimeout(() => {
+                optContent.classList.remove('scale-95', 'opacity-0');
+                optContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+
+            document.getElementById('btn-preview').classList.toggle('hidden', entry.IsFolder);
+            document.getElementById('btn-preview').onclick = () => { closeOptionsModal(); previewFile(path, entry.Name, false); };
+            document.getElementById('btn-copy').onclick = () => { closeOptionsModal(); toggleSelection(path, entry.Name, entry.IsFolder, 'local'); };
+            document.getElementById('btn-delete').onclick = () => { closeOptionsModal(); confirmDelete(path, entry.Name, false); };
         }
 
         function closeOptionsModal() {
@@ -414,42 +525,132 @@
         }
 
         /**
+         * Deletion Logic
+         */
+        function confirmDelete(path, name, isRemote) {
+            Components.openGuiModal({
+                title: 'Delete Item?',
+                message: `Are you sure you want to delete ${name}? This action cannot be undone.`,
+                icon: 'delete_forever',
+                type: 'danger',
+                primaryText: 'Delete',
+                onPrimary: () => performDelete(path, isRemote)
+            });
+        }
+
+        async function performDelete(path, isRemote) {
+            loader.classList.remove('hidden');
+            try {
+                const params = new URLSearchParams();
+                if (isRemote) params.append('remote_path', path);
+                else params.append('local_path', path);
+
+                const res = await fetch('/api/ftp/client/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params.toString()
+                });
+                if (!res.ok) throw new Error(await res.text());
+                Components.showToast('Item deleted');
+                refreshCurrent();
+            } catch (e) {
+                Components.showToast(e.message, 'error');
+            } finally {
+                loader.classList.add('hidden');
+            }
+        }
+
+        async function deleteSelected() {
+            Components.openGuiModal({
+                title: 'Delete Selected?',
+                message: `Are you sure you want to delete ${clipboard.length} items?`,
+                icon: 'delete_sweep',
+                type: 'danger',
+                primaryText: 'Delete All',
+                onPrimary: async () => {
+                    loader.classList.remove('hidden');
+                    const isRemote = clipboard[0].pane === 'remote';
+                    try {
+                        for (const item of clipboard) {
+                            const params = new URLSearchParams();
+                            if (isRemote) params.append('remote_path', item.path);
+                            else params.append('local_path', item.path);
+                            await fetch('/api/ftp/client/delete', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                body: params.toString()
+                            });
+                        }
+                        Components.showToast('Selected items deleted');
+                        clearClipboard();
+                        refreshCurrent();
+                    } catch (e) {
+                        Components.showToast(e.message, 'error');
+                    } finally {
+                        loader.classList.add('hidden');
+                    }
+                }
+            });
+        }
+
+        /**
          * Preview Logic
          */
-        async function previewFile(path, name) {
+        async function previewFile(path, name, isRemote = true) {
             document.getElementById('preview-filename').innerText = name;
             prevModal.classList.remove('hidden');
-            prevContainer.innerHTML = `
-                <div class="flex flex-col items-center gap-4">
-                    <div class="animate-spin size-10 border-4 border-primary border-t-transparent rounded-full"></div>
-                    <p class="text-xs font-black text-primary uppercase tracking-widest">Fetching Content...</p>
-                </div>
-            `;
+            prevContainer.innerHTML = `<div class="animate-spin size-10 border-4 border-primary border-t-transparent rounded-full"></div>`;
 
             const ext = name.split('.').pop().toLowerCase();
-            const previewUrl = `/api/ftp/server/get-file?path=${encodeURIComponent(path)}`;
+            const previewUrl = isRemote ? `/api/ftp/server/get-file?path=${encodeURIComponent(path)}` : null;
+
+            if (!isRemote || !['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'txt', 'log', 'js', 'html', 'css', 'json', 'py', 'go', 'md', 'mp4', 'webm'].includes(ext)) {
+                showUnsupportedPreview(name, path, isRemote);
+                return;
+            }
 
             try {
-                if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) {
-                    prevContainer.innerHTML = `<img src="${previewUrl}" class="max-w-full max-h-full object-contain shadow-2xl rounded-xl ring-1 ring-white/10 animate-fade-in">`;
-                } else if (['mp4', 'webm', 'ogg'].includes(ext)) {
-                    prevContainer.innerHTML = `<video controls autoplay class="max-w-full max-h-full rounded-xl shadow-2xl animate-fade-in"><source src="${previewUrl}" type="video/${ext === 'mp4' ? 'mp4' : 'webm'}"></video>`;
-                } else if (['pdf'].includes(ext)) {
-                    prevContainer.innerHTML = `<iframe src="${previewUrl}" class="w-full h-full border-0 rounded-xl bg-slate-900 animate-fade-in"></iframe>`;
-                } else if (['txt', 'log', 'js', 'html', 'css', 'json', 'py', 'go', 'java', 'md'].includes(ext)) {
-                    const res = await fetch(previewUrl);
-                    if (res.ok) {
-                        const text = await res.text();
-                        prevContainer.innerHTML = `<pre class="w-full h-full p-6 text-[11px] font-mono text-slate-300 overflow-auto whitespace-pre-wrap selection:bg-primary/30 leading-relaxed bg-black/30 rounded-xl animate-fade-in">${Utils.escapeHtml(text)}</pre>`;
-                    } else {
-                        throw new Error('Could not load text content');
-                    }
+                if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+                    prevContainer.innerHTML = `<img src="${previewUrl}" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl">`;
+                } else if (['mp4', 'webm'].includes(ext)) {
+                    prevContainer.innerHTML = `<video controls autoplay class="max-w-full max-h-full rounded-lg shadow-2xl"><source src="${previewUrl}"></video>`;
+                } else if (ext === 'pdf') {
+                    prevContainer.innerHTML = `<iframe src="${previewUrl}" class="w-full h-full border-0 bg-white rounded-lg shadow-inner"></iframe>`;
                 } else {
-                    prevContainer.innerHTML = `<div class="text-center p-8 bg-white/5 rounded-3xl border border-white/5"><span class="material-symbols-outlined text-4xl text-slate-600 mb-2">no_photography</span><p class="text-slate-500 italic text-sm">Preview not available for this file type.</p></div>`;
+                    const res = await fetch(previewUrl);
+                    const text = await res.text();
+                    prevContainer.innerHTML = `<pre class="w-full h-full p-6 text-[11px] font-mono text-slate-300 overflow-auto whitespace-pre-wrap bg-black/30 rounded-lg selection:bg-primary/20 leading-relaxed">${Utils.escapeHtml(text)}</pre>`;
                 }
             } catch (e) {
-                prevContainer.innerHTML = `<div class="text-center text-danger p-8"><span class="material-symbols-outlined text-4xl mb-2">error</span><p class="font-bold text-sm">Error loading preview</p><p class="text-[10px] uppercase mt-1 opacity-50">${e.message}</p></div>`;
+                showUnsupportedPreview(name, path, isRemote, true);
             }
+        }
+
+        function showUnsupportedPreview(name, path, isRemote, error = false) {
+            prevContainer.innerHTML = `
+                <div class="flex flex-col items-center gap-6 p-8 text-center max-w-xs transition-all animate-fade-in">
+                    <div class="size-20 rounded-[2rem] bg-white/5 border border-white/10 flex items-center justify-center text-slate-500 shadow-inner">
+                        <span class="material-symbols-outlined text-[40px]">${error ? 'error' : 'visibility_off'}</span>
+                    </div>
+                    <div class="space-y-2">
+                        <h3 class="text-lg font-bold text-white">${error ? 'Load Error' : 'No Preview Available'}</h3>
+                        <p class="text-xs text-slate-500 leading-relaxed font-medium">
+                            ${error ? 'Failed to fetch file content.' : 'This file type is not supported for instant preview.'}<br>
+                            ${isRemote ? 'Copy it to local storage to open with external apps.' : 'Open this file using your system\'s file manager.'}
+                        </p>
+                    </div>
+                    ${isRemote ? `
+                        <button onclick="closePreviewModal(); toggleSelection('${path}', '${name}', false, 'remote'); switchPane('local');" class="w-full h-14 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/20 active:scale-95 transition-all flex items-center justify-center gap-2">
+                            <span class="material-symbols-outlined text-sm">content_copy</span>
+                            Add to Selection
+                        </button>
+                    ` : `
+                        <button onclick="closePreviewModal()" class="w-full h-14 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-xs uppercase tracking-widest active:scale-95 transition-all">
+                            Got it
+                        </button>
+                    `}
+                </div>
+            `;
         }
 
         function closePreviewModal() {
@@ -465,78 +666,30 @@
         };
 
         /**
-         * Copy-Paste Logic (Multiple Files)
+         * Paste / Upload Logic
          */
-        function toggleClipboardSelection(path, name) {
-            const index = clipboard.findIndex(f => f.remotePath === path);
-            if (index > -1) {
-                clipboard.splice(index, 1); // Remove from clipboard
-                Components.showToast(`Removed from clipboard: ${name}`);
-            } else {
-                clipboard.push({ remotePath: path, name: name }); // Add to clipboard
-                Components.showToast(`Added to clipboard: ${name}`);
-            }
-            updatePasteBarVisibility();
-            // Re-render remote list to update check icons
-            if (activePane === 'remote') fetchFiles('remote', currentRemotePath);
-        }
-
-        function clearClipboard() {
-            clipboard = [];
-            updatePasteBarVisibility();
-            if (activePane === 'remote') fetchFiles('remote', currentRemotePath);
-        }
-
-        function updatePasteBarVisibility() {
-            if (clipboard.length > 0 && activePane === 'local') {
-                document.getElementById('paste-info').innerText = clipboard.length === 1 ? clipboard[0].name : `${clipboard.length} files selected`;
-                pasteBar.classList.remove('hidden', 'opacity-0', 'translate-y-4');
-                pasteBar.classList.add('opacity-100', 'translate-y-0');
-            } else {
-                pasteBar.classList.add('opacity-0', 'translate-y-4');
-                setTimeout(() => { if (clipboard.length === 0 || activePane !== 'local') pasteBar.classList.add('hidden'); }, 300);
-            }
-        }
-
         async function pasteFiles() {
             if (clipboard.length === 0) return;
-
+            const isRemoteToLocal = clipboard[0].pane === 'remote';
             loader.classList.remove('hidden');
-            let successCount = 0;
-            let lastError = null;
 
             try {
-                for (const file of clipboard) {
-                    const targetLocalPath = (currentLocalPath === '.' ? '' : currentLocalPath) + '/' + file.name;
-                    const normalizedLocalPath = targetLocalPath.replace('//', '/');
-
+                for (const item of clipboard) {
                     const params = new URLSearchParams();
-                    params.append('remote_path', file.remotePath);
-                    params.append('local_path', normalizedLocalPath);
+                    params.append('remote_path', item.path);
+                    params.append('local_path', currentLocalPath);
 
-                    const res = await fetch('/api/ftp/client/download', {
+                    const endpoint = isRemoteToLocal ? '/api/ftp/client/download' : '/api/ftp/client/upload';
+                    const res = await fetch(endpoint, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: params.toString()
                     });
-
-                    if (res.ok) {
-                        successCount++;
-                    } else {
-                        lastError = await res.text();
-                    }
+                    if (!res.ok) throw new Error(await res.text());
                 }
-
-                if (successCount > 0) {
-                    Components.showToast(`Successfully pasted ${successCount} files`);
-                    clipboard = []; // Clear clipboard on success
-                    updatePasteBarVisibility();
-                    fetchFiles('local', currentLocalPath);
-                }
-
-                if (lastError) {
-                    Components.showToast('Some files failed to transfer', 'error');
-                }
+                Components.showToast('Operation complete');
+                clearClipboard();
+                refreshCurrent();
             } catch (e) {
                 Components.showToast(e.message, 'error');
             } finally {
@@ -545,7 +698,7 @@
         }
 
         /**
-         * Controls
+         * Global Controls
          */
         function refreshCurrent() {
             if (activePane === 'remote') fetchFiles('remote', currentRemotePath);
@@ -559,7 +712,7 @@
             const isLocal = activePane === 'local';
             const newPath = isLocal ?
                 (parts.length === 0 ? '.' : './' + parts.join('/')) :
-                (parts.length === 0 ? '' : parts.join('/'));
+                (parts.length === 0 ? '.' : parts.join('/'));
 
             if (isLocal) { currentLocalPath = newPath; fetchFiles('local', newPath); }
             else { currentRemotePath = newPath; fetchFiles('remote', newPath); }
@@ -581,7 +734,7 @@
             if (server) {
                 document.getElementById('server-name').innerText = server.name;
                 document.getElementById('server-info').innerText = `${server.host}:${server.port}`;
-                fetchFiles('remote', '');
+                fetchFiles('remote', '.');
                 fetchFiles('local', '.');
             } else {
                 window.location.href = 'remote-connections.html';

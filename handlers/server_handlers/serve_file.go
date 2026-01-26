@@ -17,7 +17,7 @@ func HandleServeFile(w http.ResponseWriter, req *http.Request) {
 	}
 
 	path := req.URL.Query().Get("path")
-	fullPath, entry, err := config.GetCompletePath(c, path)
+	fullPath, entry, err := config.ResolveRemotePath(c, path)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
