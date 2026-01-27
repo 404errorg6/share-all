@@ -32,22 +32,22 @@ func Mux() *http.ServeMux {
 	//required query variables: path, returns the folder's entries in a list of FSObject, see ftp/config/config.go for FSObject
 	mux.HandleFunc("GET /api/ftp/server/ls", serverhandlers.HandleListDir) //list other server directory
 	//required query variables: path, returns the file at path
-	mux.HandleFunc("GET /api/ftp/server/get-file", serverhandlers.HandleServeFile) //get file from other server
+	mux.HandleFunc("GET /api/ftp/server/get-file", serverhandlers.HandleServeFile) //stream file for preview
 	//nothing required, returns a list of addresses of connected clients
 	mux.HandleFunc("GET /api/ftp/server/connected-clients", serverhandlers.HandleGetConnectedClients) //get clients connected to own server
 	//required Form variables: host, returns err or nothing
-	mux.HandleFunc("POST /api/ftp/server/disconnect-client", serverhandlers.BlockClient) //disconnect connected client
-	mux.HandleFunc("GET /api/ftp/server/blacklist-client", serverhandlers.HandlerGetBlacklist)
-	mux.HandleFunc("POST /api/ftp/server/blocklist-client", serverhandlers.BlockClient)
-	mux.HandleFunc("POST /api/ftp/server/whitelist-client", serverhandlers.WhitelistClient)
+	mux.HandleFunc("GET /api/ftp/server/blacklist-client", serverhandlers.HandlerGetBlacklist) //get list of blacklisted ips
+	mux.HandleFunc("POST /api/ftp/server/blacklist-client", serverhandlers.BlockClient)        //block a new ip
+	mux.HandleFunc("POST /api/ftp/server/whitelist-client", serverhandlers.WhitelistClient)    //whitelist a blocked ip
+
 	//FTP client Handles
 	//required Form variables: server_host, server_port, user, password, anonymous
-	mux.HandleFunc("POST /api/ftp/client/connect-to-server", clienthandlers.HandleConnectToServer) //connect to other server
+	mux.HandleFunc("POST /api/ftp/client/connect-to-server", clienthandlers.HandleConnectToServer) //connect to server
 	//Required query variables: path, return list of FSObject
-	mux.HandleFunc("GET /api/ftp/client/ls", clienthandlers.HandleGetLocalFolderEntries) //Get local folder info
-	mux.HandleFunc("GET /api/ftp/client/get-file", clienthandlers.HandleServeFile)
-	mux.HandleFunc("POST /api/ftp/client/download", clienthandlers.HandleDownload)
-	mux.HandleFunc("POST /api/ftp/client/upload", clienthandlers.HandleUploadFile)
-	mux.HandleFunc("POST /api/ftp/client/delete", clienthandlers.HandleDelete)
+	mux.HandleFunc("GET /api/ftp/client/ls", clienthandlers.HandleGetLocalFolderEntries) //Get local folder info, path required
+	mux.HandleFunc("GET /api/ftp/client/get-file", clienthandlers.HandleServeFile)       //stream file for preview, path required
+	mux.HandleFunc("POST /api/ftp/client/download", clienthandlers.HandleDownload)       //download from server, remote_path, local_path required
+	mux.HandleFunc("POST /api/ftp/client/upload", clienthandlers.HandleUpload)           //upload to server, remote_path, local_path required
+	mux.HandleFunc("POST /api/ftp/client/delete", clienthandlers.HandleDelete)           //delete from local, local_path required
 	return mux
 }

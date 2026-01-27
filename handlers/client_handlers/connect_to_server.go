@@ -43,7 +43,7 @@ func HandleConnectToServer(w http.ResponseWriter, req *http.Request) {
 	}
 
 	addr := host + ":" + port
-	err := client.AuthClient(addr, user, pass)
+	err := client.AuthClient(user, pass, addr)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return

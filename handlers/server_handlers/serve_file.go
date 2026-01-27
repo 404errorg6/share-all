@@ -16,18 +16,17 @@ func HandleServeFile(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	path := req.URL.Query().Get("path")
-	fullPath, entry, err := config.ResolveRemotePath(c, path)
+	remotePath := req.FormValue("remote_path")
+	fullPath, entry, err := config.ResolveRemotePath(c, remotePath)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	if entry.Type != ftp.EntryTypeFile {
-		err = fmt.Errorf("\"%v\" is not a file", path)
+		err = fmt.Errorf("\"%v\" is not a file", remotePath)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	fmt.Printf("Path: %v\n", fullPath)
 	http.ServeFile(w, req, fullPath)
 }

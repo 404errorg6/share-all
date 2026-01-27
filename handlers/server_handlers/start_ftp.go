@@ -3,7 +3,6 @@ package serverhandlers
 import (
 	"fmt"
 	"net/http"
-	"path/filepath"
 	"strconv"
 
 	"github.com/404errorg6/FTP-server/ftp/config"
@@ -40,25 +39,19 @@ func HandleStartFTP(w http.ResponseWriter, req *http.Request) {
 }
 
 func initServer(host, port, root, writeAllowed, anonymous string) error {
-	if root == "" {
-		root = config.DefRootDir
-	}
-
-	if !filepath.IsAbs(root) {
-		root = filepath.Join(config.DefRootDir, root)
-	}
+	root = config.ResolveLocalPath(root)
 
 	if !config.LocalFolderExists(root) {
 		err := fmt.Errorf("\"%v\" folder does not exist", root)
 		return err
 	}
 
-	if port == "" {
-		port = config.DefFTPPort
-	}
-
 	if host == "" {
 		host = config.DefFTPHost
+	}
+
+	if port == "" {
+		port = config.DefFTPPort
 	}
 
 	if anonymous == "" {

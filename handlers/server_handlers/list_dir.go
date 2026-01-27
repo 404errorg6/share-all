@@ -16,29 +16,29 @@ func HandleListDir(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	//Get entry at path
-	path := req.URL.Query().Get("path")
-	if path == "" {
-		path = "."
+	//Get entry at remotePath
+	remotePath := req.FormValue("remote_path")
+	if remotePath == "" {
+		remotePath = "."
 	}
 
-	entry, err := c.GetEntry(path)
+	entry, err := c.GetEntry(remotePath)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		config.LogsCh <- fmt.Sprintf("Error occured while reading \"%v\": %v", path, err)
+		config.LogsCh <- fmt.Sprintf("Error occured while reading \"%v\": %v", remotePath, err)
 		return
 	}
 
 	//Check if not folder
 	if entry.Type != ftp.EntryTypeFolder {
-		err := fmt.Errorf("Error: \"%v\" is not a directory", path)
+		err := fmt.Errorf("Error: \"%v\" is not a directory", remotePath)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		config.LogsCh <- err.Error()
 		return
 	}
 
 	//List directory
-	entries, err := c.List(path)
+	dir, err := c.List(remotePath)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		config.LogsCh <- err.Error()
@@ -46,10 +46,17 @@ func HandleListDir(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//Store and send in json
-	directory := []config.FSObject{} //Initialize to avoid null in json
-	for _, entry := range entries {
+	dirObj := getDirObj(dir)
+	config.SendJSON(w, dirObj)
+}
+
+func getDirObj(dir []*ftp.Entry) []config.FSObject {
+	dirObj := []config.FSObject{}
+	for _, entry := range dir {
 		e := config.FSObject{
-			Name: entry.Name,
+			Name:         entry.Name,
+			LastModified: entry.Time,
+			Size:         int(entry.Size),
 		}
 
 		if entry.Type == ftp.EntryTypeFolder {
@@ -58,8 +65,8 @@ func HandleListDir(w http.ResponseWriter, req *http.Request) {
 			e.IsFolder = false
 		}
 
-		directory = append(directory, e)
+		dirObj = append(dirObj, e)
 	}
 
-	config.SendJSON(w, directory)
+	return dirObj
 }

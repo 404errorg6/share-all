@@ -1,6 +1,7 @@
 package clienthandlers
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -16,32 +17,39 @@ func HandleDownload(w http.ResponseWriter, req *http.Request) {
 	localPath := req.FormValue("local_path")
 	remotePath := req.FormValue("remote_path")
 
-	if remotePath == "" || localPath == "" {
-		http.Error(w, "remote_path/local_path are required", http.StatusBadRequest)
-		return
-	}
-
-	localPath = config.ResolveLocalPath(localPath)
 	c, err := client.GetClient()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
 
-	if config.RemoteFolderExists(remotePath, c) {
-		isFolder = true
+	if remotePath == "" || localPath == "" {
+		http.Error(w, "remote_path/local_path are required", http.StatusBadRequest)
+		return
 	}
 
-	if !isFolder {
-		err := downloadFile(localPath, remotePath, c)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+	localPath = config.ResolveLocalPath(localPath)
+	remotePath, remoteEntry, err := config.ResolveRemotePath(c, remotePath)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if remoteEntry.Type == ftp.EntryTypeFolder {
+		isFolder = true
+	} else {
+		isFolder = false
 	}
 
 	if isFolder {
 		err := downloadDir(localPath, remotePath, c)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+	} else {
+		err := downloadFile(localPath, remotePath, c)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -51,11 +59,20 @@ func HandleDownload(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func downloadDir(localPath, remotePath string, c *ftp.ServerConn) error {
-	dirName := filepath.Base(remotePath)
-	updatedLocalPath := filepath.Join(localPath, dirName) //Add remote dir
+func downloadDir(localDirPath, remoteDirPath string, c *ftp.ServerConn) error {
+	dirName := filepath.Base(remoteDirPath)
+	localDirPath = config.ResolveLocalPath(localDirPath)
+	updatedLocalPath := filepath.Join(localDirPath, dirName)
+	remoteDirPath, remoteEntry, err := config.ResolveRemotePath(c, remoteDirPath)
+	if err != nil {
+		return err
+	}
 
-	remoteDir, err := c.List(remotePath)
+	if remoteEntry.Type != ftp.EntryTypeFolder {
+		return fmt.Errorf("\"%v\" is a file, not a remote directory", remoteDirPath)
+	}
+
+	remoteDir, err := c.List(remoteDirPath)
 	if err != nil {
 		return err
 	}
@@ -63,7 +80,7 @@ func downloadDir(localPath, remotePath string, c *ftp.ServerConn) error {
 	for _, e := range remoteDir {
 
 		if e.Type == ftp.EntryTypeFile { //Download files
-			remoteFilePath := filepath.Join(remotePath, e.Name)
+			remoteFilePath := filepath.Join(remoteDirPath, e.Name)
 			err := downloadFile(updatedLocalPath, remoteFilePath, c)
 			if err != nil {
 				return err
@@ -71,7 +88,7 @@ func downloadDir(localPath, remotePath string, c *ftp.ServerConn) error {
 		}
 
 		if e.Type == ftp.EntryTypeFolder { //Download folders
-			newRemotePath := filepath.Join(remotePath, e.Name)
+			newRemotePath := filepath.Join(remoteDirPath, e.Name)
 			err := downloadDir(updatedLocalPath, newRemotePath, c)
 			if err != nil {
 				return err
@@ -83,10 +100,17 @@ func downloadDir(localPath, remotePath string, c *ftp.ServerConn) error {
 }
 
 func downloadFile(localDirPath, remoteFilePath string, c *ftp.ServerConn) error { //Downloads remote file at remoteFilePath to local storage in localDirPath
-	fileName := filepath.Base(remoteFilePath)
-	remoteFile, err := c.Retr(remoteFilePath)
+	localDirPath = config.ResolveLocalPath(localDirPath)
+	remoteFilePath, remoteEntry, err := config.ResolveRemotePath(c, remoteFilePath)
 	if err != nil {
 		return err
+	}
+
+	fileName := filepath.Base(remoteFilePath)
+	filePath := filepath.Join(localDirPath, fileName)
+
+	if remoteEntry.Type == ftp.EntryTypeFolder {
+		return fmt.Errorf("\"%v\" is a directory, not a remote file", remoteFilePath)
 	}
 
 	err = os.MkdirAll(localDirPath, os.ModeDir)
@@ -94,11 +118,16 @@ func downloadFile(localDirPath, remoteFilePath string, c *ftp.ServerConn) error 
 		return err
 	}
 
-	localFile, err := os.Create(filepath.Join(localDirPath, fileName))
+	localFile, err := os.Create(filePath)
 	if err != nil {
 		return err
 	}
 	defer localFile.Close()
+
+	remoteFile, err := c.Retr(remoteFilePath)
+	if err != nil {
+		return err
+	}
 
 	_, err = io.Copy(localFile, remoteFile)
 	if err != nil {
