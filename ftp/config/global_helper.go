@@ -12,34 +12,34 @@ import (
 	"github.com/jlaffaye/ftp"
 )
 
-func ResolveRemotePath(c *ftp.ServerConn, path string) (string, *ftp.Entry, error) {
-	if path == "" {
+func ResolveRemotePath(c *ftp.ServerConn, remotePath string) (string, *ftp.Entry, error) {
+	if remotePath == "" {
 		return ".", nil, nil
 	}
 
 	//Check if file/folder is within accessible range
-	entry, err := c.GetEntry(path) //Get from client's accessible filesystem
+	entry, err := c.GetEntry(remotePath) //Get from client's accessible filesystem
 	if err != nil {
 		return "", nil, err
 	}
 
 	//File/folder is safe to send now
-	if !filepath.IsAbs(path) {
-		path = filepath.Join(Server.RootDir, path)
+	if !filepath.IsAbs(remotePath) {
+		remotePath = filepath.Join(Server.RootDir, remotePath)
 	}
-	return path, entry, nil
+	return remotePath, entry, nil
 }
 
-func ResolveLocalPath(path string) string {
-	if path == "" {
-		return DefRootDir
+func ResolveLocalPath(localPath string) string {
+	if localPath == "" {
+		return DefLocalDir
 	}
 
-	if filepath.IsAbs(path) {
-		return filepath.Clean(path)
+	if filepath.IsAbs(localPath) {
+		return filepath.Clean(localPath)
 	}
 
-	return filepath.Join(DefRootDir, path)
+	return filepath.Join(DefLocalDir, localPath)
 }
 
 func GetHostPort(addr string) (string, string, error) {
@@ -64,8 +64,8 @@ func SendJSON(w http.ResponseWriter, data any) {
 	w.WriteHeader(200)
 }
 
-func RemoteFolderExists(path string, c *ftp.ServerConn) bool {
-	info, err := c.GetEntry(path)
+func RemoteFolderExists(remotePath string, c *ftp.ServerConn) bool {
+	info, err := c.GetEntry(remotePath)
 	if err != nil {
 		return false
 	}
@@ -77,8 +77,8 @@ func RemoteFolderExists(path string, c *ftp.ServerConn) bool {
 	return false
 }
 
-func LocalFolderExists(path string) bool {
-	info, err := os.Stat(path)
+func LocalFolderExists(localPath string) bool {
+	info, err := os.Stat(localPath)
 	if err != nil {
 		if os.IsExist(err) {
 			return true

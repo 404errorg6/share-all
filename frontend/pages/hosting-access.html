@@ -141,7 +141,7 @@
                 primaryText: 'Block & Terminate',
                 onPrimary: async () => {
                     const params = new URLSearchParams({ host });
-                    const res = await fetch('/api/ftp/server/blocklist-client', { method: 'POST', body: params });
+                    const res = await fetch('/api/ftp/server/blacklist-client', { method: 'POST', body: params });
                     if (res.ok) { Components.showToast(`IP ${host} blocked`); fetchSecurityState(); }
                 }
             });

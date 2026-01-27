@@ -3,21 +3,15 @@ package clienthandlers
 import (
 	"net/http"
 	"os"
-	"path/filepath"
 
 	"github.com/404errorg6/FTP-server/ftp/config"
 )
 
 func HandleGetLocalFolderEntries(w http.ResponseWriter, req *http.Request) {
-	path := req.URL.Query().Get("path")
-	path = config.ResolveLocalPath(path)
+	localPath := req.FormValue("local_path")
+	localPath = config.ResolveLocalPath(localPath)
 
-	fullPath, err := filepath.Abs(path)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
+	fullPath := config.ResolveLocalPath(localPath)
 	dir, err := os.ReadDir(fullPath)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
