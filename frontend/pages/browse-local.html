@@ -55,7 +55,7 @@
 <body
     class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased overflow-x-hidden">
     <div
-        class="relative flex min-h-screen w-full flex-col max-w-md mx-auto shadow-2xl bg-background-light dark:bg-background-dark">
+        class="relative flex min-h-screen w-full flex-col max-w-6xl mx-auto shadow-2xl bg-background-light dark:bg-background-dark md:my-8 md:rounded-[2rem] overflow-hidden">
         <!-- Header -->
         <header
             class="sticky top-0 z-20 bg-background-light dark:bg-background-dark/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
@@ -67,10 +67,6 @@
                     </button>
                     <h2 class="text-xl font-bold leading-tight tracking-tight">Local Storage</h2>
                 </div>
-                <button
-                    class="flex size-10 items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                    <span class="material-symbols-outlined">search</span>
-                </button>
             </div>
         </header>
 
@@ -104,6 +100,11 @@
                 <span class="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Select</span>
             </button>
             <p id="file-count" class="text-xs text-slate-500 font-bold uppercase tracking-widest ml-2">0 items</p>
+            <button id="select-folder-btn"
+                class="hidden flex items-center justify-center gap-1.5 px-3 h-9 rounded-lg bg-success text-white font-bold ml-2 transition-all active:scale-95">
+                <span class="material-symbols-outlined text-[18px]">check_circle</span>
+                <span class="text-[10px] uppercase tracking-widest">Select Folder</span>
+            </button>
         </div>
 
         <main class="flex-1 flex flex-col pb-24 relative" id="local-file-list">
@@ -117,7 +118,8 @@
                     Browse Folders
                 </button>
             </div>
-            <div id="file-list-container" class="hidden flex-col"></div>
+            <div id="file-list-container"
+                class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4"></div>
 
             <!-- Loading Indicator Overlay -->
             <div id="sync-overlay"
@@ -233,7 +235,7 @@
             currentPath = path;
             loader.classList.remove('hidden');
             try {
-                const response = await fetch(`/api/ftp/client/ls?path=${encodeURIComponent(path)}`);
+                const response = await fetch(`/api/ftp/client/ls?local_path=${encodeURIComponent(path)}`);
                 if (!response.ok) throw new Error('Failed to load path');
                 const entries = await response.json();
                 renderEntries(entries, path);
@@ -258,22 +260,36 @@
                 const isSelected = selection.some(s => s.path === normalizedPath);
 
                 const item = document.createElement('div');
-                item.className = `flex items-center gap-3 px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-800/50 cursor-pointer border-b border-slate-100 dark:border-slate-800/50 group transition-all ${isSelected ? 'bg-primary/10 ring-1 ring-inset ring-primary/30' : ''}`;
+                item.className = `flex flex-col gap-3 p-4 bg-white dark:bg-slate-800/40 rounded-2xl hover:bg-primary/5 dark:hover:bg-primary/10 cursor-pointer border border-slate-100 dark:border-white/5 shadow-sm transition-all hover:shadow-md active:scale-[0.98] group relative ${isSelected ? 'ring-2 ring-primary border-primary bg-primary/5' : ''}`;
                 const icon = Utils.getFileIcon(entry.Name, entry.IsFolder);
                 const color = Utils.getColorClass(entry.Name, entry.IsFolder);
 
                 item.innerHTML = `
-                    <div class="flex items-center justify-center rounded-xl size-11 ${color} shadow-sm relative">
-                        <span class="material-symbols-outlined">${isSelected ? 'check_circle' : icon}</span>
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center justify-center rounded-xl size-12 ${color} shadow-sm group-hover:scale-110 transition-transform">
+                            <span class="material-symbols-outlined text-2xl">${isSelected ? 'check_circle' : icon}</span>
+                        </div>
+                        <div class="flex flex-col flex-1 overflow-hidden">
+                            <p class="text-sm font-bold truncate ${isSelected ? 'text-primary' : 'text-slate-900 dark:text-gray-100'}">${entry.Name}</p>
+                            <p class="text-[10px] text-slate-500 font-medium uppercase">${entry.IsFolder ? 'Folder' : Utils.formatFileSize(entry.Size)}</p>
+                        </div>
+                        <button class="size-8 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity">
+                             <span class="material-symbols-outlined text-xl">more_vert</span>
+                        </button>
                     </div>
-                    <div class="flex flex-col flex-1 overflow-hidden">
-                        <p class="text-sm font-bold truncate ${isSelected ? 'text-primary' : 'text-slate-900 dark:text-gray-100'}">${entry.Name}</p>
-                        <p class="text-[10px] text-slate-500 font-medium uppercase">${entry.IsFolder ? 'Folder' : Utils.formatFileSize(entry.Size)} • ${Utils.formatDate(entry.LastModified)}</p>
+                    <div class="mt-auto pt-2 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
+                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">${Utils.formatDate(entry.LastModified)}</p>
+                        ${entry.IsFolder ? '<span class="material-symbols-outlined text-primary text-sm">folder_open</span>' : ''}
                     </div>
-                    <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">chevron_right</span>
                 `;
 
-                item.onclick = () => {
+                // Re-wire click to handle the inner button vs card click
+                item.onclick = (e) => {
+                    const btn = e.target.closest('button');
+                    if (btn) {
+                        openOptions(entry, normalizedPath);
+                        return;
+                    }
                     if (selectionMode) {
                         toggleSelection(normalizedPath, entry.Name, entry.IsFolder);
                     } else {
@@ -466,6 +482,18 @@
 
         // Auto-load root on start
         document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const isSelectMode = urlParams.get('selectMode') === 'true';
+
+            if (isSelectMode) {
+                const selectBtn = document.getElementById('select-folder-btn');
+                selectBtn.classList.remove('hidden');
+                selectBtn.onclick = () => {
+                    localStorage.setItem('selectedFolderPath', currentPath);
+                    window.location.href = 'hosting-panel.html';
+                };
+            }
+
             loadDirectory('.');
         });
     </script>

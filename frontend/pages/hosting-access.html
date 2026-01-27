@@ -25,7 +25,8 @@
 </head>
 
 <body class="bg-background-dark font-display text-slate-100 antialiased overflow-x-hidden">
-    <div class="relative flex min-h-screen w-full flex-col max-w-md mx-auto shadow-2xl bg-background-dark">
+    <div
+        class="relative flex min-h-screen w-full flex-col max-w-4xl mx-auto shadow-2xl bg-background-dark md:my-8 md:rounded-[2rem] overflow-hidden">
         <!-- Header -->
         <header class="sticky top-0 z-20 bg-background-dark/95 backdrop-blur-md border-b border-slate-800 p-4">
             <div class="flex items-center gap-3">
@@ -44,7 +45,7 @@
                     <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest">Active Sessions</h2>
                     <span id="active-count" class="section-badge bg-green-500/10 text-green-500">0 Live</span>
                 </div>
-                <div id="clients-list" class="flex flex-col gap-3"></div>
+                <div id="clients-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
             </section>
 
             <!-- BLACKLIST -->
@@ -53,7 +54,7 @@
                     <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest">Blacklisted IPs</h2>
                     <span id="blocked-count" class="section-badge bg-red-500/10 text-red-500 font-bold">0 Blocked</span>
                 </div>
-                <div id="blacklist-list" class="flex flex-col gap-3"></div>
+                <div id="blacklist-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
             </section>
 
             <!-- Sync Loading -->
