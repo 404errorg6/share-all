@@ -52,7 +52,8 @@
 </head>
 
 <body class="bg-background-dark font-display text-slate-100 antialiased overflow-x-hidden">
-    <div class="relative flex min-h-screen w-full flex-col max-w-md mx-auto shadow-2xl bg-background-dark">
+    <div
+        class="relative flex min-h-screen w-full flex-col max-w-7xl mx-auto shadow-2xl bg-background-dark md:my-8 md:rounded-[2rem] overflow-hidden lg:h-[90dvh]">
         <!-- Header -->
         <header class="sticky top-0 z-20 bg-background-dark border-b border-slate-800">
             <div class="flex items-center p-4 pb-0 justify-between">
@@ -69,7 +70,7 @@
             </div>
 
             <!-- Context Tabs -->
-            <div class="flex border-b border-[#3b4c54] px-4 mt-4">
+            <div class="flex border-b border-[#3b4c54] px-4 mt-4 lg:hidden">
                 <button id="tab-remote" onclick="switchPane('remote')"
                     class="relative flex flex-col items-center justify-center pb-3 flex-1 transition-colors">
                     <p class="text-primary text-sm font-bold uppercase">Remote</p>
@@ -102,12 +103,12 @@
                     <span class="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Select</span>
                 </button>
                 <div id="pane-selection-indicator"
-                    class="bg-primary/10 text-primary px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+                    class="bg-primary/10 text-primary px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest lg:hidden">
                     Remote View</div>
             </div>
 
             <!-- Dynamic Breadcrumbs -->
-            <div class="flex items-center gap-2 bg-slate-900/50 px-4 py-3">
+            <div class="flex items-center gap-2 bg-slate-900/50 px-4 py-3 border-b border-white/5">
                 <button onclick="goUp()"
                     class="flex items-center justify-center size-9 rounded-lg hover:bg-slate-700 transition-colors shrink-0">
                     <span class="material-symbols-outlined text-[20px]">arrow_upward</span>
@@ -117,9 +118,13 @@
             </div>
         </header>
 
-        <main class="flex-1 flex flex-col pb-24 relative min-h-0">
+        <main class="flex-1 flex flex-col lg:flex-row pb-24 relative min-h-0 lg:pb-0">
             <!-- Remote Pane -->
-            <div id="remote-pane" class="flex-1 flex flex-col overflow-y-auto">
+            <div id="remote-pane" class="flex-1 flex flex-col overflow-y-auto lg:border-r lg:border-white/5 lg:!flex">
+                <div class="hidden lg:flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/5">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-primary">Remote Server</span>
+                    <span id="remote-count" class="text-[10px] text-slate-500 font-bold"></span>
+                </div>
                 <div id="remote-list" class="flex flex-col"></div>
                 <div id="remote-empty"
                     class="hidden flex flex-col items-center justify-center py-20 text-slate-400 text-center">
@@ -129,7 +134,11 @@
             </div>
 
             <!-- Local Pane -->
-            <div id="local-pane" class="hidden flex-1 flex flex-col overflow-y-auto">
+            <div id="local-pane" class="hidden flex-1 flex flex-col overflow-y-auto lg:!flex">
+                <div class="hidden lg:flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/5">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-success">Local Storage</span>
+                    <span id="local-count" class="text-[10px] text-slate-500 font-bold"></span>
+                </div>
                 <div id="local-list" class="flex flex-col"></div>
                 <div id="local-empty"
                     class="hidden flex flex-col items-center justify-center py-20 text-slate-400 text-center">
@@ -206,9 +215,8 @@
         </div>
     </div>
 
-    <!-- Floating Paste Bar -->
     <div id="paste-bar"
-        class="fixed bottom-24 left-1/2 -translate-x-1/2 z-30 hidden w-[calc(100%-48px)] max-w-sm transition-all duration-300">
+        class="fixed bottom-24 lg:bottom-8 left-1/2 -translate-x-1/2 z-30 hidden w-[calc(100%-48px)] max-w-sm transition-all duration-300">
         <div class="bg-primary shadow-2xl shadow-primary/30 rounded-2xl p-4 flex items-center justify-between">
             <div class="flex items-center gap-3 overflow-hidden">
                 <div class="size-9 bg-white/20 rounded-lg flex items-center justify-center text-white">
@@ -274,6 +282,11 @@
          * Pane Management
          */
         function switchPane(pane) {
+            if (window.innerWidth >= 1024) {
+                activePane = pane;
+                renderBreadcrumbs(activePane === 'remote' ? currentRemotePath : currentLocalPath);
+                return;
+            }
             activePane = pane;
 
             // Tab UI
@@ -305,9 +318,10 @@
          */
         async function fetchFiles(type, path) {
             const api = type === 'remote' ? '/api/ftp/server/ls' : '/api/ftp/client/ls';
+            const paramName = type === 'remote' ? 'remote_path' : 'local_path';
             loader.classList.remove('hidden');
             try {
-                const res = await fetch(`${api}?path=${encodeURIComponent(path)}`);
+                const res = await fetch(`${api}?${paramName}=${encodeURIComponent(path)}`);
                 if (!res.ok) throw new Error(await res.text());
                 const data = await res.json();
                 renderList(type, data, path);
@@ -384,7 +398,10 @@
                 container.appendChild(item);
             });
 
-            if (activePane === type) renderBreadcrumbs(path);
+            const countEl = document.getElementById(`${type}-count`);
+            if (countEl) countEl.innerText = `${visible.length} items`;
+
+            if (activePane === type || window.innerWidth >= 1024) renderBreadcrumbs(activePane === 'remote' ? currentRemotePath : currentLocalPath);
         }
 
         function renderBreadcrumbs(path) {
@@ -502,7 +519,8 @@
             document.getElementById('btn-preview').classList.toggle('hidden', entry.IsFolder);
             document.getElementById('btn-preview').onclick = () => { closeOptionsModal(); Preview.show(path, entry.Name, true); };
             document.getElementById('btn-copy').onclick = () => { closeOptionsModal(); toggleSelection(path, entry.Name, entry.IsFolder, 'remote'); };
-            document.getElementById('btn-delete').onclick = () => { closeOptionsModal(); confirmDelete(path, entry.Name, true); };
+            // Remote deletion removed as per backend changes
+            document.getElementById('btn-delete').classList.add('hidden');
         }
 
         function openLocalOptions(entry, path) {
@@ -517,6 +535,7 @@
             document.getElementById('btn-preview').classList.toggle('hidden', entry.IsFolder);
             document.getElementById('btn-preview').onclick = () => { closeOptionsModal(); Preview.show(path, entry.Name, false); };
             document.getElementById('btn-copy').onclick = () => { closeOptionsModal(); toggleSelection(path, entry.Name, entry.IsFolder, 'local'); };
+            document.getElementById('btn-delete').classList.remove('hidden');
             document.getElementById('btn-delete').onclick = () => { closeOptionsModal(); confirmDelete(path, entry.Name, false); };
         }
 
@@ -606,10 +625,16 @@
             try {
                 for (const item of clipboard) {
                     const params = new URLSearchParams();
-                    params.append('remote_path', item.path);
-                    params.append('local_path', currentLocalPath);
-
                     const endpoint = isRemoteToLocal ? '/api/ftp/client/download' : '/api/ftp/client/upload';
+
+                    if (isRemoteToLocal) {
+                        params.append('remote_path', item.path);
+                        params.append('local_path', currentLocalPath);
+                    } else {
+                        params.append('local_path', item.path);
+                        params.append('remote_path', currentRemotePath);
+                    }
+
                     const res = await fetch(endpoint, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

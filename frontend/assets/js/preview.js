@@ -31,7 +31,8 @@ const Preview = {
 
         const ext = name.split('.').pop().toLowerCase();
         const api = isRemote ? '/api/ftp/server/get-file' : '/api/ftp/client/get-file';
-        const url = `${api}?path=${encodeURIComponent(path)}`;
+        const paramName = isRemote ? 'remote_path' : 'local_path';
+        const url = `${api}?${paramName}=${encodeURIComponent(path)}`;
 
         if (!this.isSupported(ext)) {
             this.showUnsupported(name, path, isRemote);
