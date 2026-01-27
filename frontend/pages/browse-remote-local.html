@@ -125,7 +125,7 @@
                     <span class="text-[10px] font-black uppercase tracking-widest text-primary">Remote Server</span>
                     <span id="remote-count" class="text-[10px] text-slate-500 font-bold"></span>
                 </div>
-                <div id="remote-list" class="flex flex-col"></div>
+                <div id="remote-list" class="flex flex-col min-h-[100px]" onclick="switchPane('remote')"></div>
                 <div id="remote-empty"
                     class="hidden flex flex-col items-center justify-center py-20 text-slate-400 text-center">
                     <span class="material-symbols-outlined text-6xl mb-4 opacity-20">cloud_off</span>
@@ -139,7 +139,7 @@
                     <span class="text-[10px] font-black uppercase tracking-widest text-success">Local Storage</span>
                     <span id="local-count" class="text-[10px] text-slate-500 font-bold"></span>
                 </div>
-                <div id="local-list" class="flex flex-col"></div>
+                <div id="local-list" class="flex flex-col min-h-[100px]" onclick="switchPane('local')"></div>
                 <div id="local-empty"
                     class="hidden flex flex-col items-center justify-center py-20 text-slate-400 text-center">
                     <span class="material-symbols-outlined text-6xl mb-4 opacity-20">folder_off</span>
@@ -177,7 +177,7 @@
                 <button id="btn-copy"
                     class="flex items-center gap-3 w-full px-5 py-4 rounded-2xl hover:bg-white/5 text-white transition-all active:scale-95">
                     <span class="material-symbols-outlined">content_copy</span>
-                    <span class="text-sm font-bold">Add to Selection</span>
+                    <span class="text-sm font-bold">Copy</span>
                 </button>
                 <button id="btn-delete"
                     class="flex items-center gap-3 w-full px-5 py-4 rounded-2xl hover:bg-danger/10 text-danger transition-all active:scale-95">
@@ -321,6 +321,7 @@
             const paramName = type === 'remote' ? 'remote_path' : 'local_path';
             loader.classList.remove('hidden');
             try {
+
                 const res = await fetch(`${api}?${paramName}=${encodeURIComponent(path)}`);
                 if (!res.ok) throw new Error(await res.text());
                 const data = await res.json();
@@ -361,17 +362,29 @@
                 const color = Utils.getColorClass(entry.Name, entry.IsFolder);
 
                 item.innerHTML = `
-                    <div class="size-11 rounded-xl flex items-center justify-center ${color} shadow-sm relative">
+                    <div class="size-11 rounded-xl flex items-center justify-center ${color} shadow-sm relative shrink-0">
                         <span class="material-symbols-outlined">${isSelected ? 'check_circle' : icon}</span>
                     </div>
                     <div class="flex flex-col flex-1 overflow-hidden">
                         <span class="text-sm font-bold truncate ${isSelected ? 'text-primary' : 'text-white'}">${entry.Name}</span>
                         <span class="text-[10px] text-slate-500 font-medium uppercase">${entry.IsFolder ? 'Folder' : Utils.formatFileSize(entry.Size)} • ${Utils.formatDate(entry.LastModified)}</span>
                     </div>
-                    <span class="material-symbols-outlined text-slate-600 group-hover:text-primary transition-colors">chevron_right</span>
+                    <div class="flex items-center gap-2">
+                        <button class="options-trigger size-9 flex items-center justify-center rounded-full hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span class="material-symbols-outlined text-lg">more_vert</span>
+                        </button>
+                        <span class="material-symbols-outlined text-slate-600 group-hover:text-primary transition-colors text-sm">chevron_right</span>
+                    </div>
                 `;
 
-                item.onclick = () => {
+                item.onclick = (e) => {
+                    const optBtn = e.target.closest('.options-trigger');
+                    if (optBtn) {
+                        if (type === 'remote') openRemoteOptions(entry, normalizedPath);
+                        else openLocalOptions(entry, normalizedPath);
+                        return;
+                    }
+
                     if (selectionMode) {
                         toggleSelection(normalizedPath, entry.Name, entry.IsFolder, type);
                     } else {
