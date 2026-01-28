@@ -21,6 +21,7 @@ func (d *AndroidMainDriver) GetSettings() (*ftpserver.Settings, error) {
 		PublicHost:             config.Server.FTPHost,
 		ActiveConnectionsCheck: ftpserver.IPMatchRequired,
 		PasvConnectionsCheck:   ftpserver.IPMatchRequired,
+		IdleTimeout:            300,
 	}
 	return &settings, nil
 }
