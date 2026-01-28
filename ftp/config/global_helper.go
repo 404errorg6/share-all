@@ -17,6 +17,8 @@ func ResolveRemotePath(c *ftp.ServerConn, remotePath string) (string, *ftp.Entry
 		return ".", nil, nil
 	}
 
+	remotePath = filepath.ToSlash(remotePath)
+
 	//Check if file/folder is within accessible range
 	entry, err := c.GetEntry(remotePath) //Get from client's accessible filesystem
 	if err != nil {
@@ -31,6 +33,7 @@ func ResolveRemotePath(c *ftp.ServerConn, remotePath string) (string, *ftp.Entry
 }
 
 func ResolveLocalPath(localPath string) string {
+	localPath = filepath.ToSlash(localPath)
 	if localPath == "" {
 		return DefLocalDir
 	}
