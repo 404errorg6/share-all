@@ -26,28 +26,27 @@ func HandleUpload(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	localPath = config.ResolveLocalPath(localPath)
-	info, err := os.Stat(localPath)
+	err = smartUpload(remotePath, localPath, c)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if info.IsDir() {
-		err := uploadDir(remotePath, localPath, c)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	} else {
-		err := uploadFile(remotePath, localPath, c)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func smartUpload(remotePath, localPath string, c *ftp.ServerConn) error {
+	localPath = config.ResolveLocalPath(localPath)
+	info, err := os.Stat(localPath)
+	if err != nil {
+		return err
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	if info.IsDir() {
+		return uploadDir(remotePath, localPath, c)
+	}
+
+	return uploadFile(remotePath, localPath, c)
 }
 
 func uploadDir(remoteDirPath, localDirPath string, c *ftp.ServerConn) error {
@@ -83,6 +82,10 @@ func uploadDir(remoteDirPath, localDirPath string, c *ftp.ServerConn) error {
 	}
 
 	for _, e := range localDir {
+		if e.Name() == "." || e.Name() == ".." {
+			continue
+		}
+
 		if e.Type().IsDir() {
 			updatedLocalDirPath := filepath.Join(localDirPath, e.Name())
 
