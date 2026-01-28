@@ -60,13 +60,14 @@ func HandleDownload(w http.ResponseWriter, req *http.Request) {
 }
 
 func downloadDir(localDirPath, remoteDirPath string, c *ftp.ServerConn) error {
-	dirName := filepath.Base(remoteDirPath)
 	localDirPath = config.ResolveLocalPath(localDirPath)
-	updatedLocalPath := filepath.Join(localDirPath, dirName)
 	remoteDirPath, remoteEntry, err := config.ResolveRemotePath(c, remoteDirPath)
 	if err != nil {
 		return err
 	}
+
+	dirName := filepath.Base(remoteDirPath)
+	updatedLocalPath := filepath.Join(localDirPath, dirName)
 
 	if remoteEntry.Type != ftp.EntryTypeFolder {
 		return fmt.Errorf("\"%v\" is a file, not a remote directory", remoteDirPath)
