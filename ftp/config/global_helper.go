@@ -6,6 +6,7 @@ import (
 	"mime"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -27,7 +28,7 @@ func ResolveRemotePath(c *ftp.ServerConn, remotePath string) (string, *ftp.Entry
 
 	//File/folder is safe to send now
 	if !filepath.IsAbs(remotePath) {
-		remotePath = filepath.Join(Server.RootDir, remotePath)
+		remotePath = path.Join(Server.RootDir, remotePath)
 	}
 	return remotePath, entry, nil
 }

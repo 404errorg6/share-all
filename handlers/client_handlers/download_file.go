@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/404errorg6/FTP-server/ftp/client"
@@ -66,7 +67,7 @@ func downloadDir(localDirPath, remoteDirPath string, c *ftp.ServerConn) error {
 		return err
 	}
 
-	dirName := filepath.Base(remoteDirPath)
+	dirName := path.Base(remoteDirPath)
 	updatedLocalPath := filepath.Join(localDirPath, dirName)
 
 	if remoteEntry.Type != ftp.EntryTypeFolder {
@@ -81,7 +82,7 @@ func downloadDir(localDirPath, remoteDirPath string, c *ftp.ServerConn) error {
 	for _, e := range remoteDir {
 
 		if e.Type == ftp.EntryTypeFile { //Download files
-			remoteFilePath := filepath.Join(remoteDirPath, e.Name)
+			remoteFilePath := path.Join(remoteDirPath, e.Name)
 			err := downloadFile(updatedLocalPath, remoteFilePath, c)
 			if err != nil {
 				return err
@@ -89,7 +90,7 @@ func downloadDir(localDirPath, remoteDirPath string, c *ftp.ServerConn) error {
 		}
 
 		if e.Type == ftp.EntryTypeFolder { //Download folders
-			newRemotePath := filepath.Join(remoteDirPath, e.Name)
+			newRemotePath := path.Join(remoteDirPath, e.Name)
 			err := downloadDir(updatedLocalPath, newRemotePath, c)
 			if err != nil {
 				return err
@@ -107,7 +108,7 @@ func downloadFile(localDirPath, remoteFilePath string, c *ftp.ServerConn) error 
 		return err
 	}
 
-	fileName := filepath.Base(remoteFilePath)
+	fileName := path.Base(remoteFilePath)
 	filePath := filepath.Join(localDirPath, fileName)
 
 	if remoteEntry.Type == ftp.EntryTypeFolder {
