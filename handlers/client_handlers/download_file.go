@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/404errorg6/FTP-server/ftp/client"
 	"github.com/404errorg6/FTP-server/ftp/config"
@@ -14,7 +15,6 @@ import (
 )
 
 func HandleDownload(w http.ResponseWriter, req *http.Request) {
-	var isFolder bool
 	localPath := req.FormValue("local_path")
 	remotePath := req.FormValue("remote_path")
 
@@ -29,35 +29,36 @@ func HandleDownload(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	localPath = config.ResolveLocalPath(localPath)
-	remotePath, remoteEntry, err := config.ResolveRemotePath(c, remotePath)
+	err = SmartDownload(localPath, remotePath, c)
 	if err != nil {
+		if strings.Contains(err.Error(), "226") { //Treat 226 closing connection as a success instead of error
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if remoteEntry.Type == ftp.EntryTypeFolder {
-		isFolder = true
-	} else {
-		isFolder = false
-	}
-
-	if isFolder {
-		err := downloadDir(localPath, remotePath, c)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-	} else {
-		err := downloadFile(localPath, remotePath, c)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	}
-
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func SmartDownload(localDirPath, remotePath string, c *ftp.ServerConn) error { //Choose whether to download dir or file
+	// 1. Resolve the remote path once at the start
+	localDirPath = config.ResolveLocalPath(localDirPath)
+	remotePath, entry, err := config.ResolveRemotePath(c, remotePath)
+	if err != nil {
+		return err
+	}
+
+	// 2. Decide what to do based on entry type
+	if entry.Type == ftp.EntryTypeFolder {
+		fmt.Printf("Detected directory: %s. Starting recursive download...\n", remotePath)
+		return downloadDir(localDirPath, remotePath, c)
+	}
+
+	fmt.Printf("Detected file: %s. Starting file download...\n", remotePath)
+	return downloadFile(localDirPath, remotePath, c)
 }
 
 func downloadDir(localDirPath, remoteDirPath string, c *ftp.ServerConn) error {
@@ -80,6 +81,12 @@ func downloadDir(localDirPath, remoteDirPath string, c *ftp.ServerConn) error {
 	}
 
 	for _, e := range remoteDir {
+
+		if e.Name == "." || e.Name == ".." {
+			continue
+		}
+
+		fmt.Printf("Downloading: %v", e.Name)
 
 		if e.Type == ftp.EntryTypeFile { //Download files
 			remoteFilePath := path.Join(remoteDirPath, e.Name)
