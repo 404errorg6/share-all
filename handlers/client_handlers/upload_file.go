@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/404errorg6/FTP-server/ftp/client"
@@ -70,7 +71,7 @@ func uploadDir(remoteDirPath, localDirPath string, c *ftp.ServerConn) error {
 		return fmt.Errorf("\"%v\" is a file, not a remote directory", remoteDirPath)
 	}
 
-	updatedRemoteDirPath := filepath.Join(remoteDirPath, dirName)
+	updatedRemoteDirPath := path.Join(remoteDirPath, dirName)
 	err = c.MakeDir(updatedRemoteDirPath)
 	if err != nil {
 		return err
@@ -109,6 +110,9 @@ func uploadDir(remoteDirPath, localDirPath string, c *ftp.ServerConn) error {
 
 func uploadFile(remoteDirPath, localFilePath string, c *ftp.ServerConn) error {
 	localFilePath = config.ResolveLocalPath(localFilePath)
+	fileName := filepath.Base(localFilePath)
+	remoteFile := path.Join(remoteDirPath, fileName)
+
 	remoteDirPath, entry, err := config.ResolveRemotePath(c, remoteDirPath)
 	if err != nil {
 		return err
@@ -134,7 +138,7 @@ func uploadFile(remoteDirPath, localFilePath string, c *ftp.ServerConn) error {
 		return err
 	}
 
-	err = c.Stor(remoteDirPath, file)
+	err = c.Stor(remoteFile, file)
 	if err != nil {
 		return err
 	}
