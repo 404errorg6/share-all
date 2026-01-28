@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/404errorg6/FTP-server/ftp/client"
 	"github.com/404errorg6/FTP-server/ftp/config"
@@ -73,7 +74,7 @@ func uploadDir(remoteDirPath, localDirPath string, c *ftp.ServerConn) error {
 
 	updatedRemoteDirPath := path.Join(remoteDirPath, dirName)
 	err = c.MakeDir(updatedRemoteDirPath)
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "file exists") {
 		return err
 	}
 
