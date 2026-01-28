@@ -3,7 +3,6 @@ package serverhandlers
 import (
 	"fmt"
 	"net/http"
-	"path"
 
 	"github.com/404errorg6/FTP-server/ftp/client"
 	"github.com/404errorg6/FTP-server/ftp/config"
