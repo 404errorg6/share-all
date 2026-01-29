@@ -363,7 +363,7 @@
 
             visible.forEach(entry => {
                 const item = document.createElement('div');
-                const fullPath = (path === '/' || path === '.') ? `${path === '/' ? '' : path}/${entry.Name}` : `${path}/${entry.Name}`;
+                const fullPath = (path === '/' || path === '.') ? `${path === '/' ? '.' : path}/${entry.Name}` : `${path}/${entry.Name}`;
                 const normalizedPath = fullPath.replace('//', '/');
 
                 const isSelected = clipboard.some(f => f.path === normalizedPath && f.pane === type);

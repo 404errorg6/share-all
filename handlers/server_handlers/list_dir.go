@@ -18,14 +18,9 @@ func HandleListDir(w http.ResponseWriter, req *http.Request) {
 
 	//Get entry at remotePath
 	remotePath := req.FormValue("remote_path")
-	if remotePath == "" {
-		remotePath = "."
-	}
-
-	entry, err := c.GetEntry(remotePath)
+	remotePath, entry, err := config.ResolveRemotePath(c, remotePath)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		config.LogsCh <- fmt.Sprintf("Error occured while reading \"%v\": %v", remotePath, err)
 		return
 	}
 
