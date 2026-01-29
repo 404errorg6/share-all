@@ -682,7 +682,8 @@
                 }
                 Components.showToast('Operation complete');
                 clearClipboard();
-                refreshCurrent();
+                if (isRemoteToLocal) fetchFiles('local', currentLocalPath);
+                else fetchFiles('remote', currentRemotePath);
             } catch (e) {
                 Components.showToast(e.message, 'error');
             } finally {
