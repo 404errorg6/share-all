@@ -28,9 +28,16 @@ func ResolveRemotePath(c *ftp.ServerConn, remotePath string) (string, *ftp.Entry
 
 	if entry.Type == ftp.EntryTypeFile {
 		// Attempt to list the path. If it works, it's a directory.
-		_, listErr := c.List(remotePath)
-		if listErr == nil {
-			entry.Type = ftp.EntryTypeFolder
+		entries, err := c.List(remotePath)
+		if err == nil && len(entries) > 0 {
+			// If the name of the first item is the SAME as our file,
+			// and the server says it's a file, it's definitely a file.
+			if entries[0].Name == path.Base(remotePath) && entries[0].Type == ftp.EntryTypeFile {
+				entry.Type = ftp.EntryTypeFile
+			} else {
+				// If List returns multiple items or the type is folder, it's a folder
+				entry.Type = ftp.EntryTypeFolder
+			}
 		}
 	}
 
