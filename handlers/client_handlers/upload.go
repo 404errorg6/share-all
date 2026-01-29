@@ -39,6 +39,11 @@ func HandleUpload(w http.ResponseWriter, req *http.Request) {
 
 func smartUpload(remotePath, localPath string, c *ftp.ServerConn) error {
 	localPath = config.ResolveLocalPath(localPath)
+	remotePath, _, err := config.ResolveRemotePath(c, remotePath)
+	if err != nil {
+		return err
+	}
+
 	info, err := os.Stat(localPath)
 	if err != nil {
 		return err
@@ -53,8 +58,7 @@ func smartUpload(remotePath, localPath string, c *ftp.ServerConn) error {
 
 func uploadDir(remoteDirPath, localDirPath string, c *ftp.ServerConn) error {
 	dirName := filepath.Base(localDirPath)
-	localDirPath = config.ResolveLocalPath(localDirPath)
-	remoteDirPath, remoteEntry, err := config.ResolveRemotePath(c, remoteDirPath)
+	remoteEntry, err := c.GetEntry(remoteDirPath)
 	if err != nil {
 		return err
 	}
@@ -64,6 +68,7 @@ func uploadDir(remoteDirPath, localDirPath string, c *ftp.ServerConn) error {
 		return err
 	}
 
+	//Check if remoteDirPath and localDirPath are really dirs
 	if !localEntry.IsDir() {
 		return fmt.Errorf("\"%v\" is a file, not a local directory", localDirPath)
 	}
@@ -88,21 +93,24 @@ func uploadDir(remoteDirPath, localDirPath string, c *ftp.ServerConn) error {
 			continue
 		}
 
+		//Handle dir upload
 		if e.Type().IsDir() {
 			updatedLocalDirPath := filepath.Join(localDirPath, e.Name())
 
-			err := uploadDir(remoteDirPath, updatedLocalDirPath, c)
+			err := uploadDir(updatedRemoteDirPath, updatedLocalDirPath, c)
 			if err != nil {
 				return err
 			}
 
-		} else {
-			localFilePath := filepath.Join(localDirPath, e.Name())
+			continue
+		}
 
-			err := uploadFile(remoteDirPath, localFilePath, c)
-			if err != nil {
-				return err
-			}
+		//Handle file upload
+		localFilePath := filepath.Join(localDirPath, e.Name())
+
+		err := uploadFile(updatedRemoteDirPath, localFilePath, c)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -110,16 +118,15 @@ func uploadDir(remoteDirPath, localDirPath string, c *ftp.ServerConn) error {
 }
 
 func uploadFile(remoteDirPath, localFilePath string, c *ftp.ServerConn) error {
-	localFilePath = config.ResolveLocalPath(localFilePath)
 	fileName := filepath.Base(localFilePath)
 	remoteFile := path.Join(remoteDirPath, fileName)
 
-	remoteDirPath, entry, err := config.ResolveRemotePath(c, remoteDirPath)
+	remoteEntry, err := c.GetEntry(remoteDirPath)
 	if err != nil {
 		return err
 	}
 
-	if entry.Type != ftp.EntryTypeFolder {
+	if remoteEntry.Type != ftp.EntryTypeFolder {
 		err := fmt.Errorf("\"%v\" is a file, not a remote directory", remoteDirPath)
 		return err
 	}
