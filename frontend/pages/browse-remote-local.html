@@ -389,8 +389,12 @@
                 `;
 
                 item.onclick = (e) => {
+                    // Safety: prevent interaction if modal is acting or closing
+                    if (!optModal.classList.contains('hidden')) return;
+
                     const optBtn = e.target.closest('.options-trigger');
                     if (optBtn) {
+                        e.stopPropagation();
                         if (type === 'remote') openRemoteOptions(entry, normalizedPath);
                         else openLocalOptions(entry, normalizedPath);
                         return;
@@ -402,6 +406,7 @@
                         if (entry.IsFolder) {
                             if (type === 'remote') {
                                 currentRemotePath = normalizedPath;
+                                console.log('Navigated Remote to:', currentRemotePath);
                                 fetchFiles('remote', currentRemotePath);
                             } else {
                                 currentLocalPath = normalizedPath;
