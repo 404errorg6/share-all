@@ -46,28 +46,22 @@ func HandleDownload(w http.ResponseWriter, req *http.Request) {
 func SmartDownload(localDirPath, remotePath string, c *ftp.ServerConn) error { //Choose whether to download dir or file
 	// 1. Resolve the remote path once at the start
 	localDirPath = config.ResolveLocalPath(localDirPath)
-	remotePath, entry, err := config.ResolveRemotePath(c, remotePath)
+	remotePath, remoteEntry, err := config.ResolveRemotePath(c, remotePath)
 	if err != nil {
 		return err
 	}
 
 	// 2. Decide what to do based on entry type
-	if entry.Type == ftp.EntryTypeFolder {
+	if remoteEntry.Type == ftp.EntryTypeFolder {
 		fmt.Printf("Detected directory: %s. Starting recursive download...\n", remotePath)
-		return downloadDir(localDirPath, remotePath, c)
+		return downloadDir(localDirPath, remotePath, remoteEntry, c)
 	}
 
 	fmt.Printf("Detected file: %s. Starting file download...\n", remotePath)
-	return downloadFile(localDirPath, remotePath, c)
+	return downloadFile(localDirPath, remotePath, remoteEntry, c)
 }
 
-func downloadDir(localDirPath, remoteDirPath string, c *ftp.ServerConn) error {
-	localDirPath = config.ResolveLocalPath(localDirPath)
-	remoteDirPath, remoteEntry, err := config.ResolveRemotePath(c, remoteDirPath)
-	if err != nil {
-		return err
-	}
-
+func downloadDir(localDirPath, remoteDirPath string, remoteEntry *ftp.Entry, c *ftp.ServerConn) error {
 	dirName := path.Base(remoteDirPath)
 	updatedLocalPath := filepath.Join(localDirPath, dirName)
 
@@ -90,7 +84,7 @@ func downloadDir(localDirPath, remoteDirPath string, c *ftp.ServerConn) error {
 
 		if e.Type == ftp.EntryTypeFile { //Download files
 			remoteFilePath := path.Join(remoteDirPath, e.Name)
-			err := downloadFile(updatedLocalPath, remoteFilePath, c)
+			err := downloadFile(updatedLocalPath, remoteFilePath, remoteEntry, c)
 			if err != nil {
 				return err
 			}
@@ -98,7 +92,7 @@ func downloadDir(localDirPath, remoteDirPath string, c *ftp.ServerConn) error {
 
 		if e.Type == ftp.EntryTypeFolder { //Download folders
 			newRemotePath := path.Join(remoteDirPath, e.Name)
-			err := downloadDir(updatedLocalPath, newRemotePath, c)
+			err := downloadDir(updatedLocalPath, newRemotePath, remoteEntry, c)
 			if err != nil {
 				return err
 			}
@@ -108,13 +102,7 @@ func downloadDir(localDirPath, remoteDirPath string, c *ftp.ServerConn) error {
 	return nil
 }
 
-func downloadFile(localDirPath, remoteFilePath string, c *ftp.ServerConn) error { //Downloads remote file at remoteFilePath to local storage in localDirPath
-	localDirPath = config.ResolveLocalPath(localDirPath)
-	remoteFilePath, remoteEntry, err := config.ResolveRemotePath(c, remoteFilePath)
-	if err != nil {
-		return err
-	}
-
+func downloadFile(localDirPath, remoteFilePath string, remoteEntry *ftp.Entry, c *ftp.ServerConn) error { //Downloads remote file at remoteFilePath to local storage in localDirPath
 	fileName := path.Base(remoteFilePath)
 	filePath := filepath.Join(localDirPath, fileName)
 
@@ -122,7 +110,7 @@ func downloadFile(localDirPath, remoteFilePath string, c *ftp.ServerConn) error 
 		return fmt.Errorf("\"%v\" is a directory, not a remote file", remoteFilePath)
 	}
 
-	err = os.MkdirAll(localDirPath, os.ModeDir)
+	err := os.MkdirAll(localDirPath, os.ModeDir)
 	if err != nil {
 		return err
 	}
