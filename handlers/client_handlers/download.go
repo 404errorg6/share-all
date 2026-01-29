@@ -135,6 +135,7 @@ func downloadFile(localDirPath, remoteFilePath string, c *ftp.ServerConn) error 
 	if err != nil {
 		return err
 	}
+	defer remoteFile.Close()
 
 	_, err = io.Copy(localFile, remoteFile)
 	if err != nil {
