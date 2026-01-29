@@ -1,13 +1,14 @@
 package client
 
 import (
+	"os"
 	"time"
 
 	"github.com/jlaffaye/ftp"
 )
 
 func AuthClient(user, pass, addr string) error {
-	c, err := ftp.Dial(addr, ftp.DialWithTimeout(5*time.Second))
+	c, err := ftp.Dial(addr, ftp.DialWithTimeout(5*time.Second), ftp.DialWithDebugOutput(os.Stdout))
 	if err != nil {
 		return err
 	}
