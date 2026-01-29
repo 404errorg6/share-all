@@ -29,7 +29,7 @@ func HandleDownload(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = SmartDownload(localPath, remotePath, c)
+	err = smartDownload(localPath, remotePath, c)
 	if err != nil {
 		if strings.Contains(err.Error(), "226") { //Treat 226 closing connection as a success instead of error
 			w.WriteHeader(http.StatusNoContent)
@@ -43,7 +43,7 @@ func HandleDownload(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func SmartDownload(localDirPath, remotePath string, c *ftp.ServerConn) error { //Choose whether to download dir or file
+func smartDownload(localDirPath, remotePath string, c *ftp.ServerConn) error { //Choose whether to download dir or file
 	// 1. Resolve the remote path once at the start
 	localDirPath = config.ResolveLocalPath(localDirPath)
 	remotePath, remoteEntry, err := config.ResolveRemotePath(c, remotePath)
