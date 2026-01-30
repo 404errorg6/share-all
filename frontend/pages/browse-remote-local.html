@@ -256,476 +256,12 @@
     <script src="../assets/js/utils.js"></script>
     <script src="../assets/js/components.js"></script>
     <script src="../assets/js/preview.js"></script>
-    <script>
-        Components.injectSidebar('browse-remote-local');
-        Components.injectModal();
+    <script type="module">
+        import { state, ui } from '../assets/js/ftp-state.js';
+        import { FTP_API } from '../assets/js/ftp-api.js';
+        import { Renderer } from '../assets/js/ftp-renderer.js';
 
-        // State
-        let activePane = 'remote'; // 'remote' or 'local'
-        let currentRemotePath = '.';
-        let currentLocalPath = '.';
-        let showHidden = false;
-        let selectionMode = false;
-
-        // Clipboard for Copy-Paste / Selection
-        let clipboard = []; // Array of { path, name, isFolder, pane }
-
-        // UI Elements
-        const rList = document.getElementById('remote-list');
-        const lList = document.getElementById('local-list');
-        const rPane = document.getElementById('remote-pane');
-        const lPane = document.getElementById('local-pane');
-        const bc = document.getElementById('breadcrumb-path');
-        const loader = document.getElementById('sync-overlay');
-        const hBtn = document.getElementById('toggle-hidden-btn');
-        const sBtn = document.getElementById('toggle-select-mode');
-        const paneInd = document.getElementById('pane-selection-indicator');
-
-        // Modal Elements
-        const optModal = document.getElementById('options-modal');
-        const optContent = document.getElementById('options-modal-content');
-        const prevModal = document.getElementById('preview-modal');
-        const prevContainer = document.getElementById('preview-container');
-        const pasteBar = document.getElementById('paste-bar');
-
-        /**
-         * Pane Management
-         */
-        function switchPane(pane) {
-            if (window.innerWidth >= 1024) {
-                activePane = pane;
-                renderBreadcrumbs(currentRemotePath, 'remote');
-                renderBreadcrumbs(currentLocalPath, 'local');
-                return;
-            }
-            activePane = pane;
-
-            // Tab UI
-            const tRem = document.getElementById('tab-remote');
-            const tLoc = document.getElementById('tab-local');
-            const iRem = document.getElementById('remote-indicator');
-            const iLoc = document.getElementById('local-indicator');
-
-            if (pane === 'remote') {
-                tRem.classList.remove('text-slate-400', 'text-slate-500'); tRem.classList.add('text-primary');
-                tLoc.classList.remove('text-primary'); tLoc.classList.add('text-slate-400');
-                iRem.classList.remove('hidden'); iLoc.classList.add('hidden');
-                rPane.classList.remove('hidden'); lPane.classList.add('hidden');
-                paneInd.innerText = 'Remote View';
-                renderBreadcrumbs(currentRemotePath, 'remote');
-            } else {
-                tLoc.classList.remove('text-slate-400', 'text-slate-500'); tLoc.classList.add('text-primary');
-                tRem.classList.remove('text-primary'); tRem.classList.add('text-slate-400');
-                iLoc.classList.remove('hidden'); iRem.classList.add('hidden');
-                lPane.classList.remove('hidden'); rPane.classList.add('hidden');
-                paneInd.innerText = 'Local View';
-                renderBreadcrumbs(currentLocalPath, 'local');
-            }
-            updatePasteBarVisibility();
-        }
-
-        /**
-         * Data Fetching
-         */
-        async function fetchFiles(type, path) {
-            const api = type === 'remote' ? '/api/ftp/server/ls' : '/api/ftp/client/ls';
-            const paramName = type === 'remote' ? 'remote_path' : 'local_path';
-            loader.classList.remove('hidden');
-            try {
-
-                const res = await fetch(`${api}?${paramName}=${encodeURIComponent(path)}`);
-                if (!res.ok) throw new Error(await res.text());
-                const data = await res.json();
-                renderList(type, data, path);
-            } catch (e) {
-                Components.showToast(e.message, 'error');
-            } finally {
-                loader.classList.add('hidden');
-            }
-        }
-
-        /**
-         * Rendering
-         */
-        function renderList(type, entries, path) {
-            const container = type === 'remote' ? rList : lList;
-            const empty = document.getElementById(`${type}-empty`);
-            container.innerHTML = '';
-
-            const visible = entries.filter(e => showHidden || !Utils.isHiddenFile(e.Name))
-                .sort((a, b) => (b.IsFolder - a.IsFolder) || a.Name.localeCompare(b.Name));
-
-            if (visible.length === 0) {
-                empty.classList.remove('hidden');
-                return;
-            }
-            empty.classList.add('hidden');
-
-            visible.forEach(entry => {
-                const item = document.createElement('div');
-                const fullPath = (path === '/' || path === '.') ? `${path === '/' ? '.' : path}/${entry.Name}` : `${path}/${entry.Name}`;
-                const normalizedPath = fullPath.replace('//', '/');
-
-                const isSelected = clipboard.some(f => f.path === normalizedPath && f.pane === type);
-
-                item.className = `flex items-center gap-4 px-4 py-3 hover:bg-white/5 cursor-pointer border-b border-white/5 group transition-colors ${isSelected ? 'bg-primary/10 ring-1 ring-inset ring-primary/30 shadow-sm' : ''}`;
-                const icon = Utils.getFileIcon(entry.Name, entry.IsFolder);
-                const color = Utils.getColorClass(entry.Name, entry.IsFolder);
-
-                item.innerHTML = `
-                    <div class="size-11 rounded-xl flex items-center justify-center ${color} shadow-sm relative shrink-0">
-                        <span class="material-symbols-outlined">${isSelected ? 'check_circle' : icon}</span>
-                    </div>
-                    <div class="flex flex-col flex-1 overflow-hidden">
-                        <span class="text-sm font-bold truncate ${isSelected ? 'text-primary' : 'text-white'}">${entry.Name}</span>
-                        <span class="text-[10px] text-slate-500 font-medium uppercase">${entry.IsFolder ? 'Folder' : Utils.formatFileSize(entry.Size)} • ${Utils.formatDate(entry.LastModified)}</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button class="options-trigger size-9 flex items-center justify-center rounded-full hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <span class="material-symbols-outlined text-lg">more_vert</span>
-                        </button>
-                        <span class="material-symbols-outlined text-slate-600 group-hover:text-primary transition-colors text-sm">chevron_right</span>
-                    </div>
-                `;
-
-                item.onclick = (e) => {
-                    // Safety: prevent interaction if modal is acting or closing
-                    if (!optModal.classList.contains('hidden')) return;
-
-                    const optBtn = e.target.closest('.options-trigger');
-                    if (optBtn) {
-                        e.stopPropagation();
-                        if (type === 'remote') openRemoteOptions(entry, normalizedPath);
-                        else openLocalOptions(entry, normalizedPath);
-                        return;
-                    }
-
-                    if (selectionMode) {
-                        toggleSelection(normalizedPath, entry.Name, entry.IsFolder, type);
-                    } else {
-                        if (entry.IsFolder) {
-                            if (type === 'remote') {
-                                currentRemotePath = normalizedPath;
-                                console.log('Navigated Remote to:', currentRemotePath);
-                                fetchFiles('remote', currentRemotePath);
-                            } else {
-                                currentLocalPath = normalizedPath;
-                                fetchFiles('local', currentLocalPath);
-                            }
-                        } else {
-                            Preview.show(normalizedPath, entry.Name, type === 'remote');
-                        }
-                    }
-                };
-
-                item.oncontextmenu = (e) => {
-                    e.preventDefault();
-                    if (type === 'remote') openRemoteOptions(entry, normalizedPath);
-                    else openLocalOptions(entry, normalizedPath);
-                };
-
-                container.appendChild(item);
-            });
-
-            const countEl = document.getElementById(`${type}-count`);
-            if (countEl) countEl.innerText = `${visible.length} items`;
-
-            if (countEl) countEl.innerText = `${visible.length} items`;
-
-            renderBreadcrumbs(path, type);
-        }
-
-        function renderBreadcrumbs(path, type) {
-            const buildInto = (container, p, t) => {
-                if (!container) return;
-                container.innerHTML = '';
-                const isLocal = t === 'local';
-                const parts = p.split('/').filter(part => part && part !== '.');
-
-                const root = document.createElement('p');
-                root.className = `text-xs font-black uppercase tracking-widest cursor-pointer hover:underline px-2 py-1 rounded transition-colors ${isLocal ? 'text-success' : 'text-primary'}`;
-                root.innerText = isLocal ? "Local" : "Remote";
-                root.onclick = () => {
-                    if (isLocal) { currentLocalPath = '.'; fetchFiles('local', '.'); }
-                    else { currentRemotePath = '.'; fetchFiles('remote', '.'); }
-                };
-                container.appendChild(root);
-
-                let build = isLocal ? '.' : '';
-                parts.forEach(part => {
-                    build += `/${part}`;
-                    const sep = document.createElement('span');
-                    sep.className = "text-slate-600 px-1";
-                    sep.innerHTML = '<span class="material-symbols-outlined text-xs">chevron_right</span>';
-                    container.appendChild(sep);
-
-                    const node = document.createElement('p');
-                    node.className = "text-xs font-bold text-slate-300 hover:text-white cursor-pointer px-2 py-1 rounded hover:bg-white/5 truncate max-w-[120px] transition-colors";
-                    node.innerText = part;
-                    const target = build;
-                    node.onclick = () => {
-                        if (isLocal) { currentLocalPath = target; fetchFiles('local', target); }
-                        else { currentRemotePath = target; fetchFiles('remote', target); }
-                    };
-                    container.appendChild(node);
-                });
-            };
-
-            // Update Global Breadcrumb if it matches active pane
-            if (activePane === type) {
-                buildInto(bc, path, type);
-            }
-
-            // Update Specific Pane Breadcrumb (Desktop)
-            const specific = document.getElementById(`${type}-breadcrumbs`);
-            buildInto(specific, path, type);
-        }
-
-        /**
-         * Selection Mode
-         */
-        function toggleSelectionMode() {
-            selectionMode = !selectionMode;
-            sBtn.classList.toggle('bg-primary', selectionMode);
-            sBtn.classList.toggle('text-white', selectionMode);
-            sBtn.classList.toggle('text-slate-400', !selectionMode);
-            sBtn.querySelector('span').innerText = selectionMode ? 'done_all' : 'rule';
-            updatePasteBarVisibility();
-            refreshCurrent();
-        }
-
-        function toggleSelection(path, name, isFolder, pane) {
-            const index = clipboard.findIndex(f => f.path === path && f.pane === pane);
-            if (index > -1) {
-                clipboard.splice(index, 1);
-            } else {
-                if (clipboard.length > 0 && clipboard[0].pane !== pane) clipboard = [];
-                clipboard.push({ path, name, isFolder, pane });
-            }
-            updatePasteBarVisibility();
-            refreshCurrent();
-        }
-
-        function clearClipboard() {
-            clipboard = [];
-            updatePasteBarVisibility();
-            refreshCurrent();
-        }
-
-        function updatePasteBarVisibility() {
-            const hasSelection = clipboard.length > 0;
-            const pb = document.getElementById('paste-bar');
-            const btnPaste = document.getElementById('btn-paste-action');
-            const btnDelete = document.getElementById('btn-delete-selected');
-            const msg = document.getElementById('paste-message');
-            const info = document.getElementById('paste-info');
-
-            if (hasSelection) {
-                pb.classList.remove('hidden');
-                setTimeout(() => pb.classList.add('opacity-100', 'translate-y-0'), 10);
-
-                const selectedPane = clipboard[0].pane;
-                info.innerText = clipboard.length === 1 ? clipboard[0].name : `${clipboard.length} items`;
-
-                if (selectionMode) {
-                    btnDelete.classList.remove('hidden');
-                    btnPaste.classList.add('hidden');
-                    msg.innerText = "Items Selected";
-                } else {
-                    btnDelete.classList.add('hidden');
-                    if (selectedPane !== activePane) {
-                        btnPaste.classList.remove('hidden');
-                        msg.innerText = `Ready to ${selectedPane === 'remote' ? 'Copy' : 'Upload'}`;
-                    } else {
-                        btnPaste.classList.add('hidden');
-                        msg.innerText = "Items in Clipboard";
-                    }
-                }
-            } else {
-                pb.classList.remove('opacity-100', 'translate-y-0');
-                setTimeout(() => { if (clipboard.length === 0) pb.classList.add('hidden'); }, 300);
-            }
-        }
-
-        /**
-         * File Actions Logic
-         */
-        function openRemoteOptions(entry, path) {
-            document.getElementById('options-filename').innerText = entry.Name;
-            document.getElementById('options-type').innerText = "Remote " + (entry.IsFolder ? "Folder" : "File") + " Actions";
-            optModal.classList.remove('hidden');
-            setTimeout(() => {
-                optContent.classList.remove('scale-95', 'opacity-0');
-                optContent.classList.add('scale-100', 'opacity-100');
-            }, 10);
-
-            document.getElementById('btn-preview').classList.toggle('hidden', entry.IsFolder);
-            document.getElementById('btn-preview').onclick = () => { closeOptionsModal(); Preview.show(path, entry.Name, true); };
-            document.getElementById('btn-copy').onclick = () => { closeOptionsModal(); toggleSelection(path, entry.Name, entry.IsFolder, 'remote'); };
-            // Remote deletion removed as per backend changes
-            document.getElementById('btn-delete').classList.add('hidden');
-        }
-
-        function openLocalOptions(entry, path) {
-            document.getElementById('options-filename').innerText = entry.Name;
-            document.getElementById('options-type').innerText = "Local " + (entry.IsFolder ? "Folder" : "File") + " Actions";
-            optModal.classList.remove('hidden');
-            setTimeout(() => {
-                optContent.classList.remove('scale-95', 'opacity-0');
-                optContent.classList.add('scale-100', 'opacity-100');
-            }, 10);
-
-            document.getElementById('btn-preview').classList.toggle('hidden', entry.IsFolder);
-            document.getElementById('btn-preview').onclick = () => { closeOptionsModal(); Preview.show(path, entry.Name, false); };
-            document.getElementById('btn-copy').onclick = () => { closeOptionsModal(); toggleSelection(path, entry.Name, entry.IsFolder, 'local'); };
-            document.getElementById('btn-delete').classList.remove('hidden');
-            document.getElementById('btn-delete').onclick = () => { closeOptionsModal(); confirmDelete(path, entry.Name, false); };
-        }
-
-        function closeOptionsModal() {
-            optContent.classList.add('scale-95', 'opacity-0');
-            optContent.classList.remove('scale-100', 'opacity-100');
-            setTimeout(() => { optModal.classList.add('hidden'); }, 300);
-        }
-
-        /**
-         * Deletion Logic
-         */
-        function confirmDelete(path, name, isRemote) {
-            Components.openGuiModal({
-                title: 'Delete Item?',
-                message: `Are you sure you want to delete ${name}? This action cannot be undone.`,
-                icon: 'delete_forever',
-                type: 'danger',
-                primaryText: 'Delete',
-                onPrimary: () => performDelete(path, isRemote)
-            });
-        }
-
-        async function performDelete(path, isRemote) {
-            loader.classList.remove('hidden');
-            try {
-                const params = new URLSearchParams();
-                if (isRemote) params.append('remote_path', path);
-                else params.append('local_path', path);
-
-                const res = await fetch('/api/ftp/client/delete', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: params.toString()
-                });
-                if (!res.ok) throw new Error(await res.text());
-                Components.showToast('Item deleted');
-                refreshCurrent();
-            } catch (e) {
-                Components.showToast(e.message, 'error');
-            } finally {
-                loader.classList.add('hidden');
-            }
-        }
-
-        async function deleteSelected() {
-            Components.openGuiModal({
-                title: 'Delete Selected?',
-                message: `Are you sure you want to delete ${clipboard.length} items?`,
-                icon: 'delete_sweep',
-                type: 'danger',
-                primaryText: 'Delete All',
-                onPrimary: async () => {
-                    loader.classList.remove('hidden');
-                    const isRemote = clipboard[0].pane === 'remote';
-                    try {
-                        for (const item of clipboard) {
-                            const params = new URLSearchParams();
-                            if (isRemote) params.append('remote_path', item.path);
-                            else params.append('local_path', item.path);
-                            await fetch('/api/ftp/client/delete', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                                body: params.toString()
-                            });
-                        }
-                        Components.showToast('Selected items deleted');
-                        clearClipboard();
-                        refreshCurrent();
-                    } catch (e) {
-                        Components.showToast(e.message, 'error');
-                    } finally {
-                        loader.classList.add('hidden');
-                    }
-                }
-            });
-        }
-
-        /**
-         * Paste / Upload Logic
-         */
-        async function pasteFiles() {
-            if (clipboard.length === 0) return;
-            const isRemoteToLocal = clipboard[0].pane === 'remote';
-            loader.classList.remove('hidden');
-
-            try {
-                for (const item of clipboard) {
-                    const params = new URLSearchParams();
-                    const endpoint = isRemoteToLocal ? '/api/ftp/client/download' : '/api/ftp/client/upload';
-
-                    if (isRemoteToLocal) {
-                        params.append('remote_path', item.path);
-                        params.append('local_path', currentLocalPath);
-                    } else {
-                        params.append('local_path', item.path);
-                        params.append('remote_path', currentRemotePath);
-                    }
-
-                    const res = await fetch(endpoint, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: params.toString()
-                    });
-                    if (!res.ok) throw new Error(await res.text());
-                }
-                Components.showToast('Operation complete');
-                clearClipboard();
-                if (isRemoteToLocal) fetchFiles('local', currentLocalPath);
-                else fetchFiles('remote', currentRemotePath);
-            } catch (e) {
-                Components.showToast(e.message, 'error');
-            } finally {
-                loader.classList.add('hidden');
-            }
-        }
-
-        /**
-         * Global Controls
-         */
-        function refreshCurrent() {
-            if (activePane === 'remote') fetchFiles('remote', currentRemotePath);
-            else fetchFiles('local', currentLocalPath);
-        }
-
-        function goUp(paneOverride) {
-            const pane = paneOverride || activePane;
-            let path = pane === 'remote' ? currentRemotePath : currentLocalPath;
-            const parts = path.split('/').filter(p => p && p !== '.');
-            parts.pop();
-            const isLocal = pane === 'local';
-            const newPath = isLocal ?
-                (parts.length === 0 ? '.' : './' + parts.join('/')) :
-                (parts.length === 0 ? '.' : parts.join('/'));
-
-            if (isLocal) { currentLocalPath = newPath; fetchFiles('local', newPath); }
-            else { currentRemotePath = newPath; fetchFiles('remote', newPath); }
-        }
-
-        function toggleHiddenFiles() {
-            showHidden = !showHidden;
-            hBtn.classList.toggle('opacity-50', !showHidden);
-            hBtn.querySelector('span').innerText = showHidden ? 'visibility' : 'visibility_off';
-            refreshCurrent();
-        }
-
-        // Init
+        // 1. Initial Load Logic
         document.addEventListener('DOMContentLoaded', () => {
             const serverId = localStorage.getItem('current_server_id');
             const servers = JSON.parse(localStorage.getItem('ftp_servers') || '[]');
@@ -734,12 +270,78 @@
             if (server) {
                 document.getElementById('server-name').innerText = server.name;
                 document.getElementById('server-info').innerText = `${server.host}:${server.port}`;
-                fetchFiles('remote', '.');
-                fetchFiles('local', '.');
+                refreshAll();
             } else {
                 window.location.href = 'remote-connections.html';
             }
         });
+
+        // 2. Navigation & View Functions
+        async function refreshAll() {
+            await Promise.all([
+                fetchAndRender('remote', state.currentRemotePath),
+                fetchAndRender('local', state.currentLocalPath)
+            ]);
+        }
+
+        async function fetchAndRender(type, path) {
+            ui.loader.classList.remove('hidden');
+            try {
+                const data = await FTP_API.fetchFiles(type, path);
+                Renderer.renderList(type, data, path, handleItemClick);
+            } catch (e) {
+                Components.showToast(e.message, 'error');
+            } finally {
+                ui.loader.classList.add('hidden');
+            }
+        }
+
+        // 3. Central Click Handler
+        function handleItemClick(e, entry, path, type) {
+            const optBtn = e.target.closest('.options-trigger');
+            if (optBtn) {
+                e.stopPropagation();
+                // Call your existing openOptionsModal logic here
+                return;
+            }
+
+            if (state.selectionMode) {
+                toggleSelection(path, entry.Name, entry.IsFolder, type);
+            } else if (entry.IsFolder) {
+                if (type === 'remote') {
+                    state.currentRemotePath = path;
+                    fetchAndRender('remote', path);
+                } else {
+                    state.currentLocalPath = path;
+                    fetchAndRender('local', path);
+                }
+            } else {
+                Preview.show(path, entry.Name, type === 'remote');
+            }
+        }
+
+        // 4. Global Window bindings (Required for HTML onclick attributes)
+        window.switchPane = (pane) => {
+            state.activePane = pane;
+            // ... (insert your existing switchPane UI logic here)
+        };
+
+        window.goUp = (paneOverride) => {
+            const pane = paneOverride || state.activePane;
+            let path = pane === 'remote' ? state.currentRemotePath : state.currentLocalPath;
+            const parts = path.split('/').filter(p => p && p !== '.');
+            parts.pop();
+
+            const newPath = (parts.length === 0) ? '.' : (pane === 'local' ? './' + parts.join('/') : parts.join('/'));
+
+            if (pane === 'local') state.currentLocalPath = newPath;
+            else state.currentRemotePath = newPath;
+
+            fetchAndRender(pane, newPath);
+        };
+
+        window.refreshCurrent = () => fetchAndRender(state.activePane, state.activePane === 'remote' ? state.currentRemotePath : state.currentLocalPath);
+
     </script>
 </body>
 
