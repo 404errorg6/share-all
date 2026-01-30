@@ -29,8 +29,9 @@ func ResolveRemotePath(c *ftp.ServerConn, remotePath string) (string, *ftp.Entry
 	//File/folder is safe to send now
 	if !filepath.IsAbs(remotePath) {
 		remotePath = path.Join(Server.RootDir, remotePath)
-		remotePath = path.Clean(remotePath)
 	}
+
+	remotePath = filepath.Clean(remotePath)
 	return remotePath, entry, nil
 }
 

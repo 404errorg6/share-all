@@ -2,6 +2,7 @@ package serverhandlers
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/404errorg6/FTP-server/ftp/client"
@@ -28,5 +29,18 @@ func HandleServeFile(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	http.ServeFile(w, req, fullPath)
+	file, err := c.Retr(fullPath)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+
+	_, err = io.Copy(w, file)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
