@@ -135,6 +135,7 @@ func uploadFile(remoteDirPath, localFilePath string, c *ftp.ServerConn) error {
 	if err != nil {
 		return err
 	}
+	defer file.Close()
 
 	info, err := file.Stat()
 	if err != nil {
