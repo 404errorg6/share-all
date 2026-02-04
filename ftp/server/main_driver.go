@@ -41,8 +41,9 @@ func (d *AndroidMainDriver) AuthUser(cc ftpserver.ClientContext, user, pass stri
 	}
 
 	if config.Server.AnonymousAccessAllowed {
-		if user == "anonymous" {
+		if user == "anonymous" && pass == "anonymous" {
 			fileSystem := afero.NewBasePathFs(afero.NewOsFs(), config.Server.RootDir)
+			isAuthorized = true
 
 			if !config.Server.WriteAllowed {
 				fileSystem = afero.NewReadOnlyFs(fileSystem)
