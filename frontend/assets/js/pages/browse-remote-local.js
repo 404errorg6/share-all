@@ -14,6 +14,14 @@ const serverNameEl = document.getElementById('server-name');
 const serverInfoEl = document.getElementById('server-info');
 let currentServer = null;
 
+function handleError(e) {
+    let msg = e.message;
+    if (msg.includes('550') && msg.includes('operation not permitted')) {
+        msg = "Write not allowed here";
+    }
+    Components.showToast(msg, 'error');
+}
+
 // --- Pane Management ---
 function switchPane(pane) {
     state.activePane = pane;
@@ -64,7 +72,7 @@ async function fetchFiles(type, path) {
         Renderer.renderList(type, data, path, handleAction);
         renderBreadcrumbs(path, type);
     } catch (e) {
-        Components.showToast(e.message, 'error');
+        handleError(e);
     } finally {
         ui.loader.classList.add('hidden');
     }
@@ -264,7 +272,7 @@ async function performDelete(path, isRemote) {
         Components.showToast('Item deleted');
         refreshCurrent();
     } catch (e) {
-        Components.showToast(e.message, 'error');
+        handleError(e);
     } finally {
         ui.loader.classList.add('hidden');
     }
@@ -288,7 +296,7 @@ async function deleteSelected() {
                 clearClipboard();
                 refreshCurrent();
             } catch (e) {
-                Components.showToast(e.message, 'error');
+                handleError(e);
             } finally {
                 ui.loader.classList.add('hidden');
             }
@@ -313,7 +321,7 @@ async function pasteFiles() {
         else fetchFiles('remote', state.currentRemotePath);
 
     } catch (e) {
-        Components.showToast(e.message, 'error');
+        handleError(e);
     } finally {
         ui.loader.classList.add('hidden');
     }
