@@ -28,7 +28,7 @@ func (d *AndroidMainDriver) GetSettings() (*ftpserver.Settings, error) {
 
 func (d *AndroidMainDriver) AuthUser(cc ftpserver.ClientContext, user, pass string) (ftpserver.ClientDriver, error) {
 	var isAuthorized bool
-	clientDriver := &AndroidClientDriver{}
+	cDriver := &AndroidClientDriver{}
 
 	host, _, _ := config.GetHostPort(cc.RemoteAddr().String())
 
@@ -41,22 +41,16 @@ func (d *AndroidMainDriver) AuthUser(cc ftpserver.ClientContext, user, pass stri
 	}
 
 	if config.Server.AnonymousAccessAllowed {
-		if user == "anonymous" && pass == "anonymous" {
-			fileSystem := afero.NewBasePathFs(afero.NewOsFs(), config.Server.RootDir)
+		if user == "anonymous" {
+			cDriver.Fs = afero.NewBasePathFs(afero.NewOsFs(), config.Server.RootDir)
 			isAuthorized = true
-
-			if !config.Server.WriteAllowed {
-				fileSystem = afero.NewReadOnlyFs(fileSystem)
-			}
-
-			clientDriver.Fs = fileSystem
 		}
 	}
 
 	if isAuthorized {
 		addToConnectedClient(user, cc)
 		config.LogsCh <- fmt.Sprintf("%v authorization successful", cc.RemoteAddr().String())
-		return clientDriver, nil
+		return cDriver, nil
 	}
 
 	return nil, fmt.Errorf("Invalid credentials")
