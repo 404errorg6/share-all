@@ -2,8 +2,10 @@ package server
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/404errorg6/FTP-server/ftp/config"
 	ftpserver "github.com/fclairamb/ftpserverlib"
@@ -27,6 +29,7 @@ func StartFTP() error {
 
 	err := registerFTP() //Let clients discover this server
 	if err != nil {
+		config.LogsCh <- err.Error()
 		return err
 	}
 
@@ -45,18 +48,41 @@ func registerFTP() error {
 		return err
 	}
 
-	service := "_ftp._tcp"
-	domain := "local."
 	text := []string{
 		fmt.Sprintf("AnonymousAllowed=%v", config.FTPServer.AnonymousAccessAllowed),
 	}
 
-	server, err = zeroconf.Register(instance, service, domain, portInt, text, nil)
+	ifaces, err := getWifiOrMobileInterface()
+	if err != nil {
+		return err
+	}
+
+	server, err = zeroconf.Register(instance, config.SERVICE, config.DOMAIN, portInt, text, ifaces)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func getWifiOrMobileInterface() ([]net.Interface, error) {
+	var WifiOrMobileInterfaces []net.Interface
+	ifs, err := net.Interfaces()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, iface := range ifs {
+		if strings.HasPrefix(iface.Name, "wlan") || strings.HasPrefix(iface.Name, "ccmni") || strings.HasPrefix(iface.Name, "rmnet") {
+			WifiOrMobileInterfaces = append(WifiOrMobileInterfaces, iface)
+		}
+	}
+
+	if len(WifiOrMobileInterfaces) == 0 {
+		return nil, fmt.Errorf("Neither wifi nor mobile data enabled")
+	}
+
+	return WifiOrMobileInterfaces, nil
 }
 
 func startLogsAndFTP() {
