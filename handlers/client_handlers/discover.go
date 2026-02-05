@@ -2,6 +2,7 @@ package clienthandlers
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"strconv"
@@ -30,8 +31,10 @@ func HandlerDiscoverServers(w http.ResponseWriter, req *http.Request) {
 }
 
 func discover() ([]ServerInfo, error) {
+	var serversInfo []ServerInfo
 	entries := make(chan *zeroconf.ServiceEntry, 100)
-	resolver, err := zeroconf.NewResolver()
+
+	resolver, err := zeroconf.NewResolver(zeroconf.SelectIfaces(config.WifiOrDataInterface))
 	if err != nil {
 		return nil, err
 	}
@@ -43,56 +46,55 @@ func discover() ([]ServerInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	<-ctx.Done()
 
-	serversInfo, err := convertEntriesToServerInfo(entries)
-	if err != nil {
-		return nil, err
+	for entry := range entries {
+		svrInfo, err := convertEntryToServerInfo(entry)
+		if err != nil {
+			config.LogsCh <- err.Error()
+			continue
+		}
+
+		serversInfo = append(serversInfo, svrInfo)
 	}
 
 	return serversInfo, nil
 }
 
-func convertEntriesToServerInfo(entries chan *zeroconf.ServiceEntry) ([]ServerInfo, error) {
-	slimmedEntries := []ServerInfo{}
+func convertEntryToServerInfo(entry *zeroconf.ServiceEntry) (ServerInfo, error) {
+	fmt.Printf("Called with %v\n", *entry)
+	serverInfo := ServerInfo{}
+	// Use Instance name as it's more descriptive in Zeroconf
+	serverInfo.Name = entry.Instance
+	if serverInfo.Name == "" {
+		serverInfo.Name = entry.HostName
+	}
 
-	for entry := range entries {
-		serverInfo := ServerInfo{}
-		// Use Instance name as it's more descriptive in Zeroconf
-		serverInfo.Name = entry.Instance
-		if serverInfo.Name == "" {
-			serverInfo.Name = entry.HostName
-		}
+	// Try IPv4 first, fallback to IPv6 if needed
+	serverInfo.IP = getUsableIP(entry.AddrIPv4)
+	if serverInfo.IP == "Unknown" && len(entry.AddrIPv6) > 0 {
+		serverInfo.IP = entry.AddrIPv6[0].String()
+	}
 
-		// Try IPv4 first, fallback to IPv6 if needed
-		serverInfo.IP = getUsableIP(entry.AddrIPv4)
-		if serverInfo.IP == "Unknown" && len(entry.AddrIPv6) > 0 {
-			serverInfo.IP = entry.AddrIPv6[0].String()
-		}
+	serverInfo.Port = strconv.Itoa(entry.Port)
 
-		serverInfo.Port = strconv.Itoa(entry.Port)
-
-		// Check for AnonymousAllowed in Text records
-		anonAllowed := false
-		for _, s := range entry.Text {
-			if strings.HasPrefix(s, "AnonymousAllowed=") {
-				parts := strings.Split(s, "=")
-				if len(parts) == 2 {
-					b, err := strconv.ParseBool(parts[1])
-					if err != nil {
-						return nil, err
-					}
-
+	// Check for AnonymousAllowed in Text records
+	anonAllowed := false
+	for _, s := range entry.Text {
+		if strings.HasPrefix(s, "AnonymousAllowed=") {
+			parts := strings.Split(s, "=")
+			if len(parts) == 2 {
+				b, err := strconv.ParseBool(parts[1])
+				if err == nil {
 					anonAllowed = b
 				}
-				break
 			}
+			break
 		}
 
 		serverInfo.AnonymousAllowed = anonAllowed
-		slimmedEntries = append(slimmedEntries, serverInfo)
 	}
-	return slimmedEntries, nil
+	fmt.Printf("Returning %v", serverInfo)
+	return serverInfo, nil
 }
 
 func getUsableIP(ips []net.IP) string {

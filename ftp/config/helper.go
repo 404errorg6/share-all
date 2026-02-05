@@ -7,6 +7,30 @@ import (
 	"strings"
 )
 
+func getWifiOrMobileInterface() ([]net.Interface, error) {
+	var WifiOrMobileInterfaces []net.Interface
+	ifs, err := net.Interfaces()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, iface := range ifs {
+		name := strings.ToLower(iface.Name)
+		if strings.Contains(name, "cellular") || strings.Contains(name, "wi-fi") || strings.Contains(name, "wifi") || strings.HasPrefix(name, "wlan") || strings.HasPrefix(name, "ccmni") || strings.HasPrefix(iface.Name, "rmnet") {
+			if iface.Flags&net.FlagUp != 0 && iface.Flags&net.FlagBroadcast != 0 {
+				WifiOrMobileInterfaces = append(WifiOrMobileInterfaces, iface)
+				fmt.Printf("Ready for register: %v\n", iface)
+			}
+		}
+	}
+
+	if len(WifiOrMobileInterfaces) == 0 {
+		return nil, fmt.Errorf("Neither wifi nor mobile data enabled")
+	}
+
+	return WifiOrMobileInterfaces, nil
+}
+
 func getDefRootDir() string {
 	home, _ := os.UserHomeDir()
 	fmt.Printf("Home: %v\n", home)

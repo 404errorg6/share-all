@@ -43,16 +43,17 @@ const (
 )
 
 var (
-	DefFTPPort        = "2121"
-	DefFTPHost        = GetLocalIP()
-	DefFTPWriteAccess = "false"
-	DefAnonymous      = "true"
-	HTTPPort          = "8085"
-	HTTPHost          = "127.0.0.1"
-	LogsTestingCount  = 0
-	LogsCh            = make(chan string, 100) //Channel that sends logs
-	DefLocalDir       = getDefRootDir()
-	FTPServer         = MyServer{}
+	DefFTPPort             = "2121"
+	DefFTPHost             = GetLocalIP()
+	DefFTPWriteAccess      = "false"
+	DefAnonymous           = "true"
+	HTTPPort               = "8085"
+	HTTPHost               = "127.0.0.1"
+	LogsTestingCount       = 0
+	LogsCh                 = make(chan string, 100) //Channel that sends logs
+	DefLocalDir            = getDefRootDir()
+	WifiOrDataInterface, _ = getWifiOrMobileInterface()
+	FTPServer              = MyServer{}
 )
 
 func (s *MyServer) BlockUser(host string) {

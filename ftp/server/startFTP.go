@@ -2,10 +2,8 @@ package server
 
 import (
 	"fmt"
-	"net"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/404errorg6/FTP-server/ftp/config"
 	ftpserver "github.com/fclairamb/ftpserverlib"
@@ -52,43 +50,14 @@ func registerFTP() error {
 		fmt.Sprintf("AnonymousAllowed=%v", config.FTPServer.AnonymousAccessAllowed),
 	}
 
-	ifaces, err := getWifiOrMobileInterface()
-	if err != nil {
-		return err
-	}
+	config.LogsCh <- fmt.Sprintf("Wifi or Mobile interfaces: \n%v", config.WifiOrDataInterface)
 
-	config.LogsCh <- fmt.Sprintf("Wifi or Mobile interfaces: \n%v", ifaces)
-
-	server, err = zeroconf.Register(instance, config.SERVICE, config.DOMAIN, portInt, text, ifaces)
+	server, err = zeroconf.Register(instance, config.SERVICE, config.DOMAIN, portInt, text, config.WifiOrDataInterface)
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func getWifiOrMobileInterface() ([]net.Interface, error) {
-	var WifiOrMobileInterfaces []net.Interface
-	ifs, err := net.Interfaces()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, iface := range ifs {
-		name := strings.ToLower(iface.Name)
-		if strings.Contains(name, "cellular") || strings.Contains(name, "wi-fi") || strings.Contains(name, "wifi") || strings.HasPrefix(name, "wlan") || strings.HasPrefix(name, "ccmni") || strings.HasPrefix(iface.Name, "rmnet") {
-			if iface.Flags&net.FlagUp != 0 && iface.Flags&net.FlagBroadcast != 0 {
-				WifiOrMobileInterfaces = append(WifiOrMobileInterfaces, iface)
-				fmt.Printf("Ready for register: %v\n", iface)
-			}
-		}
-	}
-
-	if len(WifiOrMobileInterfaces) == 0 {
-		return nil, fmt.Errorf("Neither wifi nor mobile data enabled")
-	}
-
-	return WifiOrMobileInterfaces, nil
 }
 
 func startLogsAndFTP() {
