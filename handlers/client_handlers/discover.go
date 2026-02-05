@@ -43,14 +43,14 @@ func discover() ([]ServerInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	<-ctx.Done()
 
-	// Important: We need to consume the channel until it's closed by zeroconf (when context expires)
-	slimmed, err := convertEntriesToServerInfo(entries)
+	serversInfo, err := convertEntriesToServerInfo(entries)
 	if err != nil {
 		return nil, err
 	}
 
-	return slimmed, nil
+	return serversInfo, nil
 }
 
 func convertEntriesToServerInfo(entries chan *zeroconf.ServiceEntry) ([]ServerInfo, error) {
