@@ -2,7 +2,6 @@ package clienthandlers
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"net/http"
 	"strconv"
@@ -38,7 +37,7 @@ func discover() ([]ServerInfo, error) {
 		return nilEntries, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
 	err = resolver.Browse(ctx, config.SERVICE, config.DOMAIN, entries)
@@ -60,39 +59,37 @@ func convertEntriesToServerInfo(entries chan *zeroconf.ServiceEntry) ([]ServerIn
 
 	for entry := range entries {
 		serverInfo := ServerInfo{}
-		serverInfo.Name = entry.HostName
-		serverInfo.IP = getUsableIP(entry.AddrIPv4)
-		serverInfo.Port = strconv.Itoa(entry.Port)
-		anonmousAllowed, err := getBoolVal(entry.Text, "AnonymousAccessAllowed")
-		if err != nil {
-			return slimmedEntries, err
+		// Use Instance name as it's more descriptive in Zeroconf
+		serverInfo.Name = entry.Instance
+		if serverInfo.Name == "" {
+			serverInfo.Name = entry.HostName
 		}
 
-		serverInfo.AnonymousAllowed = anonmousAllowed
+		// Try IPv4 first, fallback to IPv6 if needed
+		serverInfo.IP = getUsableIP(entry.AddrIPv4)
+		if serverInfo.IP == "Unknown" && len(entry.AddrIPv6) > 0 {
+			serverInfo.IP = entry.AddrIPv6[0].String()
+		}
+
+		serverInfo.Port = strconv.Itoa(entry.Port)
+
+		// Safe check for AnonymousAllowed in Text records
+		anonAllowed := false
+		for _, s := range entry.Text {
+			if strings.HasPrefix(s, "AnonymousAllowed=") {
+				parts := strings.Split(s, "=")
+				if len(parts) == 2 {
+					b, _ := strconv.ParseBool(parts[1])
+					anonAllowed = b
+				}
+				break
+			}
+		}
+
+		serverInfo.AnonymousAllowed = anonAllowed
 		slimmedEntries = append(slimmedEntries, serverInfo)
 	}
 	return slimmedEntries, nil
-}
-
-func getBoolVal(text []string, key string) (bool, error) {
-	for _, s := range text {
-		if strings.Contains(s, key) {
-			_, after, found := strings.Cut(s, "=")
-			if !found {
-				return false, fmt.Errorf("\"%v\" key not found", key)
-			}
-
-			s = after
-			boolVal, err := strconv.ParseBool(s)
-			if err != nil {
-				return false, err
-			}
-
-			return boolVal, nil
-		}
-	}
-
-	return false, fmt.Errorf("\"%v\" key not found", key)
 }
 
 func getUsableIP(ips []net.IP) string {
