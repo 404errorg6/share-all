@@ -36,7 +36,7 @@ func discover() ([]ServerInfo, error) {
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
 	err = resolver.Browse(ctx, config.SERVICE, config.DOMAIN, entries)
