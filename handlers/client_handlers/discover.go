@@ -63,7 +63,7 @@ func convertEntriesToServerInfo(entries chan *zeroconf.ServiceEntry) ([]ServerIn
 		serverInfo.Name = entry.HostName
 		serverInfo.IP = getUsableIP(entry.AddrIPv4)
 		serverInfo.Port = strconv.Itoa(entry.Port)
-		anonmousAllowed, err := getBoolVal(entry.Text, "AnonymousAllowed")
+		anonmousAllowed, err := getBoolVal(entry.Text, "AnonymousAccessAllowed")
 		if err != nil {
 			return slimmedEntries, err
 		}
@@ -77,6 +77,12 @@ func convertEntriesToServerInfo(entries chan *zeroconf.ServiceEntry) ([]ServerIn
 func getBoolVal(text []string, key string) (bool, error) {
 	for _, s := range text {
 		if strings.Contains(s, key) {
+			_, after, found := strings.Cut(s, "=")
+			if !found {
+				return false, fmt.Errorf("\"%v\" key not found", key)
+			}
+
+			s = after
 			boolVal, err := strconv.ParseBool(s)
 			if err != nil {
 				return false, err
