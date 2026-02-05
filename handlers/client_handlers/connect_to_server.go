@@ -14,12 +14,12 @@ func HandleConnectToServer(w http.ResponseWriter, req *http.Request) {
 	port := req.FormValue("server_port")
 	user := req.FormValue("user")
 	pass := req.FormValue("password")
-	annonymous := req.FormValue("anonymous")
+	anonymous := req.FormValue("anonymous")
 	isAnonymous := false
 
-	if annonymous != "" {
+	if anonymous != "" {
 		var err error
-		isAnonymous, err = strconv.ParseBool(annonymous)
+		isAnonymous, err = strconv.ParseBool(anonymous)
 		if err != nil {
 			err = fmt.Errorf("Invalid value for annonymous in form: %v", err.Error())
 			http.Error(w, err.Error(), http.StatusBadRequest)
