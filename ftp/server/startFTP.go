@@ -36,8 +36,8 @@ func StartFTP() error {
 
 func registerFTP() error {
 	instance, err := os.Hostname()
-	if err != nil {
-		return err
+	if err != nil || instance == "" {
+		instance = "FTP-Server"
 	}
 
 	portInt, err := strconv.Atoi(config.FTPServer.Port)
@@ -48,7 +48,7 @@ func registerFTP() error {
 	service := "_ftp._tcp"
 	domain := "local."
 	text := []string{
-		fmt.Sprintf("AnonymousAccessAllowed=%v", config.FTPServer.AnonymousAccessAllowed),
+		fmt.Sprintf("AnonymousAllowed=%v", config.FTPServer.AnonymousAccessAllowed),
 	}
 
 	server, err = zeroconf.Register(instance, service, domain, portInt, text, nil)

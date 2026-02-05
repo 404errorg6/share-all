@@ -25,13 +25,31 @@ func getDefRootDir() string {
 }
 
 func GetLocalIP() string {
-	// We don't actually connect, so any IP works.
-	conn, err := net.Dial("udp", "8.8.8.8:80")
+	addrs, err := net.InterfaceAddrs()
 	if err != nil {
-		return "127.0.0.1" // Fallback
+		return "127.0.0.1"
 	}
-	defer conn.Close()
 
-	localAddr := conn.LocalAddr().(*net.UDPAddr)
-	return localAddr.IP.String()
+	for _, address := range addrs {
+		// check the address type and if it is not a loopback the display it
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				// Avoid link-local (169.254.x.x) if possible
+				if !ipnet.IP.IsLinkLocalUnicast() {
+					return ipnet.IP.String()
+				}
+			}
+		}
+	}
+
+	// Double check if we can at least find any non-loopback IP
+	for _, address := range addrs {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String()
+			}
+		}
+	}
+
+	return "127.0.0.1"
 }
