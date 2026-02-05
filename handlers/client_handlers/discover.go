@@ -30,25 +30,24 @@ func HandlerDiscoverServers(w http.ResponseWriter, req *http.Request) {
 }
 
 func discover() ([]ServerInfo, error) {
-	var nilEntries []ServerInfo
 	entries := make(chan *zeroconf.ServiceEntry, 100)
 	resolver, err := zeroconf.NewResolver()
 	if err != nil {
-		return nilEntries, err
+		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
 	err = resolver.Browse(ctx, config.SERVICE, config.DOMAIN, entries)
 	if err != nil {
-		return nilEntries, err
+		return nil, err
 	}
 
 	// Important: We need to consume the channel until it's closed by zeroconf (when context expires)
 	slimmed, err := convertEntriesToServerInfo(entries)
 	if err != nil {
-		return nilEntries, err
+		return nil, err
 	}
 
 	return slimmed, nil
@@ -73,13 +72,17 @@ func convertEntriesToServerInfo(entries chan *zeroconf.ServiceEntry) ([]ServerIn
 
 		serverInfo.Port = strconv.Itoa(entry.Port)
 
-		// Safe check for AnonymousAllowed in Text records
+		// Check for AnonymousAllowed in Text records
 		anonAllowed := false
 		for _, s := range entry.Text {
 			if strings.HasPrefix(s, "AnonymousAllowed=") {
 				parts := strings.Split(s, "=")
 				if len(parts) == 2 {
-					b, _ := strconv.ParseBool(parts[1])
+					b, err := strconv.ParseBool(parts[1])
+					if err != nil {
+						return nil, err
+					}
+
 					anonAllowed = b
 				}
 				break
