@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"strings"
 )
@@ -21,4 +22,16 @@ func getDefRootDir() string {
 	}
 
 	return home
+}
+
+func GetLocalIP() string {
+	// We don't actually connect, so any IP works.
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		return "127.0.0.1" // Fallback
+	}
+	defer conn.Close()
+
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	return localAddr.IP.String()
 }

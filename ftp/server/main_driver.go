@@ -17,8 +17,8 @@ type AndroidMainDriver struct {
 
 func (d *AndroidMainDriver) GetSettings() (*ftpserver.Settings, error) {
 	settings := ftpserver.Settings{
-		ListenAddr:             config.Server.FTPHost + ":" + config.Server.FTPPort,
-		PublicHost:             config.Server.FTPHost,
+		ListenAddr:             config.FTPServer.Host + ":" + config.FTPServer.Port,
+		PublicHost:             config.FTPServer.Host,
 		ActiveConnectionsCheck: ftpserver.IPMatchRequired,
 		PasvConnectionsCheck:   ftpserver.IPMatchRequired,
 		IdleTimeout:            500,
@@ -36,16 +36,16 @@ func (d *AndroidMainDriver) AuthUser(cc ftpserver.ClientContext, user, pass stri
 		return nil, fmt.Errorf("%v is already connected", host)
 	}
 
-	if slices.Contains(config.Server.BlackList, host) {
+	if slices.Contains(config.FTPServer.BlackList, host) {
 		return nil, fmt.Errorf("%v is blocked", host)
 	}
 
-	if config.Server.AnonymousAccessAllowed {
+	if config.FTPServer.AnonymousAccessAllowed {
 		if user == "anonymous" && pass == "anonymous" {
-			fileSystem := afero.NewBasePathFs(afero.NewOsFs(), config.Server.RootDir)
+			fileSystem := afero.NewBasePathFs(afero.NewOsFs(), config.FTPServer.RootDir)
 			isAuthorized = true
 
-			if !config.Server.WriteAllowed {
+			if !config.FTPServer.WriteAllowed {
 				fileSystem = afero.NewReadOnlyFs(fileSystem)
 			}
 

@@ -7,17 +7,18 @@ import (
 )
 
 func StopFTP() error {
-	if !config.Server.IsRunning {
+	if !config.FTPServer.IsRunning {
 		return nil
 	}
 
-	config.Server.ConnectedClients.Range(disconnectClients)
-	if err := config.Server.Conn.Stop(); err != nil {
+	config.FTPServer.ConnectedClients.Range(disconnectClients)
+	if err := config.FTPServer.Conn.Stop(); err != nil {
 		config.LogsCh <- err.Error()
 		return err
 	}
-	config.Server.Conn = nil
-	config.Server.IsRunning = false
+	config.FTPServer.Conn = nil
+	config.FTPServer.IsRunning = false
+	server.Shutdown()
 
 	config.LogsCh <- "server stopped"
 	return nil

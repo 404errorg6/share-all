@@ -72,10 +72,10 @@ func initServer(host, port, root, writeAllowed, anonymous string) error {
 		return err
 	}
 
-	config.Server.FTPHost = host
-	config.Server.FTPPort = port
-	config.Server.RootDir = root
-	config.Server.AnonymousAccessAllowed = isAnonymous
-	config.Server.WriteAllowed = writeAllowedBool
+	config.FTPServer.Host = host
+	config.FTPServer.Port = port
+	config.FTPServer.RootDir = root
+	config.FTPServer.AnonymousAccessAllowed = isAnonymous
+	config.FTPServer.WriteAllowed = writeAllowedBool
 	return nil
 }

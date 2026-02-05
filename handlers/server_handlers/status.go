@@ -7,7 +7,7 @@ import (
 )
 
 func HandleServerStatus(w http.ResponseWriter, req *http.Request) {
-	if config.Server.IsRunning {
+	if config.FTPServer.IsRunning {
 		config.SendJSON(w, true)
 		return
 	}
