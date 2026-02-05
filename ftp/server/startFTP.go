@@ -57,6 +57,8 @@ func registerFTP() error {
 		return err
 	}
 
+	config.LogsCh <- fmt.Sprintf("Wifi or Mobile interfaces: \n%v", ifaces)
+
 	server, err = zeroconf.Register(instance, config.SERVICE, config.DOMAIN, portInt, text, ifaces)
 	if err != nil {
 		return err
@@ -73,8 +75,12 @@ func getWifiOrMobileInterface() ([]net.Interface, error) {
 	}
 
 	for _, iface := range ifs {
-		if strings.HasPrefix(iface.Name, "wlan") || strings.HasPrefix(iface.Name, "ccmni") || strings.HasPrefix(iface.Name, "rmnet") {
-			WifiOrMobileInterfaces = append(WifiOrMobileInterfaces, iface)
+		name := strings.ToLower(iface.Name)
+		if strings.Contains(name, "cellular") || strings.Contains(name, "wi-fi") || strings.Contains(name, "wifi") || strings.HasPrefix(name, "wlan") || strings.HasPrefix(name, "ccmni") || strings.HasPrefix(iface.Name, "rmnet") {
+			if iface.Flags%net.FlagUp != 0 && iface.Flags&net.FlagBroadcast != 0 {
+				WifiOrMobileInterfaces = append(WifiOrMobileInterfaces, iface)
+				fmt.Printf("Ready for register: %v\n", iface)
+			}
 		}
 	}
 
