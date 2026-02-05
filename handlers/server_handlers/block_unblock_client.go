@@ -13,7 +13,7 @@ func BlockClient(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	config.Server.BlockUser(host)
+	config.FTPServer.BlockUser(host)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -24,10 +24,10 @@ func WhitelistClient(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	config.Server.BlackList = config.Server.UnblockUser(host)
+	config.FTPServer.BlackList = config.FTPServer.UnblockUser(host)
 	w.WriteHeader(http.StatusNoContent)
 }
 
 func HandlerGetBlacklist(w http.ResponseWriter, req *http.Request) {
-	config.SendJSON(w, config.Server.BlackList)
+	config.SendJSON(w, config.FTPServer.BlackList)
 }

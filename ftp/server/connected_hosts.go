@@ -10,7 +10,7 @@ import (
 func GetConnectedHosts() []config.Client {
 	connectedClients := []config.Client{}
 	fmt.Printf("Connected Clients:\n")
-	config.Server.ConnectedClients.Range(func(key, value any) bool {
+	config.FTPServer.ConnectedClients.Range(func(key, value any) bool {
 		client, ok := value.(config.Client)
 		if !ok {
 			config.LogsCh <- fmt.Sprintf("Unable to convert to Client: %v", value)
@@ -28,7 +28,7 @@ func alreadyConnected(addr string) bool {
 	host, _, _ := config.GetHostPort(addr)
 	var matchFound bool
 
-	config.Server.ConnectedClients.Range(func(key, value any) bool {
+	config.FTPServer.ConnectedClients.Range(func(key, value any) bool {
 		client, ok := value.(config.Client)
 		if !ok {
 			config.LogsCh <- fmt.Sprintf("[FATAL]: cannot convert to Client: %v", value)
@@ -61,9 +61,9 @@ func addToConnectedClient(user string, cc ftpserver.ClientContext) {
 	client.Host = host
 	client.Msg = fmt.Sprintf("%v: %v    %v", user, addr, cc.RemoteAddr().Network())
 	client.Context = cc
-	config.Server.ConnectedClients.Store(cc.ID(), client)
+	config.FTPServer.ConnectedClients.Store(cc.ID(), client)
 }
 
 func rmFromConnectedClients(cc ftpserver.ClientContext) {
-	config.Server.ConnectedClients.Delete(cc.ID())
+	config.FTPServer.ConnectedClients.Delete(cc.ID())
 }

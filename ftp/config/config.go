@@ -16,8 +16,8 @@ type FSObject struct {
 }
 
 type MyServer struct {
-	FTPHost                string
-	FTPPort                string
+	Host                   string
+	Port                   string
 	RootDir                string
 	AnonymousAccessAllowed bool
 	WriteAllowed           bool
@@ -37,9 +37,14 @@ type Client struct {
 	Context ftpserver.ClientContext
 }
 
+const (
+	SERVICE = "_ftp._tcp"
+	DOMAIN  = "local."
+)
+
 var (
 	DefFTPPort        = "2121"
-	DefFTPHost        = "0.0.0.0"
+	DefFTPHost        = GetLocalIP()
 	DefFTPWriteAccess = "false"
 	DefAnonymous      = "true"
 	HTTPPort          = "8085"
@@ -47,7 +52,7 @@ var (
 	LogsTestingCount  = 0
 	LogsCh            = make(chan string, 100) //Channel that sends logs
 	DefLocalDir       = getDefRootDir()
-	Server            = MyServer{}
+	FTPServer         = MyServer{}
 )
 
 func (s *MyServer) BlockUser(host string) {
@@ -59,7 +64,7 @@ func (s *MyServer) BlockUser(host string) {
 		}
 
 		if client.Host == host {
-			Server.BlackList = append(Server.BlackList, host)
+			FTPServer.BlackList = append(FTPServer.BlackList, host)
 			client.Context.Close()
 			return false
 		}
