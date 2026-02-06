@@ -52,7 +52,7 @@ func registerFTP() error {
 
 	config.LogsCh <- fmt.Sprintf("Wifi or Mobile interfaces: \n%v", config.WifiOrDataInterface)
 
-	server, err = zeroconf.Register(instance, config.SERVICE, config.DOMAIN, portInt, text, config.WifiOrDataInterface)
+	server, err = zeroconf.Register(instance, config.SERVICE, config.DOMAIN, portInt, text, nil)
 	if err != nil {
 		return err
 	}
