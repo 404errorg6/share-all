@@ -34,7 +34,7 @@ func discover() ([]ServerInfo, error) {
 	var serversInfo []ServerInfo
 	entries := make(chan *zeroconf.ServiceEntry, 100)
 
-	resolver, err := zeroconf.NewResolver(zeroconf.SelectIfaces(config.WifiOrDataInterface))
+	resolver, err := zeroconf.NewResolver()
 	if err != nil {
 		return nil, err
 	}
@@ -46,6 +46,7 @@ func discover() ([]ServerInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	<-ctx.Done()
 
 	for entry := range entries {
 		svrInfo, err := convertEntryToServerInfo(entry)
@@ -80,7 +81,7 @@ func convertEntryToServerInfo(entry *zeroconf.ServiceEntry) (ServerInfo, error) 
 	// Check for AnonymousAllowed in Text records
 	anonAllowed := false
 	for _, s := range entry.Text {
-		if strings.HasPrefix(s, "AnonymousAllowed=") {
+		if strings.Contains(s, "=") {
 			parts := strings.Split(s, "=")
 			if len(parts) == 2 {
 				b, err := strconv.ParseBool(parts[1])
@@ -90,9 +91,8 @@ func convertEntryToServerInfo(entry *zeroconf.ServiceEntry) (ServerInfo, error) 
 			}
 			break
 		}
-
-		serverInfo.AnonymousAllowed = anonAllowed
 	}
+	serverInfo.AnonymousAllowed = anonAllowed
 	fmt.Printf("Returning %v", serverInfo)
 	return serverInfo, nil
 }
