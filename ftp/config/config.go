@@ -16,6 +16,8 @@ type FSObject struct {
 }
 
 type MyServer struct {
+	User                   string
+	Password               string
 	Host                   string
 	Port                   string
 	RootDir                string
