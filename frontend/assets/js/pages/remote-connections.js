@@ -65,6 +65,7 @@ const RemoteConnections = {
     },
 
     discoveryEventSource: null,
+    discoveredCards: new Map(),
 
     discoverServers() {
         if (this.discoveryEventSource) {
@@ -73,7 +74,7 @@ const RemoteConnections = {
 
         this.discoveryState.classList.remove('hidden');
         this.discoveryList.innerHTML = '';
-        const discoveredIds = new Set();
+        this.discoveredCards.clear();
 
         this.discoveryEventSource = new EventSource('/api/ftp/discover');
 
@@ -82,11 +83,8 @@ const RemoteConnections = {
                 const server = JSON.parse(event.data);
                 const serverId = `${server.IP}:${server.Port}`;
 
-                if (!discoveredIds.has(serverId)) {
-                    discoveredIds.add(serverId);
-                    this.discoveryState.classList.add('hidden');
-                    this.renderDiscoveredServer(server);
-                }
+                this.discoveryState.classList.add('hidden');
+                this.renderDiscoveredServer(serverId, server);
             } catch (err) {
                 console.error('Discovery parse error:', err);
             }
@@ -98,9 +96,16 @@ const RemoteConnections = {
         };
     },
 
-    renderDiscoveredServer(server) {
-        const card = document.createElement('div');
-        card.className = "flex flex-col bg-slate-800/40 border border-white/5 rounded-2xl overflow-hidden hover:border-primary/30 transition-all cursor-pointer group animate-in fade-in slide-in-from-bottom-2 duration-500";
+    renderDiscoveredServer(serverId, server) {
+        let card = this.discoveredCards.get(serverId);
+        const isNew = !card;
+
+        if (isNew) {
+            card = document.createElement('div');
+            card.className = "flex flex-col bg-slate-800/40 border border-white/5 rounded-2xl overflow-hidden hover:border-primary/30 transition-all cursor-pointer group animate-in fade-in slide-in-from-bottom-2 duration-500";
+            this.discoveryList.appendChild(card);
+            this.discoveredCards.set(serverId, card);
+        }
 
         card.onclick = () => this.handleDiscoveredServerClick(server);
 
@@ -124,7 +129,6 @@ const RemoteConnections = {
                 </div>
             </div>
         `;
-        this.discoveryList.appendChild(card);
     },
 
     handleDiscoveredServerClick(server) {
