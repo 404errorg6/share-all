@@ -49,7 +49,7 @@ async function toggleServer(checkbox) {
             params.append('write_allowed', allowWriting ? 'true' : 'false');
 
             if (!anonymous) {
-                params.append('username', document.getElementById('ftp-username').value);
+                params.append('user', document.getElementById('ftp-username').value);
                 params.append('password', document.getElementById('ftp-password').value);
             }
 
