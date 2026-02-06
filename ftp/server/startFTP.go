@@ -10,8 +10,6 @@ import (
 	"github.com/grandcat/zeroconf"
 )
 
-// TODO: Restrict api so attacker on same network can't start this server on personal dir
-
 var server *zeroconf.Server
 
 func StartFTP() error {
@@ -38,6 +36,7 @@ func StartFTP() error {
 func registerFTP() error {
 	instance, err := os.Hostname()
 	if err != nil || instance == "" {
+		// TODO: add mac at the end
 		instance = "FTP-Server"
 	}
 

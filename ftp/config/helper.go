@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// TODO: Refactor this shit
 func getWifiOrMobileInterface() ([]net.Interface, error) {
 	var WifiOrMobileInterfaces []net.Interface
 	ifs, err := net.Interfaces()

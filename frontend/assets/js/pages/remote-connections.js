@@ -64,68 +64,67 @@ const RemoteConnections = {
         });
     },
 
-    async discoverServers() {
+    discoveryEventSource: null,
+
+    discoverServers() {
+        if (this.discoveryEventSource) {
+            this.discoveryEventSource.close();
+        }
+
         this.discoveryState.classList.remove('hidden');
         this.discoveryList.innerHTML = '';
+        const discoveredIds = new Set();
 
-        try {
-            const response = await fetch('/api/ftp/discover');
-            const servers = await response.json();
+        this.discoveryEventSource = new EventSource('/api/ftp/discover');
 
-            this.discoveryState.classList.add('hidden');
+        this.discoveryEventSource.onmessage = (event) => {
+            try {
+                const server = JSON.parse(event.data);
+                const serverId = `${server.IP}:${server.Port}`;
 
-            if (!servers || servers.length === 0) {
-                this.discoveryList.innerHTML = `
-                    <div class="col-span-full py-8 text-center text-slate-500 bg-slate-800/20 rounded-2xl border border-dashed border-white/10">
-                        <p class="text-sm italic">No servers found on your network.</p>
-                    </div>
-                `;
-                return;
+                if (!discoveredIds.has(serverId)) {
+                    discoveredIds.add(serverId);
+                    this.discoveryState.classList.add('hidden');
+                    this.renderDiscoveredServer(server);
+                }
+            } catch (err) {
+                console.error('Discovery parse error:', err);
             }
+        };
 
-            this.renderDiscoveredServers(servers);
-        } catch (err) {
-            console.error('Discovery error:', err);
-            this.discoveryState.classList.add('hidden');
-            this.discoveryList.innerHTML = `
-                <div class="col-span-full py-8 text-center text-danger bg-danger/5 rounded-2xl border border-dashed border-danger/20">
-                    <p class="text-sm font-medium">Discovery failed. Please try again.</p>
-                    <button onclick="RemoteConnections.discoverServers()" class="mt-2 text-xs text-primary underline">Retry</button>
-                </div>
-            `;
-        }
+        this.discoveryEventSource.onerror = (err) => {
+            console.info('Discovery stream closed or interrupted. Reconnecting...');
+            // EventSource automatically reconnects
+        };
     },
 
-    renderDiscoveredServers(servers) {
-        this.discoveryList.innerHTML = '';
-        servers.forEach(server => {
-            const card = document.createElement('div');
-            card.className = "flex flex-col bg-slate-800/40 border border-white/5 rounded-2xl overflow-hidden hover:border-primary/30 transition-all cursor-pointer group animate-in fade-in slide-in-from-bottom-2 duration-500";
+    renderDiscoveredServer(server) {
+        const card = document.createElement('div');
+        card.className = "flex flex-col bg-slate-800/40 border border-white/5 rounded-2xl overflow-hidden hover:border-primary/30 transition-all cursor-pointer group animate-in fade-in slide-in-from-bottom-2 duration-500";
 
-            card.onclick = () => this.handleDiscoveredServerClick(server);
+        card.onclick = () => this.handleDiscoveredServerClick(server);
 
-            card.innerHTML = `
-                <div class="p-4 flex items-center gap-4">
-                    <div class="size-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all shadow-inner">
-                        <span class="material-symbols-outlined text-3xl">wifi_tethering</span>
-                    </div>
-                    <div class="flex flex-col flex-1 overflow-hidden">
-                        <h3 class="text-white font-bold truncate">${server.Name || server.IP}</h3>
-                        <div class="flex items-center gap-2 mt-0.5">
-                            <span class="text-[10px] bg-slate-700/50 text-slate-400 px-1.5 py-0.5 rounded font-mono">${server.IP}:${server.Port}</span>
-                            ${server.AnonymousAllowed ?
-                    '<span class="text-[9px] bg-green-500/10 text-green-500 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Public</span>' :
-                    '<span class="text-[9px] bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Private</span>'
-                }
-                        </div>
-                    </div>
-                    <div class="size-10 rounded-full flex items-center justify-center text-primary/40 group-hover:text-primary transition-colors">
-                        <span class="material-symbols-outlined">chevron_right</span>
+        card.innerHTML = `
+            <div class="p-4 flex items-center gap-4">
+                <div class="size-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all shadow-inner">
+                    <span class="material-symbols-outlined text-3xl">wifi_tethering</span>
+                </div>
+                <div class="flex flex-col flex-1 overflow-hidden">
+                    <h3 class="text-white font-bold truncate">${server.Name || server.IP}</h3>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span class="text-[10px] bg-slate-700/50 text-slate-400 px-1.5 py-0.5 rounded font-mono">${server.IP}:${server.Port}</span>
+                        ${server.AnonymousAllowed ?
+                '<span class="text-[9px] bg-green-500/10 text-green-500 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Public</span>' :
+                '<span class="text-[9px] bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Private</span>'
+            }
                     </div>
                 </div>
-            `;
-            this.discoveryList.appendChild(card);
-        });
+                <div class="size-10 rounded-full flex items-center justify-center text-primary/40 group-hover:text-primary transition-colors">
+                    <span class="material-symbols-outlined">chevron_right</span>
+                </div>
+            </div>
+        `;
+        this.discoveryList.appendChild(card);
     },
 
     handleDiscoveredServerClick(server) {

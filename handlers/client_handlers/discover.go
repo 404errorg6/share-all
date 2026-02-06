@@ -1,13 +1,12 @@
 package clienthandlers
 
 import (
-	"context"
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/404errorg6/FTP-server/ftp/config"
 	"github.com/grandcat/zeroconf"
@@ -21,48 +20,66 @@ type ServerInfo struct {
 }
 
 func HandlerDiscoverServers(w http.ResponseWriter, req *http.Request) {
-	serversInfo, err := discover()
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("X-Accel-Buffering", "no")
+
+	discover(w, req)
+}
+
+func discover(w http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
+	entries := make(chan *zeroconf.ServiceEntry, 100)
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		config.LogsCh <- "Could not type-cast to flusher"
+		return
+	}
+
+	resolver, err := zeroconf.NewResolver()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	config.SendJSON(w, serversInfo)
-}
-
-func discover() ([]ServerInfo, error) {
-	var serversInfo []ServerInfo
-	entries := make(chan *zeroconf.ServiceEntry, 100)
-
-	resolver, err := zeroconf.NewResolver()
-	if err != nil {
-		return nil, err
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-
 	err = resolver.Browse(ctx, config.SERVICE, config.DOMAIN, entries)
 	if err != nil {
-		return nil, err
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	<-ctx.Done()
 
-	for entry := range entries {
-		svrInfo, err := convertEntryToServerInfo(entry)
-		if err != nil {
-			config.LogsCh <- err.Error()
-			continue
+	for {
+		select {
+		case entry := <-entries:
+			svrInfo, err := convertEntryToServerInfo(entry)
+			if err != nil {
+				config.LogsCh <- err.Error()
+				continue
+			}
+
+			body, err := json.Marshal(svrInfo)
+			if err != nil {
+				config.LogsCh <- err.Error()
+				continue
+			}
+
+			_, err = fmt.Fprintf(w, "data: %s\n\n", body)
+			if err != nil {
+				config.LogsCh <- err.Error()
+			}
+			flusher.Flush()
+			fmt.Printf("ServerInfo: %v\n", svrInfo)
+
+		case <-ctx.Done(): //Exit function if user moves to another page
+			return
 		}
-
-		serversInfo = append(serversInfo, svrInfo)
 	}
-
-	return serversInfo, nil
 }
 
 func convertEntryToServerInfo(entry *zeroconf.ServiceEntry) (ServerInfo, error) {
-	fmt.Printf("Called with %v\n", *entry)
 	serverInfo := ServerInfo{}
 	// Use Instance name as it's more descriptive in Zeroconf
 	serverInfo.Name = entry.Instance
@@ -93,7 +110,6 @@ func convertEntryToServerInfo(entry *zeroconf.ServiceEntry) (ServerInfo, error) 
 		}
 	}
 	serverInfo.AnonymousAllowed = anonAllowed
-	fmt.Printf("Returning %v", serverInfo)
 	return serverInfo, nil
 }
 
