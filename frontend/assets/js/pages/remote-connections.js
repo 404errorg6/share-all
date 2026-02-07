@@ -10,6 +10,7 @@ const RemoteConnections = {
     loginModal: null,
 
     init() {
+        console.log('RemoteConnections: init triggered');
         this.serverList = document.getElementById('server-list');
         this.discoveryList = document.getElementById('discovery-list');
         this.emptyState = document.getElementById('empty-state');
@@ -17,7 +18,20 @@ const RemoteConnections = {
         this.loginModal = document.getElementById('login-modal');
 
         this.loadSavedServers();
+        this.loadDiscoveredServers();
         this.discoverServers();
+    },
+
+    loadDiscoveredServers() {
+        const discovered = JSON.parse(localStorage.getItem('discovered_servers') || '{}');
+        const entries = Object.entries(discovered);
+        console.log(`RemoteConnections: Loading ${entries.length} discovered servers from cache`);
+        if (entries.length > 0) {
+            this.discoveryState.classList.add('hidden');
+        }
+        entries.forEach(([serverId, server]) => {
+            this.renderDiscoveredServer(serverId, server, true);
+        });
     },
 
     loadSavedServers() {
@@ -72,9 +86,10 @@ const RemoteConnections = {
             this.discoveryEventSource.close();
         }
 
-        this.discoveryState.classList.remove('hidden');
-        this.discoveryList.innerHTML = '';
-        this.discoveredCards.clear();
+        if (this.discoveredCards.size === 0) {
+            this.discoveryState.classList.remove('hidden');
+        }
+        // Do not clear discoveryList or discoveredCards to maintain persistence
 
         this.discoveryEventSource = new EventSource('/api/ftp/discover');
 
@@ -84,6 +99,12 @@ const RemoteConnections = {
                 const serverId = `${server.IP}:${server.Port}`;
 
                 this.discoveryState.classList.add('hidden');
+
+                // Save to localStorage specifically on discovery
+                const discovered = JSON.parse(localStorage.getItem('discovered_servers') || '{}');
+                discovered[serverId] = server;
+                localStorage.setItem('discovered_servers', JSON.stringify(discovered));
+
                 this.renderDiscoveredServer(serverId, server);
             } catch (err) {
                 console.error('Discovery parse error:', err);
@@ -96,13 +117,14 @@ const RemoteConnections = {
         };
     },
 
-    renderDiscoveredServer(serverId, server) {
+    renderDiscoveredServer(serverId, server, fromCache = false) {
         let card = this.discoveredCards.get(serverId);
         const isNew = !card;
 
         if (isNew) {
             card = document.createElement('div');
-            card.className = "flex flex-col bg-slate-800/40 border border-white/5 rounded-2xl overflow-hidden hover:border-primary/30 transition-all cursor-pointer group animate-in fade-in slide-in-from-bottom-2 duration-500";
+            card.className = "flex flex-col bg-slate-800/40 border border-white/5 rounded-2xl overflow-hidden hover:border-primary/30 transition-all cursor-pointer group";
+            if (!fromCache) card.classList.add("animate-in", "fade-in", "slide-in-from-bottom-2", "duration-500");
             this.discoveryList.appendChild(card);
             this.discoveredCards.set(serverId, card);
         }
@@ -132,8 +154,10 @@ const RemoteConnections = {
     },
 
     handleDiscoveredServerClick(server) {
+        const name = server.Name || server.IP;
+        localStorage.removeItem('current_server_id'); // Ensure we use discovered info
         if (server.AnonymousAllowed) {
-            this.connectWithCredentials(server.IP, server.Port, 'anonymous', 'anonymous', true);
+            this.connectWithCredentials(server.IP, server.Port, 'anonymous', 'anonymous', true, name);
         } else {
             this.showLoginPrompt(server);
         }
@@ -172,11 +196,12 @@ const RemoteConnections = {
             return;
         }
 
+        const name = this.pendingServer.Name || this.pendingServer.IP;
         this.closeLoginModal();
-        await this.connectWithCredentials(this.pendingServer.IP, this.pendingServer.Port, user, pass, false);
+        await this.connectWithCredentials(this.pendingServer.IP, this.pendingServer.Port, user, pass, false, name);
     },
 
-    async connectWithCredentials(host, port, user, pass, isAnon) {
+    async connectWithCredentials(host, port, user, pass, isAnon, name) {
         Components.showToast(`Connecting to ${host}...`, 'info');
         try {
             const params = new URLSearchParams();
@@ -195,7 +220,15 @@ const RemoteConnections = {
             const text = await response.text();
             if (response.ok || text.includes('already connected')) {
                 Components.showToast('Connected successfully', 'success');
-                // We don't have an ID for discovered servers, so we just redirect
+
+                // Store connection info for the browser page
+                if (name) {
+                    console.log(`RemoteConnections: Storing connection info for ${name} (${host}:${port})`);
+                    localStorage.setItem('current_remote_name', name);
+                    localStorage.setItem('current_remote_host', host);
+                    localStorage.setItem('current_remote_port', port);
+                }
+
                 window.location.href = 'browse-remote-local.html';
             } else {
                 Components.showToast(`Connection failed: ${text}`, 'error');
@@ -206,7 +239,8 @@ const RemoteConnections = {
     },
 
     async connectToServer(server) {
-        await this.connectWithCredentials(server.host, server.port, server.user, server.password, server.isAnon);
+        localStorage.setItem('current_server_id', server.id);
+        await this.connectWithCredentials(server.host, server.port, server.user, server.password, server.isAnon, server.name);
     },
 
     editServer(id) {

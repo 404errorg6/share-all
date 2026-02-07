@@ -358,17 +358,37 @@ function toggleHiddenFiles() {
 document.addEventListener('DOMContentLoaded', () => {
     const serverId = localStorage.getItem('current_server_id');
     const servers = JSON.parse(localStorage.getItem('ftp_servers') || '[]');
-    const server = servers.find(s => s.id == serverId);
+    const savedServer = servers.find(s => s.id == serverId);
 
-    if (server) {
-        currentServer = server; // Store for switching
-        document.getElementById('server-name').innerText = server.name;
-        document.getElementById('server-info').innerText = `${server.host}:${server.port}`;
-        fetchFiles('remote', '.');
-        fetchFiles('local', '.');
+    console.log('BrowseRemoteLocal: Init. serverId:', serverId, 'savedServer found:', !!savedServer);
+
+    if (savedServer) {
+        currentServer = savedServer;
+        document.getElementById('server-name').innerText = savedServer.name;
+        document.getElementById('server-info').innerText = `${savedServer.host}:${savedServer.port}`;
     } else {
-        window.location.href = 'remote-connections.html';
+        const discName = localStorage.getItem('current_remote_name');
+        const discHost = localStorage.getItem('current_remote_host');
+        const discPort = localStorage.getItem('current_remote_port');
+
+        console.log('BrowseRemoteLocal: Checking discovered info. discHost:', discHost);
+
+        if (discHost) {
+            currentServer = {
+                name: discName || "Remote Server",
+                host: discHost,
+                port: discPort || "21"
+            };
+            document.getElementById('server-name').innerText = currentServer.name;
+            document.getElementById('server-info').innerText = `${discHost}:${discPort}`;
+        } else {
+            console.warn('BrowseRemoteLocal: No connection info found, redirecting back.');
+            window.location.href = 'remote-connections.html';
+            return;
+        }
     }
+    fetchFiles('remote', '.');
+    fetchFiles('local', '.');
 });
 
 // --- Exports ---

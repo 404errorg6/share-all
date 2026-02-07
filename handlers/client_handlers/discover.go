@@ -29,6 +29,7 @@ func HandlerDiscoverServers(w http.ResponseWriter, req *http.Request) {
 	discover(w, req)
 }
 
+// TODO: Connect and go back to discovery, doesn't work
 func discover(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	entries := make(chan *zeroconf.ServiceEntry, 100)
