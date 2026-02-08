@@ -383,7 +383,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('server-info').innerText = `${discHost}:${discPort}`;
         } else {
             console.warn('BrowseRemoteLocal: No connection info found, redirecting back.');
-            window.location.href = 'remote-connections.html';
+            window.location.href = 'discover-servers.html';
             return;
         }
     }

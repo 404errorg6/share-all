@@ -36,12 +36,12 @@ const Components = {
                         <span class="text-sm font-semibold">Hosting Panel</span>
                     </div>
                 </a>
-                <a href="/pages/remote-connections.html" class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group ${activePageId === 'remote-connections' ? 'bg-primary/5 border-l-4 border-primary' : ''}">
+                <a href="/pages/discover-servers.html" class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group ${activePageId === 'remote-connections' ? 'bg-primary/5 border-l-4 border-primary' : ''}">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-500">
-                            <span class="material-symbols-outlined">add_link</span>
+                            <span class="material-symbols-outlined">wifi_tethering</span>
                         </div>
-                        <span class="text-sm font-semibold">Remote Connections</span>
+                        <span class="text-sm font-semibold">Discover Servers</span>
                     </div>
                 </a>
                 <a href="/pages/hosting-access.html" class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group ${activePageId === 'hosting-access' ? 'bg-primary/5 border-l-4 border-primary' : ''}">

@@ -28,8 +28,6 @@ type MyServer struct {
 	Conn                   *ftpserver.FtpServer
 	ConnectedClients       sync.Map
 	BlackList              []string
-	// TODO: Add users support
-	//	Users            []Client
 }
 
 type Client struct {
@@ -55,7 +53,7 @@ var (
 	LogsTestingCount       = 0
 	LogsCh                 = make(chan string, 100) //Channel that sends logs
 	DefLocalDir            = getDefRootDir()
-	WifiOrDataInterface, _ = getWifiOrMobileInterface()
+	WifiOrDataInterface, _ = getWifiOrCellularInterface()
 	FTPServer              = MyServer{}
 )
 

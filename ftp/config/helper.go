@@ -8,7 +8,7 @@ import (
 )
 
 // TODO: Refactor this shit after kotlin integration
-func getWifiOrMobileInterface() ([]net.Interface, error) {
+func getWifiOrCellularInterface() ([]net.Interface, error) {
 	var WifiOrMobileInterfaces []net.Interface
 	ifs, err := net.Interfaces()
 	if err != nil {
@@ -30,7 +30,7 @@ func getWifiOrMobileInterface() ([]net.Interface, error) {
 		}
 	}
 
-	if len(WifiOrMobileInterfaces) == 0 { //TODO: Add panic or smth
+	if len(WifiOrMobileInterfaces) == 0 {
 		return nil, fmt.Errorf("Neither wifi nor mobile data enabled")
 	}
 
