@@ -4,13 +4,17 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/404errorg6/FTP-server/ftp/config"
 	ftpserver "github.com/fclairamb/ftpserverlib"
 	"github.com/grandcat/zeroconf"
 )
 
-var server *zeroconf.Server
+var (
+	refreshTime = 5 * time.Second
+	server      *zeroconf.Server
+)
 
 func StartFTP() error {
 	if config.FTPServer.Conn != nil {
@@ -23,14 +27,25 @@ func StartFTP() error {
 	config.FTPServer.Conn = ftpserver.NewFtpServer(mydriver)
 	go startLogsAndFTP()
 
-	err := registerFTP() //Let clients discover this server
-	if err != nil {
-		config.LogsCh <- err.Error()
-		return err
-	}
+	go registerUntilStopped()
 
 	config.LogsCh <- fmt.Sprintf("FTP server started on: %v:%v with path: %v", config.FTPServer.Host, config.FTPServer.Port, config.FTPServer.RootDir)
 	return nil
+}
+
+func registerUntilStopped() {
+	time.Sleep(10 * time.Millisecond) //Ensure config.FTP-Server.IsRunning = true in startLogsAndFTP runs first
+	for {
+		if !config.FTPServer.IsRunning {
+			return
+		}
+
+		err := registerFTP()
+		if err != nil {
+			config.LogsCh <- err.Error()
+		}
+		time.Sleep(refreshTime)
+	}
 }
 
 func registerFTP() error {
