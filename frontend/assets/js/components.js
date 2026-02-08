@@ -195,16 +195,22 @@ const Components = {
         `;
 
         // Click to expand functionality
+        let hideTimeout;
+        const startHideTimer = () => {
+            hideTimeout = setTimeout(() => {
+                if (toast && toast.parentElement) {
+                    toast.classList.add('translate-x-full', 'opacity-0');
+                    setTimeout(() => toast.remove(), 500);
+                }
+            }, 5000);
+        };
+
         toast.onclick = (e) => {
-            const text = toast.querySelector('#toast-text');
-            if (text.classList.contains('truncate')) {
-                text.classList.remove('truncate', 'whitespace-nowrap');
-                text.classList.add('whitespace-normal');
-                toast.classList.add('max-w-[90vw]'); // Allow it to expand more on click
+            const isExpanded = toast.classList.toggle('toast-expanded');
+            if (isExpanded) {
+                clearTimeout(hideTimeout);
             } else {
-                text.classList.add('truncate', 'whitespace-nowrap');
-                text.classList.remove('whitespace-normal');
-                toast.classList.remove('max-w-[90vw]');
+                startHideTimer();
             }
         };
 
@@ -214,12 +220,7 @@ const Components = {
             toast.classList.remove('translate-x-full', 'opacity-0');
         }, 50);
 
-        setTimeout(() => {
-            if (toast && toast.parentElement) {
-                toast.classList.add('translate-x-full', 'opacity-0');
-                setTimeout(() => toast.remove(), 500);
-            }
-        }, 5000); // Increased timeout to 5s for better readability
+        startHideTimer();
     }
 };
 
