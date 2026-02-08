@@ -123,14 +123,10 @@ const Components = {
         this.onModalPrimary = onPrimary;
 
         mIconContainer.className = "mx-auto size-24 rounded-full flex items-center justify-center mb-6 transition-all duration-500 " +
-            (type === 'danger'
-                ? 'bg-danger/20 text-danger shadow-[0_0_30px_rgba(255,77,77,0.3)]'
-                : 'bg-primary/20 text-primary shadow-[0_0_30px_rgba(80,194,247,0.3)]');
+            (type === 'danger' ? 'icon-glow-danger' : 'icon-glow-primary');
 
-        mPrimaryBtn.className = "h-16 w-full rounded-2xl font-bold text-lg shadow-xl shadow-black/20 transition-all active:scale-95 text-white " +
-            (type === 'danger'
-                ? 'bg-gradient-to-r from-danger to-[#ff6666] hover:brightness-110'
-                : 'bg-gradient-to-r from-primary to-[#70d1ff] hover:brightness-110');
+        mPrimaryBtn.className = "h-16 w-full rounded-2xl font-bold text-lg transition-all active:scale-95 text-white shadow-lg " +
+            (type === 'danger' ? 'modal-btn-danger' : 'modal-btn-primary');
 
         mPrimaryBtn.onclick = () => { if (this.onModalPrimary) this.onModalPrimary(); this.closeGuiModal(); };
 
@@ -150,34 +146,80 @@ const Components = {
     },
 
     /**
+     * Map technical errors to user-friendly messages
+     */
+    mapError(message) {
+        if (!message) return "Unknown error occurred";
+
+        // Connection refused / Device offline
+        if (message.includes("connectex") || message.includes("actively refused it") || message.includes("dial tcp")) {
+            return "Device is offline or connection refused";
+        }
+
+        // Authentication error
+        if (message.includes("530 Authentication error") || message.includes("Invalid credentials")) {
+            return "Incorrect username/password";
+        }
+
+        return message;
+    },
+
+    /**
      * Toast Injection and Show
      */
     showToast(message, type = 'success') {
+        const displayMessage = type === 'error' ? this.mapError(message) : message;
         const containerId = 'global-toast-container';
         let container = document.getElementById(containerId);
         if (!container) {
             container = document.createElement('div');
             container.id = containerId;
-            container.className = 'fixed top-4 right-4 z-[110] flex flex-col gap-2 pointer-events-none';
+            container.className = 'fixed top-4 right-4 z-[110] flex flex-col gap-2.5 pointer-events-none';
             document.body.appendChild(container);
         }
 
         const toast = document.createElement('div');
-        const bgClass = type === 'error' ? 'bg-danger' : (type === 'info' ? 'bg-blue-500' : 'bg-green-500');
-        const icon = type === 'error' ? 'error' : (type === 'info' ? 'info' : 'check_circle');
+        const toastTypeClass = type === 'error' ? 'toast-error' : (type === 'info' ? 'toast-info' : (type === 'warning' ? 'toast-warning' : 'toast-success'));
+        const icon = type === 'error' ? 'error' : (type === 'info' ? 'info' : (type === 'warning' ? 'warning' : 'check_circle'));
+        const iconColorClass = type === 'error' ? 'text-danger' : (type === 'info' ? 'text-primary' : (type === 'warning' ? 'text-warning' : 'text-success'));
 
-        toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl ${bgClass} text-white min-w-[280px] transform transition-all duration-300 translate-x-full pointer-events-auto`;
+        toast.className = `premium-toast ${toastTypeClass} flex items-center gap-3 pl-3 pr-5 py-2.5 rounded-xl transition-all duration-500 transform translate-x-full opacity-0 cursor-pointer pointer-events-auto group`;
         toast.innerHTML = `
-            <span class="material-symbols-outlined text-xl bg-white/20 p-1 rounded-full">${icon}</span>
-            <p class="font-medium text-sm">${message}</p>
+            <div class="shrink-0 flex items-center justify-center size-8 rounded-lg bg-white/5 ${iconColorClass}">
+                <span class="material-symbols-outlined text-[18px]">${icon}</span>
+            </div>
+            <div class="flex-1 overflow-hidden transition-all duration-300">
+                <p class="text-[9px] font-black uppercase tracking-[0.1em] text-slate-500 mb-0.5 leading-none">${type}</p>
+                <p id="toast-text" class="font-bold text-sm text-white/95 leading-tight truncate px-0.5 whitespace-nowrap transition-all duration-300">${displayMessage}</p>
+            </div>
         `;
 
+        // Click to expand functionality
+        toast.onclick = (e) => {
+            const text = toast.querySelector('#toast-text');
+            if (text.classList.contains('truncate')) {
+                text.classList.remove('truncate', 'whitespace-nowrap');
+                text.classList.add('whitespace-normal');
+                toast.classList.add('max-w-[90vw]'); // Allow it to expand more on click
+            } else {
+                text.classList.add('truncate', 'whitespace-nowrap');
+                text.classList.remove('whitespace-normal');
+                toast.classList.remove('max-w-[90vw]');
+            }
+        };
+
         container.appendChild(toast);
-        setTimeout(() => toast.classList.remove('translate-x-full'), 10);
+        // Force reflow and then animate in
         setTimeout(() => {
-            toast.classList.add('translate-x-[150%]');
-            setTimeout(() => toast.remove(), 400);
-        }, 3000);
+            toast.classList.remove('translate-x-full', 'opacity-0');
+        }, 50);
+
+        setTimeout(() => {
+            if (toast && toast.parentElement) {
+                toast.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => toast.remove(), 500);
+            }
+        }, 5000); // Increased timeout to 5s for better readability
     }
 };
 
