@@ -21,7 +21,10 @@ func getWifiOrMobileInterface() ([]net.Interface, error) {
 		name := strings.ToLower(iface.Name)
 		if iface.Flags&net.FlagUp != 0 && iface.Flags&net.FlagBroadcast != 0 {
 			fmt.Printf("	%v: %v\n", iface.Name, iface)
-			if strings.Contains(name, "cellular") || strings.Contains(name, "wi-fi") || strings.Contains(name, "wifi") || strings.HasPrefix(name, "wlan") || strings.HasPrefix(name, "ccmni") || strings.HasPrefix(iface.Name, "rmnet") {
+			isWifi := strings.Contains(name, "wi-fi") || strings.Contains(name, "wifi") || strings.HasPrefix(name, "wlan")
+			isCellular := strings.Contains(name, "cellular") || strings.HasPrefix(name, "ap") || strings.HasPrefix(iface.Name, "rmnet")
+
+			if isWifi || isCellular {
 				WifiOrMobileInterfaces = append(WifiOrMobileInterfaces, iface)
 			}
 		}
