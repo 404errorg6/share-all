@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/404errorg6/FTP-server/ftp/config"
 	ftpserver "github.com/fclairamb/ftpserverlib"
@@ -12,8 +11,7 @@ import (
 )
 
 var (
-	refreshTime = 5 * time.Second
-	server      *zeroconf.Server
+	server *zeroconf.Server
 )
 
 func StartFTP() error {
@@ -36,22 +34,6 @@ func StartFTP() error {
 	return nil
 }
 
-/*
-	func registerUntilStopped() {
-		time.Sleep(10 * time.Millisecond) //Ensure config.FTP-Server.IsRunning = true in startLogsAndFTP runs first
-		for {
-			if !config.FTPServer.IsRunning || server == nil {
-				return
-			}
-
-			err := registerFTP()
-			if err != nil {
-				config.LogsCh <- err.Error()
-			}
-			time.Sleep(refreshTime)
-		}
-	}
-*/
 func registerFTP() error {
 	instance, err := os.Hostname()
 	if err != nil || instance == "" {
