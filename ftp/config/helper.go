@@ -15,14 +15,13 @@ func getWifiOrMobileInterface() ([]net.Interface, error) {
 		return nil, err
 	}
 
-	fmt.Printf("Interfaces:\n")
+	fmt.Printf("All Interfaces:\n")
 	for _, iface := range ifs {
 		fmt.Printf("	%v: %v\n", iface.Name, iface)
 		name := strings.ToLower(iface.Name)
 		if strings.Contains(name, "cellular") || strings.Contains(name, "wi-fi") || strings.Contains(name, "wifi") || strings.HasPrefix(name, "wlan") || strings.HasPrefix(name, "ccmni") || strings.HasPrefix(iface.Name, "rmnet") {
 			if iface.Flags&net.FlagUp != 0 && iface.Flags&net.FlagBroadcast != 0 {
 				WifiOrMobileInterfaces = append(WifiOrMobileInterfaces, iface)
-				fmt.Printf("Available Interface: %v\n", iface)
 			}
 		}
 	}
@@ -31,6 +30,7 @@ func getWifiOrMobileInterface() ([]net.Interface, error) {
 		return nil, fmt.Errorf("Neither wifi nor mobile data enabled")
 	}
 
+	fmt.Printf("Choosen interfaces: %v\n", WifiOrMobileInterfaces)
 	return WifiOrMobileInterfaces, nil
 }
 
