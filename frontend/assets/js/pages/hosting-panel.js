@@ -21,12 +21,20 @@ async function toggleServer(checkbox) {
 
     if (isStarting) {
         // Get configuration values
+        const name = document.getElementById('ftp-name').value || 'My FTP Server';
         const port = document.getElementById('ftp-port').value || '2121';
         const rootFolder = document.getElementById('ftp-root').value || '';
         const anonymous = document.getElementById('anonymous-login-toggle').checked;
         const allowWriting = document.getElementById('allow-writing-toggle').checked;
 
-        // Validate username/password if not anonymous
+        // Validate
+        if (!name) {
+            Components.showToast('Server Name is required', 'error');
+            checkbox.checked = false;
+            updateToggleUI(false);
+            return;
+        }
+
         if (!anonymous) {
             const username = document.getElementById('ftp-username').value || '';
             const password = document.getElementById('ftp-password').value || '';
@@ -43,6 +51,7 @@ async function toggleServer(checkbox) {
 
         try {
             const params = new URLSearchParams();
+            params.append('name', name);
             params.append('server_port', port);
             params.append('server_root_dir', rootFolder);
             params.append('anonymous_allowed', anonymous ? 'true' : 'false');
@@ -135,9 +144,6 @@ function updateUrl() {
     document.getElementById('ftp-url').textContent = `ftp://127.0.0.1:${port}/`;
 }
 
-function saveConfig() {
-    Components.showToast('Configuration saved locally');
-}
 
 function toggleAnonymous(isAnonymous) {
     const uCont = document.getElementById('username-container');
@@ -182,5 +188,4 @@ document.addEventListener('DOMContentLoaded', () => {
 window.copyUrl = copyUrl;
 window.toggleServer = toggleServer;
 window.updateUrl = updateUrl;
-window.saveConfig = saveConfig;
 window.toggleAnonymous = toggleAnonymous;

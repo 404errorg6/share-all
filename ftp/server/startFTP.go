@@ -2,8 +2,6 @@ package server
 
 import (
 	"fmt"
-	"os"
-	"strconv"
 
 	"github.com/404errorg6/FTP-server/ftp/config"
 	ftpserver "github.com/fclairamb/ftpserverlib"
@@ -31,33 +29,6 @@ func StartFTP() error {
 	}
 
 	config.LogsCh <- fmt.Sprintf("FTP server started on: %v:%v with path: %v", config.FTPServer.Host, config.FTPServer.Port, config.FTPServer.RootDir)
-	return nil
-}
-
-func registerFTP() error {
-	instance, err := os.Hostname()
-	if err != nil || instance == "" {
-		// TODO: add mac at the end
-		instance = "FTP-Server"
-	}
-
-	portInt, err := strconv.Atoi(config.FTPServer.Port)
-	if err != nil {
-		return err
-	}
-
-	text := []string{
-		fmt.Sprintf("AnonymousAllowed=%v", config.FTPServer.AnonymousAccessAllowed),
-	}
-
-	config.LogsCh <- fmt.Sprintf("Wifi or Mobile interfaces: \n%v", config.WifiOrDataInterface)
-
-	server, err = zeroconf.Register(instance, config.SERVICE, config.DOMAIN, portInt, text, nil)
-	if err != nil {
-		return err
-	}
-	server.TTL(5)
-
 	return nil
 }
 
