@@ -8,6 +8,8 @@ const RemoteConnections = {
     emptyState: null,
     discoveryState: null,
     loginModal: null,
+    rescanBtn: null,
+    discoveryTimeout: null,
 
     init() {
         console.log('RemoteConnections: init triggered');
@@ -16,22 +18,10 @@ const RemoteConnections = {
         this.emptyState = document.getElementById('empty-state');
         this.discoveryState = document.getElementById('discovery-state');
         this.loginModal = document.getElementById('login-modal');
+        this.rescanBtn = document.getElementById('rescan-btn');
 
         this.loadSavedServers();
-        this.loadDiscoveredServers();
         this.discoverServers();
-    },
-
-    loadDiscoveredServers() {
-        const discovered = JSON.parse(localStorage.getItem('discovered_servers') || '{}');
-        const entries = Object.entries(discovered);
-        console.log(`RemoteConnections: Loading ${entries.length} discovered servers from cache`);
-        if (entries.length > 0) {
-            this.discoveryState.classList.add('hidden');
-        }
-        entries.forEach(([serverId, server]) => {
-            this.renderDiscoveredServer(serverId, server, true);
-        });
     },
 
     loadSavedServers() {
@@ -85,25 +75,53 @@ const RemoteConnections = {
         if (this.discoveryEventSource) {
             this.discoveryEventSource.close();
         }
-
-        if (this.discoveredCards.size === 0) {
-            this.discoveryState.classList.remove('hidden');
+        if (this.discoveryTimeout) {
+            clearTimeout(this.discoveryTimeout);
         }
-        // Do not clear discoveryList or discoveredCards to maintain persistence
+
+        // Clear existing results to ensure fresh discovery
+        this.discoveryList.innerHTML = '';
+        this.discoveredCards.clear();
+
+        // Reset discovery-state to scanning UI
+        this.discoveryState.innerHTML = `
+            <div class="size-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4"></div>
+            <p class="text-sm font-bold text-slate-300">Scanning Network</p>
+            <p class="text-[10px] text-slate-500 mt-1 uppercase tracking-widest font-medium">Looking for active FTP servers...</p>
+        `;
+        this.discoveryState.classList.remove('hidden');
+
+        // Hide re-scan button
+        if (this.rescanBtn) this.rescanBtn.classList.add('hidden');
 
         this.discoveryEventSource = new EventSource('/api/ftp/discover');
 
+        // Set 10s timeout
+        this.discoveryTimeout = setTimeout(() => {
+            if (this.discoveredCards.size === 0) {
+                if (this.discoveryEventSource) this.discoveryEventSource.close();
+                this.discoveryState.innerHTML = `
+                    <span class="material-symbols-outlined text-4xl text-slate-500 mb-3 opacity-20">search_off</span>
+                    <p class="text-sm font-bold text-slate-300">No Servers Found</p>
+                    <p class="text-[10px] text-slate-500 mt-1 uppercase tracking-widest font-medium">Make sure other devices are on the same network</p>
+                `;
+                if (this.rescanBtn) this.rescanBtn.classList.remove('hidden');
+            }
+        }, 10000);
+
         this.discoveryEventSource.onmessage = (event) => {
+            // Cancel timeout since we got data
+            if (this.discoveryTimeout) {
+                clearTimeout(this.discoveryTimeout);
+                this.discoveryTimeout = null;
+            }
+
             try {
                 const server = JSON.parse(event.data);
                 const serverId = `${server.IP}:${server.Port}`;
 
                 this.discoveryState.classList.add('hidden');
-
-                // Save to localStorage specifically on discovery
-                const discovered = JSON.parse(localStorage.getItem('discovered_servers') || '{}');
-                discovered[serverId] = server;
-                localStorage.setItem('discovered_servers', JSON.stringify(discovered));
+                if (this.rescanBtn) this.rescanBtn.classList.remove('hidden');
 
                 this.renderDiscoveredServer(serverId, server);
             } catch (err) {
@@ -113,7 +131,7 @@ const RemoteConnections = {
 
         this.discoveryEventSource.onerror = (err) => {
             console.info('Discovery stream closed or interrupted. Reconnecting...');
-            // EventSource automatically reconnects
+            if (this.rescanBtn) this.rescanBtn.classList.remove('hidden');
         };
     },
 

@@ -23,14 +23,13 @@ type ServerInfo struct {
 func HandlerDiscoverServers(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Connection", "close")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("X-Accel-Buffering", "no")
 
 	discover(w, req)
 }
 
-// TODO: Connect and go back to discovery, doesn't work
 func discover(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	entries := make(chan *zeroconf.ServiceEntry, 100)
@@ -49,6 +48,8 @@ func discover(w http.ResponseWriter, req *http.Request) {
 
 	go sendEntries(ctx, entries, w)
 	<-ctx.Done()
+	// TODO: Delay when exiting, do perf boost
+	fmt.Println("Exited discover")
 }
 
 func sendEntries(ctx context.Context, entries <-chan *zeroconf.ServiceEntry, w http.ResponseWriter) {
