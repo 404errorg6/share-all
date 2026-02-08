@@ -13,6 +13,10 @@ var (
 )
 
 func StartFTP() error {
+	if config.WifiOrDataInterface == nil {
+		return fmt.Errorf("Neither wifi, nor cellular is enabled")
+	}
+
 	if config.FTPServer.Conn != nil {
 		err := fmt.Errorf("server already running")
 		config.LogsCh <- err.Error()
