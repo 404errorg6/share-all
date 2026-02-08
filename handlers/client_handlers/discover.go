@@ -13,6 +13,7 @@ import (
 	"github.com/grandcat/zeroconf"
 )
 
+// TODO: Do not discover your own server
 type ServerInfo struct {
 	Name             string
 	IP               string
@@ -79,7 +80,6 @@ func sendEntries(ctx context.Context, entries <-chan *zeroconf.ServiceEntry, w h
 				config.LogsCh <- err.Error()
 			}
 			flusher.Flush()
-			fmt.Printf("ServerInfo: %v\n", svrInfo)
 
 		case <-ctx.Done(): //Exit function if user moves to another page
 			return
@@ -92,7 +92,6 @@ func convertEntryToServerInfo(entry *zeroconf.ServiceEntry) (ServerInfo, error) 
 	// Use Instance name as it's more descriptive in Zeroconf
 	instance := strings.ReplaceAll(entry.Instance, "\\", "") //Clean it
 	serverInfo.Name = instance
-	fmt.Printf("Instance after registered: %v\n", entry.Instance)
 	if serverInfo.Name == "" {
 		serverInfo.Name = entry.HostName
 	}

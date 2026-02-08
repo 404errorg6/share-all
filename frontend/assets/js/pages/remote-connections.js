@@ -3,9 +3,7 @@
  */
 
 const RemoteConnections = {
-    serverList: null,
     discoveryList: null,
-    emptyState: null,
     discoveryState: null,
     loginModal: null,
     rescanBtn: null,
@@ -13,59 +11,12 @@ const RemoteConnections = {
 
     init() {
         console.log('RemoteConnections: init triggered');
-        this.serverList = document.getElementById('server-list');
         this.discoveryList = document.getElementById('discovery-list');
-        this.emptyState = document.getElementById('empty-state');
         this.discoveryState = document.getElementById('discovery-state');
         this.loginModal = document.getElementById('login-modal');
         this.rescanBtn = document.getElementById('rescan-btn');
 
-        this.loadSavedServers();
         this.discoverServers();
-    },
-
-    loadSavedServers() {
-        const servers = JSON.parse(localStorage.getItem('ftp_servers') || '[]');
-        if (servers.length === 0) {
-            this.emptyState.classList.remove('hidden');
-            this.serverList.innerHTML = '';
-        } else {
-            this.emptyState.classList.add('hidden');
-            this.renderSavedServers(servers);
-        }
-    },
-
-    renderSavedServers(servers) {
-        this.serverList.innerHTML = '';
-        servers.forEach(server => {
-            const card = document.createElement('div');
-            card.className = "flex flex-col bg-slate-800/40 border border-white/5 rounded-2xl overflow-hidden hover:border-primary/30 transition-all cursor-pointer group";
-            card.onclick = (e) => {
-                if (e.target.closest('.action-btn')) return;
-                this.connectToServer(server);
-            };
-
-            card.innerHTML = `
-                <div class="p-4 flex items-center gap-4">
-                    <div class="size-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all shadow-inner">
-                        <span class="material-symbols-outlined text-3xl">dns</span>
-                    </div>
-                    <div class="flex flex-col flex-1 overflow-hidden">
-                        <h3 class="text-white font-bold truncate">${server.name}</h3>
-                        <p class="text-slate-500 text-xs font-mono">${server.user}@${server.host}:${server.port}</p>
-                    </div>
-                    <div class="flex gap-1">
-                        <button onclick="RemoteConnections.editServer(${server.id})" class="action-btn size-10 rounded-full flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/10 transition-colors">
-                            <span class="material-symbols-outlined text-lg">edit</span>
-                        </button>
-                        <button onclick="RemoteConnections.confirmDelete(${server.id})" class="action-btn size-10 rounded-full flex items-center justify-center text-slate-500 hover:text-danger hover:bg-danger/10 transition-colors">
-                            <span class="material-symbols-outlined text-lg">delete</span>
-                        </button>
-                    </div>
-                </div>
-            `;
-            this.serverList.appendChild(card);
-        });
     },
 
     discoveryEventSource: null,
@@ -254,33 +205,8 @@ const RemoteConnections = {
         } catch (err) {
             Components.showToast('Network error or server unreachable', 'error');
         }
-    },
-
-    async connectToServer(server) {
-        localStorage.setItem('current_server_id', server.id);
-        await this.connectWithCredentials(server.host, server.port, server.user, server.password, server.isAnon, server.name);
-    },
-
-    editServer(id) {
-        window.location.href = `../forms/form-remote-manager.html?id=${id}`;
-    },
-
-    confirmDelete(id) {
-        Components.openGuiModal({
-            title: 'Remove Server?',
-            message: 'Are you sure you want to delete this server connection? This cannot be undone.',
-            icon: 'delete_forever',
-            type: 'danger',
-            primaryText: 'Delete',
-            onPrimary: () => {
-                let servers = JSON.parse(localStorage.getItem('ftp_servers') || '[]');
-                servers = servers.filter(s => s.id !== id);
-                localStorage.setItem('ftp_servers', JSON.stringify(servers));
-                Components.showToast('Server removed');
-                this.loadSavedServers();
-            }
-        });
     }
 };
 
 document.addEventListener('DOMContentLoaded', () => RemoteConnections.init());
+
