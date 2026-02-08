@@ -1,6 +1,7 @@
 package clienthandlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -34,12 +35,6 @@ func discover(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	entries := make(chan *zeroconf.ServiceEntry, 100)
 
-	flusher, ok := w.(http.Flusher)
-	if !ok {
-		config.LogsCh <- "Could not type-cast to flusher"
-		return
-	}
-
 	resolver, err := zeroconf.NewResolver()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -52,6 +47,17 @@ func discover(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	go sendEntries(ctx, entries, w)
+	<-ctx.Done()
+}
+
+func sendEntries(ctx context.Context, entries <-chan *zeroconf.ServiceEntry, w http.ResponseWriter) {
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "Could not type-cast to flusher", http.StatusInternalServerError)
+		return
+	}
+
 	for {
 		select {
 		case entry := <-entries:
@@ -61,13 +67,13 @@ func discover(w http.ResponseWriter, req *http.Request) {
 				continue
 			}
 
-			body, err := json.Marshal(svrInfo)
+			data, err := json.Marshal(svrInfo)
 			if err != nil {
 				config.LogsCh <- err.Error()
 				continue
 			}
 
-			_, err = fmt.Fprintf(w, "data: %s\n\n", body)
+			_, err = fmt.Fprintf(w, "data: %s\n\n", data)
 			if err != nil {
 				config.LogsCh <- err.Error()
 			}
