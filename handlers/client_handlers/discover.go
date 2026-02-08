@@ -90,7 +90,9 @@ func sendEntries(ctx context.Context, entries <-chan *zeroconf.ServiceEntry, w h
 func convertEntryToServerInfo(entry *zeroconf.ServiceEntry) (ServerInfo, error) {
 	serverInfo := ServerInfo{}
 	// Use Instance name as it's more descriptive in Zeroconf
-	serverInfo.Name = entry.Instance
+	instance := strings.ReplaceAll(entry.Instance, "\\", "") //Clean it
+	serverInfo.Name = instance
+	fmt.Printf("Instance after registered: %v\n", entry.Instance)
 	if serverInfo.Name == "" {
 		serverInfo.Name = entry.HostName
 	}
