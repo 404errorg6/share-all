@@ -122,8 +122,15 @@ const Components = {
         mPrimaryBtn.innerText = primaryText || 'Confirm';
         this.onModalPrimary = onPrimary;
 
-        mIconContainer.className = "mx-auto size-20 rounded-full flex items-center justify-center mb-6 " + (type === 'danger' ? 'bg-danger/10 text-danger' : 'bg-primary/10 text-primary');
-        mPrimaryBtn.className = "h-14 w-full rounded-2xl font-bold text-lg shadow-lg transition-all active:scale-95 " + (type === 'danger' ? 'bg-danger text-white' : 'bg-primary text-white');
+        mIconContainer.className = "mx-auto size-24 rounded-full flex items-center justify-center mb-6 transition-all duration-500 " +
+            (type === 'danger'
+                ? 'bg-danger/20 text-danger shadow-[0_0_30px_rgba(255,77,77,0.3)]'
+                : 'bg-primary/20 text-primary shadow-[0_0_30px_rgba(80,194,247,0.3)]');
+
+        mPrimaryBtn.className = "h-16 w-full rounded-2xl font-bold text-lg shadow-xl shadow-black/20 transition-all active:scale-95 text-white " +
+            (type === 'danger'
+                ? 'bg-gradient-to-r from-danger to-[#ff6666] hover:brightness-110'
+                : 'bg-gradient-to-r from-primary to-[#70d1ff] hover:brightness-110');
 
         mPrimaryBtn.onclick = () => { if (this.onModalPrimary) this.onModalPrimary(); this.closeGuiModal(); };
 
