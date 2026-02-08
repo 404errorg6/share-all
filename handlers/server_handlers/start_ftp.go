@@ -16,6 +16,7 @@ func HandleStartFTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	name := req.FormValue("name")
 	user := req.FormValue("user")
 	pass := req.FormValue("password")
 	port := req.FormValue("server_port")
@@ -23,9 +24,9 @@ func HandleStartFTP(w http.ResponseWriter, req *http.Request) {
 	anonymous := req.FormValue("anonymous_allowed")
 	writeAllowed := req.FormValue("write_allowed")
 
-	fmt.Printf("Form data:\n	user: %v\n	pass: %v\n	server_port: %v\n	server_root_dir: %v\n	anonymous_allowed: %v\n	writeAllowed: %v\n", user, pass, port, newRoot, anonymous, writeAllowed)
+	fmt.Printf("Form data:\n	name: %v\n	user: %v\n	pass: %v\n	server_port: %v\n	server_root_dir: %v\n	anonymous_allowed: %v\n	writeAllowed: %v\n", name, user, pass, port, newRoot, anonymous, writeAllowed)
 
-	err = initServer(user, pass, "", port, newRoot, writeAllowed, anonymous)
+	err = initServer(name, user, pass, "", port, newRoot, writeAllowed, anonymous)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -40,12 +41,16 @@ func HandleStartFTP(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func initServer(user, pass, host, port, root, writeAllowed, anonymous string) error {
+func initServer(name, user, pass, host, port, root, writeAllowed, anonymous string) error {
 	root = config.ResolveLocalPath(root)
 
 	if !config.LocalFolderExists(root) {
 		err := fmt.Errorf("\"%v\" folder does not exist", root)
 		return err
+	}
+
+	if name == "" {
+		return fmt.Errorf("name is required")
 	}
 
 	if host == "" {
@@ -80,6 +85,7 @@ func initServer(user, pass, host, port, root, writeAllowed, anonymous string) er
 		return err
 	}
 
+	config.FTPServer.Name = name
 	config.FTPServer.User = user
 	config.FTPServer.Password = pass
 	config.FTPServer.Host = host

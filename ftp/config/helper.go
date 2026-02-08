@@ -30,7 +30,7 @@ func getWifiOrMobileInterface() ([]net.Interface, error) {
 		}
 	}
 
-	if len(WifiOrMobileInterfaces) == 0 {
+	if len(WifiOrMobileInterfaces) == 0 { //TODO: Add panic or smth
 		return nil, fmt.Errorf("Neither wifi nor mobile data enabled")
 	}
 
