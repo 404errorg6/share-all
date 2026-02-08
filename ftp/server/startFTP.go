@@ -27,27 +27,31 @@ func StartFTP() error {
 	config.FTPServer.Conn = ftpserver.NewFtpServer(mydriver)
 	go startLogsAndFTP()
 
-	go registerUntilStopped()
+	err := registerFTP()
+	if err != nil {
+		return err
+	}
 
 	config.LogsCh <- fmt.Sprintf("FTP server started on: %v:%v with path: %v", config.FTPServer.Host, config.FTPServer.Port, config.FTPServer.RootDir)
 	return nil
 }
 
-func registerUntilStopped() {
-	time.Sleep(10 * time.Millisecond) //Ensure config.FTP-Server.IsRunning = true in startLogsAndFTP runs first
-	for {
-		if !config.FTPServer.IsRunning {
-			return
-		}
+/*
+	func registerUntilStopped() {
+		time.Sleep(10 * time.Millisecond) //Ensure config.FTP-Server.IsRunning = true in startLogsAndFTP runs first
+		for {
+			if !config.FTPServer.IsRunning || server == nil {
+				return
+			}
 
-		err := registerFTP()
-		if err != nil {
-			config.LogsCh <- err.Error()
+			err := registerFTP()
+			if err != nil {
+				config.LogsCh <- err.Error()
+			}
+			time.Sleep(refreshTime)
 		}
-		time.Sleep(refreshTime)
 	}
-}
-
+*/
 func registerFTP() error {
 	instance, err := os.Hostname()
 	if err != nil || instance == "" {
@@ -70,6 +74,7 @@ func registerFTP() error {
 	if err != nil {
 		return err
 	}
+	server.TTL(5)
 
 	return nil
 }
