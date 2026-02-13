@@ -14,11 +14,10 @@ import (
 )
 
 type ProgressInfo struct {
-	Name                   string
-	TotalSize              int64
-	Percent                float64
-	Written                int64
-	EstimatedRemainingTime string
+	Name      string
+	TotalSize int64
+	Percent   float64
+	Written   int64
 }
 
 var (
@@ -64,10 +63,9 @@ func WriteWithProgressBar(name string, dest *os.File, src *ftp.Response, size in
 		for p := range progressCh {
 			info.Percent = p.Percent()
 			info.Written = p.N()
-			info.EstimatedRemainingTime = p.Remaining().String()
 			transferMap[name] = info
 
-			fmt.Printf("Downloaded: %.2f%%\nRemaining: %v\nEstimated: %v\nWritten: %v\n", p.Percent(), getRemaining(p), p.Estimated(), p.N())
+			fmt.Printf("Downloaded: %.2f%%\nEstimated: %v\nWritten: %v\n", p.Percent(), p.Estimated(), p.N())
 			fmt.Println("--------------------------------------------------")
 			fmt.Printf("\n")
 		}
@@ -78,43 +76,4 @@ func WriteWithProgressBar(name string, dest *os.File, src *ftp.Response, size in
 
 	io.Copy(destNew, src)
 
-}
-
-// TODO: Reinvented the wheel?
-func getRemaining(p progress.Progress) string {
-	d := p.Remaining()
-	if d <= 0 {
-		return "Calculating..."
-	}
-
-	remainingSeconds := int64(d.Seconds())
-	var remaining string
-	hours := remainingSeconds / 3600
-	minutes := (remainingSeconds % 3600) / 60
-	seconds := remainingSeconds % 60
-
-	if hours >= 1 {
-		remaining = fmt.Sprintf("%vh%vm%vs", hours, minutes, seconds)
-		return remaining
-	}
-
-	if hours >= 1 {
-		remaining = fmt.Sprintf("%vm%vs", minutes, seconds)
-		return remaining
-	}
-
-	remaining = fmt.Sprintf("%vs", seconds)
-	return remaining
-}
-
-func getLength(r io.Reader) int64 {
-	if seeker, ok := r.(io.Seeker); ok {
-		fmt.Println("Seek successfull")
-		size, _ := seeker.Seek(0, io.SeekEnd)
-		seeker.Seek(0, io.SeekStart)
-		return size
-	}
-
-	size, _ := io.Copy(io.Discard, r)
-	return size
 }
