@@ -82,8 +82,11 @@ function handleAction(e, entry, normalizedPath, type) {
     if (!optModal.classList.contains('hidden')) return;
 
     const optBtn = e.target.closest('.options-trigger');
+    console.log('handleAction called:', { type, entryName: entry.Name, hasOptBtn: !!optBtn, target: e.target });
+
     if (optBtn) {
         e.stopPropagation();
+        console.log('Opening options for:', type, entry.Name);
         if (type === 'remote') openRemoteOptions(entry, normalizedPath);
         else openLocalOptions(entry, normalizedPath);
         return;
@@ -184,6 +187,7 @@ function updatePasteBarVisibility() {
     const hasSelection = state.clipboard.length > 0;
     const btnPaste = document.getElementById('btn-paste-action');
     const btnDelete = document.getElementById('btn-delete-selected');
+    const btnFinish = document.getElementById('btn-finish-selection');
     const msg = document.getElementById('paste-message');
     const info = document.getElementById('paste-info');
 
@@ -196,10 +200,12 @@ function updatePasteBarVisibility() {
 
         if (state.selectionMode) {
             btnDelete.classList.remove('hidden');
+            if (btnFinish) btnFinish.classList.remove('hidden');
             btnPaste.classList.add('hidden');
             msg.innerText = "Items Selected";
         } else {
             btnDelete.classList.add('hidden');
+            if (btnFinish) btnFinish.classList.add('hidden');
             if (selectedPane !== state.activePane) {
                 btnPaste.classList.remove('hidden');
                 msg.innerText = `Ready to ${selectedPane === 'remote' ? 'Copy' : 'Upload'}`;
@@ -224,10 +230,17 @@ function openRemoteOptions(entry, path) {
         optContent.classList.add('scale-100', 'opacity-100');
     }, 10);
 
-    document.getElementById('btn-preview').classList.toggle('hidden', entry.IsFolder);
-    document.getElementById('btn-preview').onclick = () => { closeOptionsModal(); Preview.show(path, entry.Name, true); };
-    document.getElementById('btn-copy').onclick = () => { closeOptionsModal(); toggleSelection(path, entry.Name, entry.IsFolder, 'remote'); };
-    document.getElementById('btn-delete').classList.add('hidden');
+    const btnPreview = document.getElementById('btn-preview');
+    const btnCopy = document.getElementById('btn-copy');
+    const btnDelete = document.getElementById('btn-delete');
+
+    btnPreview.classList.toggle('hidden', entry.IsFolder);
+    btnPreview.onclick = () => { closeOptionsModal(); Preview.show(path, entry.Name, true); };
+
+    btnCopy.classList.remove('hidden');
+    btnCopy.onclick = () => { closeOptionsModal(); toggleSelection(path, entry.Name, entry.IsFolder, 'remote'); };
+
+    btnDelete.classList.add('hidden');
 }
 
 function openLocalOptions(entry, path) {
@@ -240,11 +253,17 @@ function openLocalOptions(entry, path) {
     }, 10);
 
     const btnPreview = document.getElementById('btn-preview');
+    const btnCopy = document.getElementById('btn-copy');
+    const btnDelete = document.getElementById('btn-delete');
+
     btnPreview.classList.toggle('hidden', entry.IsFolder);
     btnPreview.onclick = () => { closeOptionsModal(); Preview.show(path, entry.Name, false); };
-    document.getElementById('btn-copy').onclick = () => { closeOptionsModal(); toggleSelection(path, entry.Name, entry.IsFolder, 'local'); };
-    document.getElementById('btn-delete').classList.remove('hidden');
-    document.getElementById('btn-delete').onclick = () => { closeOptionsModal(); confirmDelete(path, entry.Name, false); };
+
+    btnCopy.classList.remove('hidden');
+    btnCopy.onclick = () => { closeOptionsModal(); toggleSelection(path, entry.Name, entry.IsFolder, 'local'); };
+
+    btnDelete.classList.remove('hidden');
+    btnDelete.onclick = () => { closeOptionsModal(); confirmDelete(path, entry.Name, false); };
 }
 
 
@@ -354,8 +373,22 @@ function toggleHiddenFiles() {
     refreshCurrent();
 }
 
+function finishSelection() {
+    toggleSelectionMode();
+}
+
 // --- Init ---
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize modal content with correct starting classes
+    optContent.classList.add('scale-95', 'opacity-0');
+
+    // Close modal when clicking outside
+    optModal.addEventListener('click', (e) => {
+        if (e.target === optModal) {
+            closeOptionsModal();
+        }
+    });
+
     const serverId = localStorage.getItem('current_server_id');
     const servers = JSON.parse(localStorage.getItem('ftp_servers') || '[]');
     const savedServer = servers.find(s => s.id == serverId);
@@ -401,3 +434,4 @@ window.closeOptionsModal = closeOptionsModal;
 window.clearClipboard = clearClipboard;
 window.deleteSelected = deleteSelected;
 window.pasteFiles = pasteFiles;
+window.finishSelection = finishSelection;
