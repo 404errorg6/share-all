@@ -27,6 +27,11 @@ export const Renderer = {
             const icon = Utils.getFileIcon(entry.Name, entry.IsFolder);
             const color = Utils.getColorClass(entry.Name, entry.IsFolder);
 
+            const btnFn = (e) => {
+                e.stopPropagation();
+                onAction(e, entry, normalizedPath, type);
+            };
+
             item.innerHTML = `
                 <div class="size-11 rounded-xl flex items-center justify-center ${color} shadow-sm relative shrink-0">
                     <span class="material-symbols-outlined">${isSelected ? 'check_circle' : icon}</span>
@@ -41,6 +46,9 @@ export const Renderer = {
                     </button>
                     <span class="material-symbols-outlined text-slate-600 group-hover:text-primary transition-colors text-sm">chevron_right</span>
                 </div>`;
+
+            const optBtn = item.querySelector('.options-trigger');
+            if (optBtn) optBtn.onclick = btnFn;
 
             item.onclick = (e) => onAction(e, entry, normalizedPath, type);
             container.appendChild(item);
