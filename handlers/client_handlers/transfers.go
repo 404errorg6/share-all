@@ -23,7 +23,14 @@ type ProgressInfo struct {
 
 var (
 	transferMap = make(map[string]ProgressInfo)
+	free        = make(chan bool, config.DownloadLimit)
 )
+
+func init() {
+	for range config.DownloadLimit {
+		free <- true
+	}
+}
 
 func HandleTransfer(w http.ResponseWriter, req *http.Request) {
 	var transfersArr []ProgressInfo
@@ -34,9 +41,14 @@ func HandleTransfer(w http.ResponseWriter, req *http.Request) {
 	config.SendJSON(w, transfersArr)
 }
 
-func WriteWithProgressBar(name string, dest *os.File, src *ftp.Response, size int64) {
+func WriteWithProgressBar(name string, dest *os.File, src *ftp.Response, size int64, wait chan bool) {
+	<-free
+	defer func() { free <- true }()
+
 	defer dest.Close()
 	defer src.Close()
+
+	wait <- false
 
 	fmt.Println("Entered progress function")
 	destNew := progress.NewWriter(dest)
@@ -58,7 +70,6 @@ func WriteWithProgressBar(name string, dest *os.File, src *ftp.Response, size in
 			fmt.Printf("Downloaded: %.2f%%\nRemaining: %v\nEstimated: %v\nWritten: %v\n", p.Percent(), getRemaining(p), p.Estimated(), p.N())
 			fmt.Println("--------------------------------------------------")
 			fmt.Printf("\n")
-
 		}
 
 		delete(transferMap, name)
