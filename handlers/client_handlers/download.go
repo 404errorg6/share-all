@@ -2,7 +2,6 @@ package clienthandlers
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"path"
@@ -14,7 +13,14 @@ import (
 	"github.com/jlaffaye/ftp"
 )
 
+var (
+	globalW   http.ResponseWriter
+	globalReq *http.Request
+)
+
 func HandleDownload(w http.ResponseWriter, req *http.Request) {
+	globalW = w
+	globalReq = req
 	localPath := req.FormValue("local_path")
 	remotePath := req.FormValue("remote_path")
 
@@ -108,6 +114,17 @@ func downloadDir(localDirPath, remoteDirPath string, c *ftp.ServerConn) error {
 }
 
 func downloadFile(localDirPath, remoteFilePath string, c *ftp.ServerConn) error { //Downloads remote file at remoteFilePath to local storage in localDirPath
+	//Get new connection per file transfer
+	err := client.AuthClient(authUser, authPass, authAddr)
+	if err != nil {
+		return err
+	}
+
+	c, err = client.GetClient()
+	if err != nil {
+		return err
+	}
+
 	fileName := path.Base(remoteFilePath)
 	filePath := filepath.Join(localDirPath, fileName)
 
@@ -129,18 +146,13 @@ func downloadFile(localDirPath, remoteFilePath string, c *ftp.ServerConn) error 
 	if err != nil {
 		return err
 	}
-	defer localFile.Close()
 
 	remoteFile, err := c.Retr(remoteFilePath)
 	if err != nil {
 		return err
 	}
-	defer remoteFile.Close()
 
-	_, err = io.Copy(localFile, remoteFile)
-	if err != nil {
-		return err
-	}
+	go WriteWithProgressBar(remoteEntry.Name, localFile, remoteFile, int64(remoteEntry.Size))
 
 	return nil
 }
