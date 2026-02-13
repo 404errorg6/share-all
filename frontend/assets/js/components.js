@@ -44,6 +44,14 @@ const Components = {
                         <span class="text-sm font-semibold">Discover Servers</span>
                     </div>
                 </a>
+                <a href="/pages/transfers.html" class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group ${activePageId === 'transfers' ? 'bg-primary/5 border-l-4 border-primary' : ''}">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center justify-center size-10 rounded-full bg-teal-50 dark:bg-teal-500/10 text-teal-500">
+                            <span class="material-symbols-outlined">swap_horiz</span>
+                        </div>
+                        <span class="text-sm font-semibold">Transfers</span>
+                    </div>
+                </a>
                 <a href="/pages/hosting-access.html" class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group ${activePageId === 'hosting-access' ? 'bg-primary/5 border-l-4 border-primary' : ''}">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-green-50 dark:bg-green-500/10 text-green-500">

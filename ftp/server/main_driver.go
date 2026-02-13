@@ -32,10 +32,6 @@ func (d *AndroidMainDriver) AuthUser(cc ftpserver.ClientContext, user, pass stri
 
 	host, _, _ := config.GetHostPort(cc.RemoteAddr().String())
 
-	if alreadyConnected(host) { //Unauthorized if already connected
-		return nil, fmt.Errorf("%v is already connected", host)
-	}
-
 	if slices.Contains(config.FTPServer.BlackList, host) { //Unauthorize if blacklisted
 		return nil, fmt.Errorf("%v is blocked", host)
 	}

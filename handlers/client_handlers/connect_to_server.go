@@ -49,5 +49,9 @@ func HandleConnectToServer(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	authUser = user
+	authPass = pass
+	authAddr = addr
+
 	config.SendJSON(w, "successfully connected to server")
 }

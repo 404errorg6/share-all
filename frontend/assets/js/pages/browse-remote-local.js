@@ -325,19 +325,36 @@ async function deleteSelected() {
 
 async function pasteFiles() {
     if (state.clipboard.length === 0) return;
-    const isRemoteToLocal = state.clipboard[0].pane === 'remote';
+    const isRemoteToLocal = state.clipboard[0].pane === 'remote'; // True = Download, False = Upload
     ui.loader.classList.remove('hidden');
 
     try {
-        for (const item of state.clipboard) {
-            const targetPath = isRemoteToLocal ? state.currentLocalPath : state.currentRemotePath;
-            await FTP_API.transferFile(item, targetPath, isRemoteToLocal);
-        }
-        Components.showToast('Operation complete');
-        clearClipboard();
+        if (isRemoteToLocal) {
+            // DOWNLOAD: Async (Fire and forget from UI perspective)
+            // The backend handles progress via /api/ftp/transfers
+            for (const item of state.clipboard) {
+                const targetPath = state.currentLocalPath;
+                // Don't await the full transfer, just the initiation request
+                FTP_API.transferFile(item, targetPath, true).catch(handleError);
+            }
 
-        if (isRemoteToLocal) fetchFiles('local', state.currentLocalPath);
-        else fetchFiles('remote', state.currentRemotePath);
+            // Give a moment for requests to fire
+            await new Promise(r => setTimeout(r, 500));
+
+            Components.showToast('Downloads started. Check Transfers page.');
+            clearClipboard();
+            // We don't refresh local immediately because files are still downloading
+
+        } else {
+            // UPLOAD: Sync (Wait for completion as requested "will add to upload later")
+            for (const item of state.clipboard) {
+                const targetPath = state.currentRemotePath;
+                await FTP_API.transferFile(item, targetPath, false);
+            }
+            Components.showToast('Upload complete');
+            clearClipboard();
+            fetchFiles('remote', state.currentRemotePath);
+        }
 
     } catch (e) {
         handleError(e);
