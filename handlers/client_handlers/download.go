@@ -152,7 +152,9 @@ func downloadFile(localDirPath, remoteFilePath string, c *ftp.ServerConn) error 
 		return err
 	}
 
-	go WriteWithProgressBar(remoteEntry.Name, localFile, remoteFile, int64(remoteEntry.Size))
+	wait := make(chan bool, 1)
+	go WriteWithProgressBar(remoteEntry.Name, localFile, remoteFile, int64(remoteEntry.Size), wait)
+	<-wait //Wait for sync
 
 	return nil
 }

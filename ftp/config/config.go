@@ -44,10 +44,12 @@ const (
 )
 
 var (
-	DefFTPPort             = "2121"
-	DefFTPHost             = GetLocalIP()
-	DefFTPWriteAccess      = "false"
-	DefAnonymous           = "true"
+	DefFTPPort        = "2121"
+	DefFTPHost        = GetLocalIP()
+	DefFTPWriteAccess = "false"
+	DefAnonymous      = "true"
+	DownloadLimit     = 3
+
 	HTTPPort               = "8085"
 	HTTPHost               = "127.0.0.1"
 	LogsTestingCount       = 0
