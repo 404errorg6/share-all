@@ -70,25 +70,30 @@
                 </button>
                 <h1 class="text-xl font-bold tracking-tight">Transfers</h1>
             </div>
-            <button class="text-sm font-medium text-primary hover:opacity-80 transition-opacity">
-                Clear All
-            </button>
         </header>
 
-        <div class="px-6 mt-4">
-            <div class="flex gap-4 border-b border-slate-200 dark:border-slate-800">
-                <button class="pb-3 text-sm font-semibold border-b-2 border-primary text-primary">Active (<span
-                        id="active-count">0</span>)</button>
-                <button
-                    class="pb-3 text-sm font-semibold text-slate-500 dark:text-slate-400 border-b-2 border-transparent">Completed</button>
+        <section class="flex-1 px-6 mt-6 pb-20 space-y-8 scroll-container">
+            <!-- Active Transfers -->
+            <div>
+                <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    Active <span id="active-count"
+                        class="bg-primary/10 text-primary px-2 py-0.5 rounded-full text-[10px]">0</span>
+                </h2>
+                <div id="transfer-list" class="space-y-4 min-h-[100px]">
+                    <!-- Active Items / Empty State -->
+                    <div class="flex flex-col items-center justify-center py-10 text-slate-400 text-center opacity-50">
+                        <span class="material-symbols-outlined text-4xl mb-2">sync_disabled</span>
+                        <p class="font-medium text-sm">No Active Transfers</p>
+                    </div>
+                </div>
             </div>
-        </div>
 
-        <section id="transfer-list" class="flex-1 px-6 mt-6 space-y-6 scroll-container">
-            <!-- Transfers will be injected here -->
-            <div class="flex flex-col items-center justify-center py-20 text-slate-400 text-center opacity-50">
-                <span class="material-symbols-outlined text-6xl mb-4">sync_disabled</span>
-                <p class="font-bold text-lg">No Active Transfers</p>
+            <!-- Completed Transfers -->
+            <div>
+                <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Completed</h2>
+                <div id="completed-list" class="space-y-4">
+                    <!-- Completed items will go here -->
+                </div>
             </div>
         </section>
     </main>

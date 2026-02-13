@@ -5,12 +5,18 @@
 class TransferManager {
     constructor() {
         this.container = document.getElementById('transfer-list');
+        this.completedContainer = document.getElementById('completed-list');
         this.activeCountEl = document.getElementById('active-count');
         this.globalDownEl = document.getElementById('global-down-speed');
         this.globalUpEl = document.getElementById('global-up-speed');
 
         this.transfers = new Map(); // Map<string, ElementID>
+        this.completed = new Set(); // Set<string>
         this.previousState = new Map(); // Map<string, {written: number, timestamp: number}>
+
+        // New: Track transfers that we have seen as active to detect when they disappear (complete)
+        this.seenTransfers = new Map(); // Map<string, TransferItem>
+
         this.isPolling = false;
         this.pollInterval = 1000;
         this.mockInterval = null;
@@ -29,7 +35,7 @@ class TransferManager {
         this.isPolling = true;
 
         const poll = async () => {
-            // If we have mock data running, don't poll (or do both, but mock takes precedence for demo)
+            // If we have mock data running, don't poll
             if (this.mockInterval) return;
 
             try {
@@ -52,32 +58,49 @@ class TransferManager {
     }
 
     updateUI(data) {
-        if (!data || data.length === 0) {
-            this.renderEmpty();
-            this.updateCounts(0);
-            this.previousState.clear();
-            return;
-        }
+        if (!data) data = [];
 
-        // If transitioning from empty state
-        if (this.container.querySelector('.material-symbols-outlined') && this.container.children.length === 1 && !this.container.querySelector('[id^="transfer-"]')) {
-            this.container.innerHTML = '';
-        }
+        const currentActiveNames = new Set(data.map(d => d.Name));
 
-        const currentNames = new Set(data.map(d => d.Name));
+        // 1. Check for newly completed transfers
+        // Logic: If a transfer was in 'seenTransfers' but is NOT in the current 'data' payload,
+        // it implies the backend finished it and removed it from the active list.
+        for (const [name, lastKnownState] of this.seenTransfers) {
+            if (!currentActiveNames.has(name)) {
+                // Transfer is gone from backend response -> It completed
+                if (!this.completed.has(name)) {
+                    // Mark as 100% and move to completed
+                    lastKnownState.Percent = 100;
+                    lastKnownState.Written = lastKnownState.TotalSize;
+                    this.addCompletedItem(lastKnownState);
+                }
 
-        // 1. Remove old transfers
-        for (const [name, id] of this.transfers) {
-            if (!currentNames.has(name)) {
-                const el = document.getElementById(id);
-                if (el) el.remove();
-                this.transfers.delete(name);
+                // Cleanup active state
+                const id = this.transfers.get(name);
+                if (id) {
+                    const el = document.getElementById(id);
+                    if (el) el.remove();
+                    this.transfers.delete(name);
+                }
                 this.previousState.delete(name);
+                this.seenTransfers.delete(name);
             }
         }
 
-        // 2. Update or Add transfers
+        // 2. Process Current Data Payload
+        if (data.length === 0) {
+            this.renderEmpty();
+        } else {
+            // If transitioning from empty state
+            if (this.container.querySelector('.material-symbols-outlined') && !this.container.querySelector('[id^="transfer-"]')) {
+                this.container.innerHTML = '';
+            }
+        }
+
         data.forEach(item => {
+            // Update our record of seeing this transfer
+            this.seenTransfers.set(item.Name, item);
+
             // Calculate speed and ETA
             const metrics = this.calculateMetrics(item);
 
@@ -87,7 +110,7 @@ class TransferManager {
                 this.addItem(item, metrics);
             }
 
-            // Update previous state for next calculation
+            // Update previous state
             this.previousState.set(item.Name, {
                 written: item.Written,
                 timestamp: Date.now()
@@ -121,6 +144,7 @@ class TransferManager {
         const writtenDiff = item.Written - prev.written;
         const bytesPerSec = writtenDiff / timeDiff;
 
+        // If slow or stalled
         if (bytesPerSec <= 0) {
             return {
                 speed: "0 B/s",
@@ -161,10 +185,26 @@ class TransferManager {
         this.transfers.set(item.Name, id);
 
         const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = this.getTemplate(item, id, metrics);
+        tempDiv.innerHTML = this.getTemplate(item, id, metrics, false);
         const newEl = tempDiv.firstElementChild;
 
         this.container.appendChild(newEl);
+    }
+
+    addCompletedItem(item) {
+        this.completed.add(item.Name);
+
+        const tempDiv = document.createElement('div');
+        // Render completed template (simplified, no progress bar needed or full check)
+        tempDiv.innerHTML = this.getTemplate(item, `completed-${this.safeId(item.Name)}`, null, true);
+        const newEl = tempDiv.firstElementChild;
+
+        // Prepend to top of completed list
+        if (this.completedContainer.firstChild) {
+            this.completedContainer.insertBefore(newEl, this.completedContainer.firstChild);
+        } else {
+            this.completedContainer.appendChild(newEl);
+        }
     }
 
     updateItem(item, metrics) {
@@ -201,14 +241,49 @@ class TransferManager {
         }
     }
 
-    getTemplate(item, id, metrics) {
+    getTemplate(item, id, metrics, isCompleted) {
         const typeInfo = this.getTypeInfo(item.Name);
-        const percent = Math.round(item.Percent);
-        const written = Utils.formatFileSize(item.Written);
         const total = Utils.formatFileSize(item.TotalSize);
 
+        let statusRow = '';
+        if (isCompleted) {
+            statusRow = `
+                 <div class="flex items-center gap-2 mt-1">
+                    <span class="text-[10px] font-bold uppercase tracking-wide text-green-500 bg-green-500/10 px-2 py-0.5 rounded-md flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[12px]">check_circle</span> Completed
+                    </span>
+                    <span class="text-xs text-slate-400">${total}</span>
+                </div>
+            `;
+        } else {
+            const percent = Math.round(item.Percent);
+            const written = Utils.formatFileSize(item.Written);
+            statusRow = `
+                <div class="flex items-center gap-3 mt-1">
+                     <div class="info-text flex items-center text-[10px] font-bold uppercase tracking-wide text-slate-500 bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-md">
+                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[10px]">speed</span>${metrics.speed}</span>
+                        <span class="mx-1 opacity-30">|</span>
+                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[10px]">timer</span>${metrics.eta}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Progress bar is 100% and green for completed
+        const progressSection = isCompleted ? '' : `
+            <div class="space-y-2 mt-3">
+                <div class="flex justify-between text-xs font-medium">
+                    <span class="percent-text ${typeInfo.text}">${Math.round(item.Percent)}%</span>
+                    <span class="size-text text-slate-500">${Utils.formatFileSize(item.Written)} / ${total}</span>
+                </div>
+                <div class="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                    <div class="progress-bar ${typeInfo.bgFull} h-full rounded-full transition-all duration-500" style="width: ${item.Percent}%"></div>
+                </div>
+            </div>
+        `;
+
         return `
-            <div id="${id}" class="space-y-3 animate-fade-in transition-all">
+            <div id="${id}" class="p-4 rounded-xl bg-white dark:bg-surface-dark border border-slate-100 dark:border-slate-800/50 shadow-sm animate-fade-in transition-all">
                 <div class="flex items-start gap-4">
                     <div class="w-12 h-12 flex items-center justify-center rounded-2xl ${typeInfo.bg} ${typeInfo.text}">
                         <span class="material-symbols-outlined text-3xl">${typeInfo.icon}</span>
@@ -217,24 +292,10 @@ class TransferManager {
                         <div class="flex justify-between items-start">
                             <h3 class="font-semibold truncate pr-2 text-slate-900 dark:text-slate-100">${item.Name}</h3>
                         </div>
-                        <div class="flex items-center gap-3 mt-1">
-                             <div class="info-text flex items-center text-[10px] font-bold uppercase tracking-wide text-slate-500 bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-md">
-                                <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[10px]">speed</span>${metrics.speed}</span>
-                                <span class="mx-1 opacity-30">|</span>
-                                <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[10px]">timer</span>${metrics.eta}</span>
-                            </div>
-                        </div>
+                        ${statusRow}
                     </div>
                 </div>
-                <div class="space-y-2">
-                    <div class="flex justify-between text-xs font-medium">
-                        <span class="percent-text ${typeInfo.text}">${percent}%</span>
-                        <span class="size-text text-slate-500">${written} / ${total}</span>
-                    </div>
-                    <div class="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                        <div class="progress-bar ${typeInfo.bgFull} h-full rounded-full transition-all duration-500" style="width: ${item.Percent}%"></div>
-                    </div>
-                </div>
+                ${progressSection}
             </div>
         `;
     }
@@ -268,10 +329,11 @@ class TransferManager {
     }
 
     renderEmpty() {
+        if (this.container.querySelector('.material-symbols-outlined')) return;
         this.container.innerHTML = `
-            <div class="flex flex-col items-center justify-center py-20 text-slate-400 text-center opacity-50">
-                <span class="material-symbols-outlined text-6xl mb-4">sync_disabled</span>
-                <p class="font-bold text-lg">No Active Transfers</p>
+            <div class="flex flex-col items-center justify-center py-10 text-slate-400 text-center opacity-50">
+                <span class="material-symbols-outlined text-4xl mb-2">sync_disabled</span>
+                <p class="font-medium text-sm">No Active Transfers</p>
             </div>
         `;
     }
@@ -286,12 +348,7 @@ class TransferManager {
     startMockData() {
         console.log("Starting mock data simulation...");
         const mockItems = [
-            {
-                Name: "project_assets_v2.zip",
-                TotalSize: 125829120, // ~120MB
-                Percent: 64,
-                Written: 80530636
-            },
+
             {
                 Name: "database_backup_daily.sql",
                 TotalSize: 9019431321, // ~8.4GB
@@ -299,10 +356,10 @@ class TransferManager {
                 Written: 2525440770
             },
             {
-                Name: "hero_banner_4k.png",
-                TotalSize: 13107200, // ~12.5MB
-                Percent: 0,
-                Written: 0
+                Name: "completed_video.mp4",
+                TotalSize: 524288000,
+                Percent: 100,
+                Written: 524288000
             }
         ];
 
