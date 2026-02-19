@@ -27,11 +27,11 @@ func ResolveRemotePath(c *ftp.ServerConn, remotePath string) (string, *ftp.Entry
 	}
 
 	//File/folder is safe to send now
-	if !filepath.IsAbs(remotePath) {
-		remotePath = path.Join(Server.RootDir, remotePath)
+	if isAbsPath(remotePath) {
+		remotePath = path.Join(FTPServer.RootDir, remotePath)
 	}
 
-	remotePath = filepath.Clean(remotePath)
+	remotePath = path.Clean(remotePath)
 	return remotePath, entry, nil
 }
 
@@ -41,11 +41,22 @@ func ResolveLocalPath(localPath string) string {
 		return DefLocalDir
 	}
 
-	if filepath.IsAbs(localPath) {
+	if isAbsPath(localPath) {
 		return filepath.Clean(localPath)
 	}
 
 	return filepath.Join(DefLocalDir, localPath)
+}
+
+func isAbsPath(p string) bool {
+	if filepath.IsAbs(p) {
+		return true
+	}
+	// Manual check for Windows drive letters (e.g., C:/ or D:\)
+	if len(p) >= 3 && p[1] == ':' && (p[2] == '/' || p[2] == '\\') {
+		return true
+	}
+	return false
 }
 
 func GetHostPort(addr string) (string, string, error) {
