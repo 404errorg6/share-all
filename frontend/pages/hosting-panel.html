@@ -5,27 +5,9 @@
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>Hosting Panel - FTP Manager</title>
-    <script src="../assets/vendor/tailwind.min.js"></script>
+    <link rel="stylesheet" href="../assets/vendor/tailwind.min.css">
     <link rel="stylesheet" href="../assets/css/fonts.css">
     <link rel="stylesheet" href="../assets/css/main.css">
-    <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#50c2f7",
-                        "background-light": "#f5f7f8",
-                        "background-dark": "#101c22",
-                    },
-                    fontFamily: {
-                        "display": ["Inter"]
-                    },
-                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
-                },
-            },
-        }
-    </script>
     <style>
         body {
             min-height: 100dvh;
@@ -121,8 +103,19 @@
             </div>
 
             <!-- Section B: Configuration -->
-            <form id="ftp-config-form" class="flex flex-col" onsubmit="event.preventDefault(); saveConfig();">
+            <form id="ftp-config-form" class="flex flex-col">
                 <h3 class="text-primary text-sm font-bold uppercase tracking-[0.1em] px-4 pb-2 pt-6">Configuration</h3>
+
+                <!-- Name -->
+                <div class="flex items-center gap-4 px-4 min-h-[72px] py-2 justify-between">
+                    <div class="flex flex-col justify-center w-full group">
+                        <label for="ftp-name"
+                            class="text-white text-base font-normal leading-normal text-xs uppercase font-bold tracking-wider text-slate-500">Server
+                            Name</label>
+                        <input id="ftp-name" name="name" type="text" placeholder="My FTP Server" required
+                            class="bg-transparent border-0 border-b border-slate-800 focus:border-primary focus:ring-0 text-[#9cb0ba] text-sm font-normal leading-normal w-full px-0 py-1 transition-colors group-hover:border-slate-700 placeholder-slate-700" />
+                    </div>
+                </div>
 
                 <!-- Anonymous login -->
                 <div class="flex items-center gap-4 px-4 min-h-14 justify-between">
@@ -146,7 +139,7 @@
                     <div class="flex flex-col justify-center w-full group">
                         <label for="ftp-username"
                             class="text-white text-base font-normal leading-normal text-xs uppercase font-bold tracking-wider text-slate-500">Username</label>
-                        <input id="ftp-username" name="username" type="text" value="admin" disabled
+                        <input id="ftp-username" name="user" type="text" value="admin" disabled
                             class="bg-transparent border-0 border-b border-slate-800 focus:border-primary focus:ring-0 text-[#9cb0ba] text-sm font-normal leading-normal w-full px-0 py-1 transition-colors group-hover:border-slate-700 placeholder-slate-700" />
                     </div>
                 </div>
@@ -206,13 +199,6 @@
                     </div>
                 </div>
 
-                <!-- Save Button -->
-                <div class="px-4 py-6">
-                    <button type="submit"
-                        class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all">
-                        Save Configuration
-                    </button>
-                </div>
             </form>
         </main>
 

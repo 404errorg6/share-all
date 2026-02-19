@@ -41,7 +41,7 @@ func Mux() *http.ServeMux {
 	//returns string responses: "running" and "not-running"
 	mux.HandleFunc("GET /api/ftp/server/running-status", serverhandlers.HandleServerStatus)
 	//required query variables: path, returns the folder's entries in a list of FSObject, see ftp/config/config.go for FSObject
-	mux.HandleFunc("GET /api/ftp/server/ls", serverhandlers.HandleListDir) //list other server directory
+	mux.HandleFunc("GET /api/ftp/server/ls", serverhandlers.HandleListRemoteDir) //list other server directory
 	//required query variables: path, returns the file at path
 	mux.HandleFunc("GET /api/ftp/server/get-file", serverhandlers.HandleServeFile) //stream file for preview
 	//nothing required, returns a list of addresses of connected clients
@@ -60,5 +60,7 @@ func Mux() *http.ServeMux {
 	mux.HandleFunc("POST /api/ftp/client/download", clienthandlers.HandleDownload)       //download from server, remote_path, local_path required
 	mux.HandleFunc("POST /api/ftp/client/upload", clienthandlers.HandleUpload)           //upload to server, remote_path, local_path required
 	mux.HandleFunc("POST /api/ftp/client/delete", clienthandlers.HandleDelete)           //delete from local, local_path required
+	mux.HandleFunc("GET /api/ftp/discover", clienthandlers.HandlerDiscoverServers)
+	mux.HandleFunc("GET /api/ftp/transfers", clienthandlers.HandleTransfer)
 	return mux
 }

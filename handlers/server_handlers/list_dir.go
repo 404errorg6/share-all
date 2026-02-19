@@ -9,7 +9,7 @@ import (
 	"github.com/jlaffaye/ftp"
 )
 
-func HandleListDir(w http.ResponseWriter, req *http.Request) {
+func HandleListRemoteDir(w http.ResponseWriter, req *http.Request) {
 	c, err := client.GetClient()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)

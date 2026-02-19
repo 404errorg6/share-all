@@ -16,14 +16,17 @@ func HandleStartFTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	name := req.FormValue("name")
+	user := req.FormValue("user")
+	pass := req.FormValue("password")
 	port := req.FormValue("server_port")
 	newRoot := req.FormValue("server_root_dir")
 	anonymous := req.FormValue("anonymous_allowed")
 	writeAllowed := req.FormValue("write_allowed")
 
-	fmt.Printf("Form data:\n	server_port: %v\n	server_root_dir: %v\n	anonymous_allowed: %v\n	writeAllowed: %v\n", port, newRoot, anonymous, writeAllowed)
+	fmt.Printf("Form data:\n	name: %v\n	user: %v\n	pass: %v\n	server_port: %v\n	server_root_dir: %v\n	anonymous_allowed: %v\n	writeAllowed: %v\n", name, user, pass, port, newRoot, anonymous, writeAllowed)
 
-	err = initServer("", port, newRoot, writeAllowed, anonymous)
+	err = initServer(name, user, pass, "", port, newRoot, writeAllowed, anonymous)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -38,12 +41,16 @@ func HandleStartFTP(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func initServer(host, port, root, writeAllowed, anonymous string) error {
+func initServer(name, user, pass, host, port, root, writeAllowed, anonymous string) error {
 	root = config.ResolveLocalPath(root)
 
 	if !config.LocalFolderExists(root) {
 		err := fmt.Errorf("\"%v\" folder does not exist", root)
 		return err
+	}
+
+	if name == "" {
+		return fmt.Errorf("name is required")
 	}
 
 	if host == "" {
@@ -67,15 +74,24 @@ func initServer(host, port, root, writeAllowed, anonymous string) error {
 		return err
 	}
 
+	if !isAnonymous {
+		if user == "" && pass == "" {
+			return fmt.Errorf("user/password required when anonymous_access is not false")
+		}
+	}
+
 	writeAllowedBool, err := strconv.ParseBool(writeAllowed)
 	if err != nil {
 		return err
 	}
 
-	config.Server.FTPHost = host
-	config.Server.FTPPort = port
-	config.Server.RootDir = root
-	config.Server.AnonymousAccessAllowed = isAnonymous
-	config.Server.WriteAllowed = writeAllowedBool
+	config.FTPServer.Name = name
+	config.FTPServer.User = user
+	config.FTPServer.Password = pass
+	config.FTPServer.Host = host
+	config.FTPServer.Port = port
+	config.FTPServer.RootDir = root
+	config.FTPServer.AnonymousAccessAllowed = isAnonymous
+	config.FTPServer.WriteAllowed = writeAllowedBool
 	return nil
 }

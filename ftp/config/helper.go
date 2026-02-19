@@ -2,9 +2,41 @@ package config
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"strings"
 )
+
+// TODO: Refactor this shit after kotlin integration
+func getWifiOrCellularInterface() ([]net.Interface, error) {
+	var WifiOrMobileInterfaces []net.Interface
+	ifs, err := net.Interfaces()
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("Up and Broadcast Interfaces:\n")
+	for _, iface := range ifs {
+
+		name := strings.ToLower(iface.Name)
+		if iface.Flags&net.FlagUp != 0 && iface.Flags&net.FlagBroadcast != 0 {
+			fmt.Printf("	%v: %v\n", iface.Name, iface)
+			isWifi := strings.Contains(name, "wi-fi") || strings.Contains(name, "wifi") || strings.HasPrefix(name, "wlan")
+			isCellular := strings.Contains(name, "cellular") || strings.HasPrefix(name, "ap") || strings.HasPrefix(iface.Name, "rmnet")
+
+			if isWifi || isCellular {
+				WifiOrMobileInterfaces = append(WifiOrMobileInterfaces, iface)
+			}
+		}
+	}
+
+	if len(WifiOrMobileInterfaces) == 0 {
+		return nil, fmt.Errorf("Neither wifi nor mobile data enabled")
+	}
+
+	fmt.Printf("Choosen interfaces: %v\n", WifiOrMobileInterfaces)
+	return WifiOrMobileInterfaces, nil
+}
 
 func getDefRootDir() string {
 	home, _ := os.UserHomeDir()
@@ -21,4 +53,34 @@ func getDefRootDir() string {
 	}
 
 	return home
+}
+
+func GetLocalIP() string {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return "127.0.0.1"
+	}
+
+	for _, address := range addrs {
+		// check the address type and if it is not a loopback the display it
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				// Avoid link-local (169.254.x.x) if possible
+				if !ipnet.IP.IsLinkLocalUnicast() {
+					return ipnet.IP.String()
+				}
+			}
+		}
+	}
+
+	// Double check if we can at least find any non-loopback IP
+	for _, address := range addrs {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String()
+			}
+		}
+	}
+
+	return "127.0.0.1"
 }

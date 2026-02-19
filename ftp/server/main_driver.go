@@ -17,8 +17,8 @@ type AndroidMainDriver struct {
 
 func (d *AndroidMainDriver) GetSettings() (*ftpserver.Settings, error) {
 	settings := ftpserver.Settings{
-		ListenAddr:             config.Server.FTPHost + ":" + config.Server.FTPPort,
-		PublicHost:             config.Server.FTPHost,
+		ListenAddr:             config.FTPServer.Host + ":" + config.FTPServer.Port,
+		PublicHost:             config.FTPServer.Host,
 		ActiveConnectionsCheck: ftpserver.IPMatchRequired,
 		PasvConnectionsCheck:   ftpserver.IPMatchRequired,
 		IdleTimeout:            500,
@@ -32,28 +32,31 @@ func (d *AndroidMainDriver) AuthUser(cc ftpserver.ClientContext, user, pass stri
 
 	host, _, _ := config.GetHostPort(cc.RemoteAddr().String())
 
-	if alreadyConnected(host) {
-		return nil, fmt.Errorf("%v is already connected", host)
-	}
-
-	if slices.Contains(config.Server.BlackList, host) {
+	if slices.Contains(config.FTPServer.BlackList, host) { //Unauthorize if blacklisted
 		return nil, fmt.Errorf("%v is blocked", host)
 	}
 
-	if config.Server.AnonymousAccessAllowed {
+	if config.FTPServer.AnonymousAccessAllowed { //Authorize if anonymous is allowed by server and user is anonymous
 		if user == "anonymous" && pass == "anonymous" {
-			fileSystem := afero.NewBasePathFs(afero.NewOsFs(), config.Server.RootDir)
 			isAuthorized = true
+		}
+	}
 
-			if !config.Server.WriteAllowed {
-				fileSystem = afero.NewReadOnlyFs(fileSystem)
-			}
-
-			clientDriver.Fs = fileSystem
+	if !config.FTPServer.AnonymousAccessAllowed { //Authorize based on user/pass otherwise
+		if user == config.FTPServer.User && pass == config.FTPServer.Password {
+			isAuthorized = true
 		}
 	}
 
 	if isAuthorized {
+		fileSystem := afero.NewBasePathFs(afero.NewOsFs(), config.FTPServer.RootDir)
+
+		if !config.FTPServer.WriteAllowed {
+			fileSystem = afero.NewReadOnlyFs(fileSystem)
+		}
+
+		clientDriver.Fs = fileSystem
+
 		addToConnectedClient(user, cc)
 		config.LogsCh <- fmt.Sprintf("%v authorization successful", cc.RemoteAddr().String())
 		return clientDriver, nil

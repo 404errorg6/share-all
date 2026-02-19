@@ -36,12 +36,20 @@ const Components = {
                         <span class="text-sm font-semibold">Hosting Panel</span>
                     </div>
                 </a>
-                <a href="/pages/remote-connections.html" class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group ${activePageId === 'remote-connections' ? 'bg-primary/5 border-l-4 border-primary' : ''}">
+                <a href="/pages/discover-servers.html" class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group ${activePageId === 'remote-connections' ? 'bg-primary/5 border-l-4 border-primary' : ''}">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-500">
-                            <span class="material-symbols-outlined">add_link</span>
+                            <span class="material-symbols-outlined">wifi_tethering</span>
                         </div>
-                        <span class="text-sm font-semibold">Remote Connections</span>
+                        <span class="text-sm font-semibold">Discover Servers</span>
+                    </div>
+                </a>
+                <a href="/pages/transfers.html" class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group ${activePageId === 'transfers' ? 'bg-primary/5 border-l-4 border-primary' : ''}">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center justify-center size-10 rounded-full bg-teal-50 dark:bg-teal-500/10 text-teal-500">
+                            <span class="material-symbols-outlined">swap_horiz</span>
+                        </div>
+                        <span class="text-sm font-semibold">Transfers</span>
                     </div>
                 </a>
                 <a href="/pages/hosting-access.html" class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group ${activePageId === 'hosting-access' ? 'bg-primary/5 border-l-4 border-primary' : ''}">
@@ -122,8 +130,11 @@ const Components = {
         mPrimaryBtn.innerText = primaryText || 'Confirm';
         this.onModalPrimary = onPrimary;
 
-        mIconContainer.className = "mx-auto size-20 rounded-full flex items-center justify-center mb-6 " + (type === 'danger' ? 'bg-danger/10 text-danger' : 'bg-primary/10 text-primary');
-        mPrimaryBtn.className = "h-14 w-full rounded-2xl font-bold text-lg shadow-lg transition-all active:scale-95 " + (type === 'danger' ? 'bg-danger text-white' : 'bg-primary text-white');
+        mIconContainer.className = "mx-auto size-24 rounded-full flex items-center justify-center mb-6 transition-all duration-500 " +
+            (type === 'danger' ? 'icon-glow-danger' : 'icon-glow-primary');
+
+        mPrimaryBtn.className = "h-16 w-full rounded-2xl font-bold text-lg transition-all active:scale-95 text-white shadow-lg " +
+            (type === 'danger' ? 'modal-btn-danger' : 'modal-btn-primary');
 
         mPrimaryBtn.onclick = () => { if (this.onModalPrimary) this.onModalPrimary(); this.closeGuiModal(); };
 
@@ -143,34 +154,93 @@ const Components = {
     },
 
     /**
+     * Map technical errors to user-friendly messages
+     */
+    mapError(message) {
+        if (!message) return "Unknown error occurred";
+
+        // Connection refused / Device offline
+        if (message.includes("connectex") || message.includes("actively refused it") || message.includes("dial tcp")) {
+            return "Device is offline or connection refused";
+        }
+
+        // Authentication error
+        if (message.includes("530 Authentication error") || message.includes("Invalid credentials")) {
+            return "Incorrect username/password";
+        }
+
+        return message;
+    },
+
+    /**
      * Toast Injection and Show
      */
     showToast(message, type = 'success') {
-        const containerId = 'global-toast-container';
-        let container = document.getElementById(containerId);
-        if (!container) {
-            container = document.createElement('div');
-            container.id = containerId;
-            container.className = 'fixed top-4 right-4 z-[110] flex flex-col gap-2 pointer-events-none';
-            document.body.appendChild(container);
-        }
-
-        const toast = document.createElement('div');
-        const bgClass = type === 'error' ? 'bg-danger' : (type === 'info' ? 'bg-blue-500' : 'bg-green-500');
-        const icon = type === 'error' ? 'error' : (type === 'info' ? 'info' : 'check_circle');
-
-        toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl ${bgClass} text-white min-w-[280px] transform transition-all duration-300 translate-x-full pointer-events-auto`;
-        toast.innerHTML = `
-            <span class="material-symbols-outlined text-xl bg-white/20 p-1 rounded-full">${icon}</span>
-            <p class="font-medium text-sm">${message}</p>
-        `;
+        const displayMessage = type === 'error' ? this.mapError(message) : message;
+        const container = this._getToastContainer();
+        const toast = this._createToastElement(displayMessage, type);
 
         container.appendChild(toast);
-        setTimeout(() => toast.classList.remove('translate-x-full'), 10);
-        setTimeout(() => {
-            toast.classList.add('translate-x-[150%]');
-            setTimeout(() => toast.remove(), 400);
-        }, 3000);
+
+        // Finalize interactions and reveal
+        this._setupToastInteractions(toast);
+    },
+
+    _getToastContainer() {
+        const id = 'global-toast-container';
+        let container = document.getElementById(id);
+        if (!container) {
+            container = document.createElement('div');
+            container.id = id;
+            container.className = 'fixed top-4 right-4 z-[110] flex flex-col gap-2.5 pointer-events-none';
+            document.body.appendChild(container);
+        }
+        return container;
+    },
+
+    _createToastElement(message, type) {
+        const toast = document.createElement('div');
+        const config = {
+            error: { class: 'toast-error', icon: 'error', color: 'text-danger' },
+            info: { class: 'toast-info', icon: 'info', color: 'text-primary' },
+            warning: { class: 'toast-warning', icon: 'warning', color: 'text-warning' },
+            success: { class: 'toast-success', icon: 'check_circle', color: 'text-success' }
+        }[type] || { class: 'toast-success', icon: 'check_circle', color: 'text-success' };
+
+        toast.className = `premium-toast ${config.class} flex items-center gap-3 pl-3 pr-5 py-2.5 rounded-xl transition-all duration-500 transform translate-x-full opacity-0 cursor-pointer pointer-events-auto group`;
+        toast.innerHTML = `
+            <div class="shrink-0 flex items-center justify-center size-8 rounded-lg bg-white/5 ${config.color}">
+                <span class="material-symbols-outlined text-[18px]">${config.icon}</span>
+            </div>
+            <div class="flex-1 overflow-hidden transition-all duration-300">
+                <p class="text-[9px] font-black uppercase tracking-[0.1em] text-slate-500 mb-0.5 leading-none">${type}</p>
+                <p id="toast-text" class="font-bold text-sm text-white/95 leading-tight truncate px-0.5 whitespace-nowrap transition-all duration-300">${message}</p>
+            </div>
+        `;
+        return toast;
+    },
+
+    _setupToastInteractions(toast) {
+        let hideTimeout;
+        const startHideTimer = () => {
+            hideTimeout = setTimeout(() => {
+                if (toast?.parentElement) {
+                    toast.classList.add('translate-x-full', 'opacity-0');
+                    setTimeout(() => toast.remove(), 500);
+                }
+            }, 5000);
+        };
+
+        toast.onclick = () => {
+            if (toast.classList.toggle('toast-expanded')) {
+                clearTimeout(hideTimeout);
+            } else {
+                startHideTimer();
+            }
+        };
+
+        setTimeout(() => toast.classList.remove('translate-x-full', 'opacity-0'), 50);
+        startHideTimer();
     }
 };
 
