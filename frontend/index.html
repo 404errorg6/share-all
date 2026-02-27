@@ -39,11 +39,12 @@
 
         <!-- Header -->
         <header
-            class="flex items-center justify-between px-6 py-4 bg-background-dark/95 backdrop-blur-md sticky top-0 z-10 border-b border-gray-800">
+            class="flex items-center justify-between p-4 bg-background-dark/95 backdrop-blur-md sticky top-0 z-10 border-b border-gray-800">
             <div class="flex items-center gap-3">
-                <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 text-primary">
-                    <span class="material-symbols-outlined text-2xl">dns</span>
-                </div>
+                <button onclick="Components.toggleMenu()"
+                    class="text-primary flex size-10 items-center justify-center rounded-full hover:bg-white/10 transition-colors">
+                    <span class="material-symbols-outlined text-3xl">menu</span>
+                </button>
                 <div>
                     <h1 class="text-lg font-bold leading-tight tracking-tight text-white">FTP Manager</h1>
                     <div class="flex items-center gap-1.5 mt-0.5">
