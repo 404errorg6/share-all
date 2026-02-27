@@ -20,7 +20,8 @@ const Components = {
                 </button>
             </div>
             <div class="flex-1 overflow-y-auto py-2">
-                <a href="/pages/browse-local.html" class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group ${activePageId === 'browse-local' ? 'bg-primary/5 border-l-4 border-primary' : ''}">
+                <a href="/pages/browse-local.html" onclick="Components.handleSidebarClick(event, '/pages/browse-local.html')" 
+                    class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group ${activePageId === 'browse-local' ? 'bg-primary/5 border-l-4 border-primary' : ''}">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-500">
                             <span class="material-symbols-outlined">sd_storage</span>
@@ -28,7 +29,8 @@ const Components = {
                         <span class="text-sm font-semibold">Local Storage</span>
                     </div>
                 </a>
-                <a href="/pages/hosting-panel.html" class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group ${activePageId === 'hosting-panel' ? 'bg-primary/5 border-l-4 border-primary' : ''}">
+                <a href="/pages/hosting-panel.html" onclick="Components.handleSidebarClick(event, '/pages/hosting-panel.html')"
+                    class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group ${activePageId === 'hosting-panel' ? 'bg-primary/5 border-l-4 border-primary' : ''}">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-blue-50 dark:bg-blue-500/10 text-primary">
                             <span class="material-symbols-outlined">wifi</span>
@@ -36,7 +38,8 @@ const Components = {
                         <span class="text-sm font-semibold">Hosting Panel</span>
                     </div>
                 </a>
-                <a href="/pages/discover-servers.html" class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group ${activePageId === 'remote-connections' ? 'bg-primary/5 border-l-4 border-primary' : ''}">
+                <a href="/pages/discover-servers.html" onclick="Components.handleSidebarClick(event, '/pages/discover-servers.html')"
+                    class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group ${activePageId === 'remote-connections' ? 'bg-primary/5 border-l-4 border-primary' : ''}">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-500">
                             <span class="material-symbols-outlined">wifi_tethering</span>
@@ -44,7 +47,8 @@ const Components = {
                         <span class="text-sm font-semibold">Discover Servers</span>
                     </div>
                 </a>
-                <a href="/pages/transfers.html" class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group ${activePageId === 'transfers' ? 'bg-primary/5 border-l-4 border-primary' : ''}">
+                <a href="/pages/transfers.html" onclick="Components.handleSidebarClick(event, '/pages/transfers.html')"
+                    class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group ${activePageId === 'transfers' ? 'bg-primary/5 border-l-4 border-primary' : ''}">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-teal-50 dark:bg-teal-500/10 text-teal-500">
                             <span class="material-symbols-outlined">swap_horiz</span>
@@ -52,14 +56,14 @@ const Components = {
                         <span class="text-sm font-semibold">Transfers</span>
                     </div>
                 </a>
-                <a href="/pages/hosting-access.html" class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group ${activePageId === 'hosting-access' ? 'bg-primary/5 border-l-4 border-primary' : ''}">
+                <a href="/pages/hosting-access.html" onclick="Components.handleSidebarClick(event, '/pages/hosting-access.html')"
+                    class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group ${activePageId === 'hosting-access' ? 'bg-primary/5 border-l-4 border-primary' : ''}">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-green-50 dark:bg-green-500/10 text-green-500">
                             <span class="material-symbols-outlined">shield</span>
                         </div>
                         <span class="text-sm font-semibold">Access Control</span>
                     </div>
-                </a>
                 </a>
             </div>
             <div class="p-4 border-t border-slate-100 dark:border-slate-800/50">
@@ -94,6 +98,30 @@ const Components = {
             backdrop.classList.remove('opacity-100'); sidebar.classList.add('-translate-x-full');
             setTimeout(() => backdrop.classList.add('hidden'), 300);
         }
+    },
+
+    /**
+     * Handle Sidebar Link Clicks for smooth transition
+     */
+    handleSidebarClick(event, url) {
+        // Find the active anchor if child was clicked
+        const link = event.currentTarget;
+
+        // Visual feedback
+        link.style.transform = 'scale(0.98)';
+        link.style.opacity = '0.7';
+
+        // Fast close
+        this.toggleMenu(false);
+
+        // Small delay to allow the sidebar to start its exit animation
+        // and show the click feedback before the browser unloads the page
+        setTimeout(() => {
+            window.location.href = url;
+        }, 150);
+
+        event.preventDefault();
+        return false;
     },
 
     /**
@@ -152,8 +180,12 @@ const Components = {
     closeGuiModal() {
         const backdrop = document.getElementById('modal-backdrop-gui');
         const content = document.getElementById('modal-content-gui');
+        if (!backdrop || !content) return;
         backdrop.classList.remove('active'); content.classList.remove('active');
-        setTimeout(() => document.getElementById('gui-modal').classList.add('hidden'), 300);
+        setTimeout(() => {
+            const modal = document.getElementById('gui-modal');
+            if (modal) modal.classList.add('hidden');
+        }, 300);
     },
 
     /**
@@ -333,8 +365,6 @@ const Components = {
                     flex-direction: column !important;
                     overflow: hidden !important;
                     transform-origin: bottom right !important;
-                    
-                    /* Initial hidden state - crucial for preventing load flicker */
                     opacity: 0 !important;
                     visibility: hidden !important;
                     transform: scale(0.9) !important;
@@ -385,7 +415,7 @@ const Components = {
                     </button>
                 </div>
             </div>
-            `;
+`;
             document.body.insertAdjacentHTML('beforeend', html);
         },
 
