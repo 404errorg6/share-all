@@ -60,6 +60,7 @@ const Components = {
                         <span class="text-sm font-semibold">Access Control</span>
                     </div>
                 </a>
+                </a>
             </div>
             <div class="p-4 border-t border-slate-100 dark:border-slate-800/50">
                 <p class="text-[10px] text-center text-slate-500 opacity-50 uppercase tracking-widest font-bold">FTP Project v1.0</p>
@@ -75,6 +76,9 @@ const Components = {
             if (touchEndX > touchStartX + 100 && touchStartX < 50) this.toggleMenu(true);
             if (touchEndX < touchStartX - 100) this.toggleMenu(false);
         }, { passive: true });
+
+        // Auto-initialize Global Logger
+        this.Logger.init();
     },
 
     isMenuOpen: false,
@@ -241,6 +245,175 @@ const Components = {
 
         setTimeout(() => toast.classList.remove('translate-x-full', 'opacity-0'), 50);
         startHideTimer();
+    },
+
+    /**
+     * Global Floating Logger Logic
+     */
+    Logger: {
+        isInitialized: false,
+        isOpen: false,
+        isAutoScroll: true,
+        logCount: 0,
+        abortController: null,
+        MAX_LOGS: 500,
+
+        init() {
+            if (this.isInitialized) return;
+            this.isInitialized = true;
+            this.injectUI();
+            this.connect();
+        },
+
+        injectUI() {
+            const html = `
+            <!-- Floating Log Toggle -->
+            <button id="floating-log-trigger" onclick="Components.Logger.toggle()" 
+                class="fixed bottom-6 right-6 z-[90] size-14 rounded-2xl bg-slate-900 border border-white/10 shadow-2xl flex items-center justify-center text-primary transition-all duration-300 hover:scale-110 active:scale-95 group">
+                <span class="material-symbols-outlined text-3xl group-hover:rotate-12 transition-transform">terminal</span>
+                <span id="log-badge" class="absolute -top-1 -right-1 size-4 bg-primary rounded-full hidden"></span>
+            </button>
+
+            <!-- Mini Log Window -->
+            <div id="mini-log-window" class="fixed bottom-24 right-6 z-[90] w-[90vw] md:w-[400px] h-[450px] bg-[#12181b]/95 backdrop-blur-xl border border-white/10 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col transform scale-90 opacity-0 pointer-events-none transition-all duration-300 origin-bottom-right">
+                <div class="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-white/5">
+                    <div class="flex items-center gap-3">
+                        <div class="size-2 rounded-full bg-primary animate-pulse"></div>
+                        <span class="text-xs font-bold uppercase tracking-widest text-white/50">Live Logs</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <button onclick="Components.Logger.clear()" class="size-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-slate-500 hover:text-white transition-colors">
+                            <span class="material-symbols-outlined text-xl">delete_sweep</span>
+                        </button>
+                        <button onclick="Components.Logger.toggle()" class="size-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-slate-500 hover:text-white transition-colors">
+                            <span class="material-symbols-outlined text-xl">close</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="mini-log-container" class="flex-1 overflow-y-auto p-5 font-mono text-[11px] leading-relaxed space-y-1.5 custom-scrollbar bg-black/20">
+                    <div class="text-slate-500 italic opacity-50">Initializing log stream...</div>
+                </div>
+
+                <div class="px-6 py-3 border-t border-white/5 bg-white/5 flex items-center justify-between">
+                    <span id="mini-log-count" class="text-[9px] font-black uppercase tracking-widest text-slate-500">0 Lines</span>
+                    <button id="mini-scroll-lock" onclick="Components.Logger.toggleScrollLock()" class="text-primary hover:text-white transition-colors">
+                        <span class="material-symbols-outlined text-sm">vertical_align_bottom</span>
+                    </button>
+                </div>
+            </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', html);
+        },
+
+        toggle() {
+            this.isOpen = !this.isOpen;
+            const win = document.getElementById('mini-log-window');
+            const badge = document.getElementById('log-badge');
+
+            if (this.isOpen) {
+                win.classList.remove('scale-90', 'opacity-0', 'pointer-events-none');
+                win.classList.add('scale-100', 'opacity-100');
+                badge.classList.add('hidden');
+
+                // Re-scroll to bottom when opened
+                const container = document.getElementById('mini-log-container');
+                if (this.isAutoScroll) container.scrollTop = container.scrollHeight;
+            } else {
+                win.classList.add('scale-90', 'opacity-0', 'pointer-events-none');
+                win.classList.remove('scale-100', 'opacity-100');
+            }
+        },
+
+        toggleScrollLock() {
+            this.isAutoScroll = !this.isAutoScroll;
+            const btn = document.getElementById('mini-scroll-lock');
+            const icon = btn.querySelector('.material-symbols-outlined');
+
+            if (this.isAutoScroll) {
+                btn.classList.add('text-primary');
+                btn.classList.remove('text-slate-500');
+                icon.innerText = 'vertical_align_bottom';
+                const container = document.getElementById('mini-log-container');
+                container.scrollTop = container.scrollHeight;
+            } else {
+                btn.classList.remove('text-primary');
+                btn.classList.add('text-slate-500');
+                icon.innerText = 'vertical_align_center';
+            }
+        },
+
+        clear() {
+            const container = document.getElementById('mini-log-container');
+            container.innerHTML = '<div class="text-slate-500 italic opacity-50">Logs cleared...</div>';
+            this.logCount = 0;
+            this.updateCount();
+        },
+
+        updateCount() {
+            const el = document.getElementById('mini-log-count');
+            if (el) el.innerText = `${this.logCount} Lines`;
+        },
+
+        async connect() {
+            if (this.abortController) this.abortController.abort();
+            this.abortController = new AbortController();
+
+            try {
+                const response = await fetch('/api/logs', { signal: this.abortController.signal });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                const container = document.getElementById('mini-log-container');
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    const lines = chunk.split('\n').filter(l => l.trim().length > 0);
+
+                    lines.forEach(line => {
+                        this.logCount++;
+                        const entry = document.createElement('div');
+
+                        // Basic syntax coloring
+                        let colorClass = 'text-slate-300';
+                        if (line.includes('[ERROR]') || line.toLowerCase().includes('failed')) colorClass = 'text-red-400';
+                        else if (line.includes('[SYSTEM]') || line.includes('Starting')) colorClass = 'text-primary';
+                        else if (line.includes('[SUCCESS]')) colorClass = 'text-green-400';
+
+                        entry.className = `${colorClass} py-0.5 border-b border-white/5 break-all`;
+                        entry.innerText = line;
+
+                        container.appendChild(entry);
+
+                        // Pruning
+                        if (container.children.length > this.MAX_LOGS) {
+                            container.removeChild(container.firstChild);
+                        }
+                    });
+
+                    this.updateCount();
+
+                    // UI Notification
+                    if (!this.isOpen) {
+                        document.getElementById('log-badge').classList.remove('hidden');
+                    }
+
+                    // Auto scroll
+                    if (this.isAutoScroll && this.isOpen) {
+                        container.scrollTop = container.scrollHeight;
+                    }
+                }
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    console.warn('Log stream lost, retrying in 5s...', err);
+                    setTimeout(() => this.connect(), 5000);
+                }
+            }
+        }
     }
 };
 
