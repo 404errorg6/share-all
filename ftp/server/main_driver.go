@@ -17,11 +17,12 @@ type AndroidMainDriver struct {
 
 func (d *AndroidMainDriver) GetSettings() (*ftpserver.Settings, error) {
 	settings := ftpserver.Settings{
-		ListenAddr:             config.FTPServer.Host + ":" + config.FTPServer.Port,
-		PublicHost:             config.FTPServer.Host,
-		ActiveConnectionsCheck: ftpserver.IPMatchRequired,
-		PasvConnectionsCheck:   ftpserver.IPMatchRequired,
-		IdleTimeout:            500,
+		ListenAddr:              config.FTPServer.Host + ":" + config.FTPServer.Port,
+		PublicHost:              config.FTPServer.Host,
+		ActiveConnectionsCheck:  ftpserver.IPMatchRequired,
+		PasvConnectionsCheck:    ftpserver.IPMatchRequired,
+		IdleTimeout:             500,
+		DeflateCompressionLevel: 6,
 	}
 	return &settings, nil
 }

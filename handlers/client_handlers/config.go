@@ -1,7 +1,7 @@
 package clienthandlers
 
 var (
-	authUser string
-	authPass string
-	authAddr string
+	verifiedUser string
+	verifiedPass string
+	verifiedAddr string
 )
