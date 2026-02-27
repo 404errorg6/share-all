@@ -49,7 +49,7 @@ func discover(w http.ResponseWriter, req *http.Request) {
 
 	go sendEntries(ctx, entries, w)
 	<-ctx.Done()
-	// TODO: Delay when exiting, do perf boost
+
 	fmt.Println("Exited discover")
 }
 

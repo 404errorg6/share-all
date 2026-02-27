@@ -3,7 +3,6 @@ package clienthandlers
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -114,19 +113,8 @@ func downloadDir(localDirPath, remoteDirPath string, c *ftp.ServerConn) error {
 }
 
 func downloadFile(localDirPath, remoteFilePath string, c *ftp.ServerConn) error { //Downloads remote file at remoteFilePath to local storage in localDirPath
-	//Get new connection per file transfer
-	err := client.AuthClient(authUser, authPass, authAddr)
-	if err != nil {
-		return err
-	}
-
-	c, err = client.GetClient()
-	if err != nil {
-		return err
-	}
-
 	fileName := path.Base(remoteFilePath)
-	filePath := filepath.Join(localDirPath, fileName)
+	localFilePath := filepath.Join(localDirPath, fileName)
 
 	remoteEntry, err := c.GetEntry(remoteFilePath)
 	if err != nil {
@@ -137,23 +125,8 @@ func downloadFile(localDirPath, remoteFilePath string, c *ftp.ServerConn) error 
 		return fmt.Errorf("\"%v\" is a directory, not a remote file", remoteFilePath)
 	}
 
-	err = os.MkdirAll(localDirPath, os.ModeDir)
-	if err != nil {
-		return err
-	}
-
-	localFile, err := os.Create(filePath)
-	if err != nil {
-		return err
-	}
-
-	remoteFile, err := c.Retr(remoteFilePath)
-	if err != nil {
-		return err
-	}
-
 	wait := make(chan bool, 1)
-	go WriteWithProgressBar(remoteEntry.Name, localFile, remoteFile, int64(remoteEntry.Size), wait)
+	go DownloadWithProgressBar(localFilePath, remoteFilePath, wait)
 	<-wait //Wait for sync
 
 	return nil
