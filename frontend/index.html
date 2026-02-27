@@ -7,12 +7,28 @@
     <title>FTP Server Manager Dashboard</title>
 
     <!-- Scripts & Fonts -->
-    <script src="assets/vendor/tailwind.min.js"></script>
-    <script src="js/tailwind.config.js"></script>
+    <script src="assets/vendor/tailwind-cdn.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#50c2f7",
+                        "status-text": "#9cb0ba",
+                        "background-dark": "#101c22",
+                        "surface-dark": "#1b2327",
+                        success: "#22c55e",
+                        danger: "#ff4d4d",
+                    }
+                }
+            }
+        };
+    </script>
     <link rel="stylesheet" href="assets/css/fonts.css">
 
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="assets/css/main.css">
 </head>
 
 <body
@@ -23,11 +39,12 @@
 
         <!-- Header -->
         <header
-            class="flex items-center justify-between px-6 py-4 bg-background-dark/95 backdrop-blur-md sticky top-0 z-10 border-b border-gray-800">
+            class="flex items-center justify-between p-4 bg-background-dark/95 backdrop-blur-md sticky top-0 z-10 border-b border-gray-800">
             <div class="flex items-center gap-3">
-                <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 text-primary">
-                    <span class="material-symbols-outlined text-2xl">dns</span>
-                </div>
+                <button onclick="Components.toggleMenu()"
+                    class="text-primary flex size-10 items-center justify-center rounded-full hover:bg-white/10 transition-colors">
+                    <span class="material-symbols-outlined text-3xl">menu</span>
+                </button>
                 <div>
                     <h1 class="text-lg font-bold leading-tight tracking-tight text-white">FTP Manager</h1>
                     <div class="flex items-center gap-1.5 mt-0.5">
@@ -155,7 +172,7 @@
             document.addEventListener('DOMContentLoaded', () => {
                 Components.injectSidebar('dashboard');
                 Components.injectModal();
-                Components.Logger.init(); // Start Background Logs
+                // Components.Logger.init() is now handled automatically by components.js
             });
         </script>
         <!-- Re-adding the missing start/stop logic integrated here or in a new file -->

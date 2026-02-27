@@ -182,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     fetchServerStatus();
     updateUrl();
-    Components.Logger.init(); // Initialize global background logger
+    // Components.Logger.init() is now handled globally
 });
 
 // Expose functions to window because buttons use onclick
