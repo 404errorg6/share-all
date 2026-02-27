@@ -7,12 +7,28 @@
     <title>FTP Server Manager Dashboard</title>
 
     <!-- Scripts & Fonts -->
-    <script src="assets/vendor/tailwind.min.js"></script>
-    <script src="js/tailwind.config.js"></script>
+    <script src="assets/vendor/tailwind-cdn.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#50c2f7",
+                        "status-text": "#9cb0ba",
+                        "background-dark": "#101c22",
+                        "surface-dark": "#1b2327",
+                        success: "#22c55e",
+                        danger: "#ff4d4d",
+                    }
+                }
+            }
+        };
+    </script>
     <link rel="stylesheet" href="assets/css/fonts.css">
 
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="assets/css/main.css">
 </head>
 
 <body
