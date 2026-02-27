@@ -77,8 +77,7 @@ const Components = {
             if (touchEndX < touchStartX - 100) this.toggleMenu(false);
         }, { passive: true });
 
-        // Auto-initialize Global Logger
-        this.Logger.init();
+        // Global Logger initialization is handled at the bottom of the file
     },
 
     isMenuOpen: false,
@@ -257,7 +256,7 @@ const Components = {
         logCount: 0,
         abortController: null,
         MAX_LOGS: 1000,
-        PRUNE_COUNT: 100, // Clear 10% (100) when it hits 1000
+        PRUNE_COUNT: 200, // Clear 20% (200) when it hits 1000
         STORAGE_KEY: 'ftp_session_logs',
 
         init() {
@@ -334,6 +333,19 @@ const Components = {
                     flex-direction: column !important;
                     overflow: hidden !important;
                     transform-origin: bottom right !important;
+                    
+                    /* Initial hidden state - crucial for preventing load flicker */
+                    opacity: 0 !important;
+                    visibility: hidden !important;
+                    transform: scale(0.9) !important;
+                    pointer-events: none !important;
+                    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+                }
+                #mini-log-window.open {
+                    opacity: 1 !important;
+                    visibility: visible !important;
+                    transform: scale(1) !important;
+                    pointer-events: auto !important;
                 }
                 #mini-log-container::-webkit-scrollbar { width: 4px; }
                 #mini-log-container::-webkit-scrollbar-thumb { background: rgba(56, 189, 248, 0.2); border-radius: 10px; }
@@ -346,7 +358,7 @@ const Components = {
                 <span id="log-badge"></span>
             </button>
 
-            <div id="mini-log-window" class="transform scale-90 opacity-0 pointer-events-none transition-all duration-300">
+            <div id="mini-log-window">
                 <div style="padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.03);">
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <div style="width: 8px; height: 8px; background: #38bdf8; border-radius: 50%; box-shadow: 0 0 10px #38bdf8;"></div>
@@ -383,16 +395,14 @@ const Components = {
             const badge = document.getElementById('log-badge');
 
             if (this.isOpen) {
-                win.classList.remove('scale-90', 'opacity-0', 'pointer-events-none');
-                win.classList.add('scale-100', 'opacity-100');
+                win.classList.add('open');
                 badge.classList.remove('active');
 
                 // Re-scroll to bottom when opened
                 const container = document.getElementById('mini-log-container');
                 if (this.isAutoScroll) container.scrollTop = container.scrollHeight;
             } else {
-                win.classList.add('scale-90', 'opacity-0', 'pointer-events-none');
-                win.classList.remove('scale-100', 'opacity-100');
+                win.classList.remove('open');
             }
         },
 

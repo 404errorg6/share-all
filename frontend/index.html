@@ -172,7 +172,7 @@
             document.addEventListener('DOMContentLoaded', () => {
                 Components.injectSidebar('dashboard');
                 Components.injectModal();
-                Components.Logger.init(); // Start Background Logs
+                // Components.Logger.init() is now handled automatically by components.js
             });
         </script>
         <!-- Re-adding the missing start/stop logic integrated here or in a new file -->
