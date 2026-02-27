@@ -256,49 +256,120 @@ const Components = {
         isAutoScroll: true,
         logCount: 0,
         abortController: null,
-        MAX_LOGS: 500,
+        MAX_LOGS: 1000,
+        PRUNE_COUNT: 100, // Clear 10% (100) when it hits 1000
+        STORAGE_KEY: 'ftp_session_logs',
 
         init() {
             if (this.isInitialized) return;
             this.isInitialized = true;
             this.injectUI();
+            this.loadFromStorage();
             this.connect();
         },
 
         injectUI() {
+            if (document.getElementById('floating-log-trigger')) return;
+
+            const styles = `
+            <style id="logger-core-styles">
+                #floating-log-trigger {
+                    position: fixed !important;
+                    bottom: 24px !important;
+                    right: 24px !important;
+                    z-index: 10000 !important;
+                    width: 56px !important;
+                    height: 56px !important;
+                    border-radius: 16px !important;
+                    background: #0f172a !important;
+                    border: 1px solid rgba(56, 189, 248, 0.3) !important;
+                    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4) !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    color: #38bdf8 !important;
+                    cursor: pointer !important;
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+                    padding: 0 !important;
+                    margin: 0 !important;
+                }
+                #floating-log-trigger:hover {
+                    transform: scale(1.1) rotate(5deg) !important;
+                    background: #1e293b !important;
+                }
+                #log-badge {
+                    position: absolute !important;
+                    top: -2px !important;
+                    right: -2px !important;
+                    width: 12px !important;
+                    height: 12px !important;
+                    background: #38bdf8 !important;
+                    border: 2px solid #0f172a !important;
+                    border-radius: 50% !important;
+                    display: none;
+                }
+                #log-badge.active {
+                    display: block !important;
+                    animation: badge-pulse 2s infinite !important;
+                }
+                @keyframes badge-pulse {
+                    0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.7); }
+                    70% { box-shadow: 0 0 0 8px rgba(56, 189, 248, 0); }
+                    100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+                }
+                #mini-log-window {
+                    position: fixed !important;
+                    bottom: 92px !important;
+                    right: 24px !important;
+                    z-index: 10000 !important;
+                    width: 420px !important;
+                    max-width: calc(100vw - 48px) !important;
+                    height: 520px !important;
+                    background: rgba(15, 23, 42, 0.98) !important;
+                    backdrop-filter: blur(20px) !important;
+                    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+                    border-radius: 32px !important;
+                    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                    overflow: hidden !important;
+                    transform-origin: bottom right !important;
+                }
+                #mini-log-container::-webkit-scrollbar { width: 4px; }
+                #mini-log-container::-webkit-scrollbar-thumb { background: rgba(56, 189, 248, 0.2); border-radius: 10px; }
+            </style>`;
+
             const html = `
-            <!-- Floating Log Toggle -->
-            <button id="floating-log-trigger" onclick="Components.Logger.toggle()" 
-                class="fixed bottom-6 right-6 z-[90] size-14 rounded-2xl bg-slate-900 border border-white/10 shadow-2xl flex items-center justify-center text-primary transition-all duration-300 hover:scale-110 active:scale-95 group">
-                <span class="material-symbols-outlined text-3xl group-hover:rotate-12 transition-transform">terminal</span>
-                <span id="log-badge" class="absolute -top-1 -right-1 size-4 bg-primary rounded-full hidden"></span>
+            ${styles}
+            <button id="floating-log-trigger" onclick="Components.Logger.toggle()" title="System Logs">
+                <span class="material-symbols-outlined" style="font-size: 32px;">terminal</span>
+                <span id="log-badge"></span>
             </button>
 
-            <!-- Mini Log Window -->
-            <div id="mini-log-window" class="fixed bottom-24 right-6 z-[90] w-[90vw] md:w-[400px] h-[450px] bg-[#12181b]/95 backdrop-blur-xl border border-white/10 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col transform scale-90 opacity-0 pointer-events-none transition-all duration-300 origin-bottom-right">
-                <div class="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-white/5">
-                    <div class="flex items-center gap-3">
-                        <div class="size-2 rounded-full bg-primary animate-pulse"></div>
-                        <span class="text-xs font-bold uppercase tracking-widest text-white/50">Live Logs</span>
+            <div id="mini-log-window" class="transform scale-90 opacity-0 pointer-events-none transition-all duration-300">
+                <div style="padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.03);">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 8px; height: 8px; background: #38bdf8; border-radius: 50%; box-shadow: 0 0 10px #38bdf8;"></div>
+                        <span style="font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.5);">Session Monitor</span>
                     </div>
-                    <div class="flex items-center gap-1">
-                        <button onclick="Components.Logger.clear()" class="size-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-slate-500 hover:text-white transition-colors">
-                            <span class="material-symbols-outlined text-xl">delete_sweep</span>
+                    <div style="display: flex; gap: 4px;">
+                        <button onclick="Components.Logger.clear()" style="width: 36px; height: 36px; border-radius: 12px; border: none; background: transparent; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='#64748b'">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">delete_sweep</span>
                         </button>
-                        <button onclick="Components.Logger.toggle()" class="size-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-slate-500 hover:text-white transition-colors">
-                            <span class="material-symbols-outlined text-xl">close</span>
+                        <button onclick="Components.Logger.toggle()" style="width: 36px; height: 36px; border-radius: 12px; border: none; background: transparent; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='#64748b'">
+                            <span class="material-symbols-outlined" style="font-size: 20px;">close</span>
                         </button>
                     </div>
                 </div>
                 
-                <div id="mini-log-container" class="flex-1 overflow-y-auto p-5 font-mono text-[11px] leading-relaxed space-y-1.5 custom-scrollbar bg-black/20">
-                    <div class="text-slate-500 italic opacity-50">Initializing log stream...</div>
+                <div id="mini-log-container" style="flex: 1; overflow-y: auto; padding: 24px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px; line-height: 1.6; background: rgba(0,0,0,0.2);">
+                    <div style="color: #64748b; font-style: italic; opacity: 0.5;">Syncing history...</div>
                 </div>
 
-                <div class="px-6 py-3 border-t border-white/5 bg-white/5 flex items-center justify-between">
-                    <span id="mini-log-count" class="text-[9px] font-black uppercase tracking-widest text-slate-500">0 Lines</span>
-                    <button id="mini-scroll-lock" onclick="Components.Logger.toggleScrollLock()" class="text-primary hover:text-white transition-colors">
-                        <span class="material-symbols-outlined text-sm">vertical_align_bottom</span>
+                <div style="padding: 18px 24px; border-top: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02); display: flex; align-items: center; justify-content: space-between;">
+                    <span id="mini-log-count" style="font-size: 9px; font-weight: 900; color: #475569; text-transform: uppercase; letter-spacing: 1px;">0 Lines</span>
+                    <button id="mini-scroll-lock" onclick="Components.Logger.toggleScrollLock()" style="background: none; border: none; color: #38bdf8; cursor: pointer; display: flex; align-items: center;">
+                        <span class="material-symbols-outlined" style="font-size: 20px;">vertical_align_bottom</span>
                     </button>
                 </div>
             </div>
@@ -314,7 +385,7 @@ const Components = {
             if (this.isOpen) {
                 win.classList.remove('scale-90', 'opacity-0', 'pointer-events-none');
                 win.classList.add('scale-100', 'opacity-100');
-                badge.classList.add('hidden');
+                badge.classList.remove('active');
 
                 // Re-scroll to bottom when opened
                 const container = document.getElementById('mini-log-container');
@@ -345,8 +416,9 @@ const Components = {
 
         clear() {
             const container = document.getElementById('mini-log-container');
-            container.innerHTML = '<div class="text-slate-500 italic opacity-50">Logs cleared...</div>';
+            container.innerHTML = '<div class="text-slate-500 italic opacity-40">History cleared...</div>';
             this.logCount = 0;
+            sessionStorage.removeItem(this.STORAGE_KEY);
             this.updateCount();
         },
 
@@ -355,13 +427,56 @@ const Components = {
             if (el) el.innerText = `${this.logCount} Lines`;
         },
 
+        saveLog(line) {
+            try {
+                let logs = JSON.parse(sessionStorage.getItem(this.STORAGE_KEY) || '[]');
+                logs.push(line);
+                if (logs.length > this.MAX_LOGS) {
+                    logs = logs.slice(this.PRUNE_COUNT);
+                    this.renderLogs(logs); // Hard refresh UI when pruned
+                }
+                sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(logs));
+            } catch (e) {
+                console.warn('Storage error', e);
+            }
+        },
+
+        loadFromStorage() {
+            try {
+                const logs = JSON.parse(sessionStorage.getItem(this.STORAGE_KEY) || '[]');
+                this.renderLogs(logs);
+            } catch (e) { }
+        },
+
+        renderLogs(logs) {
+            const container = document.getElementById('mini-log-container');
+            if (!container) return;
+            container.innerHTML = '';
+            logs.forEach(msg => container.appendChild(this.createEntry(msg)));
+            this.logCount = logs.length;
+            this.updateCount();
+            if (this.isAutoScroll) container.scrollTop = container.scrollHeight;
+        },
+
+        createEntry(line) {
+            const entry = document.createElement('div');
+            let colorClass = 'text-slate-300';
+            if (line.includes('[ERROR]') || line.toLowerCase().includes('failed')) colorClass = 'text-red-400';
+            else if (line.includes('[SYSTEM]') || line.includes('Starting')) colorClass = 'text-primary';
+            else if (line.includes('[SUCCESS]')) colorClass = 'text-green-400';
+
+            entry.className = `${colorClass} py-0.5 border-b border-white/5 break-all opacity-90`;
+            entry.innerText = line;
+            return entry;
+        },
+
         async connect() {
             if (this.abortController) this.abortController.abort();
             this.abortController = new AbortController();
 
             try {
                 const response = await fetch('/api/logs', { signal: this.abortController.signal });
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                if (!response.ok) return;
 
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
@@ -376,30 +491,15 @@ const Components = {
 
                     lines.forEach(line => {
                         this.logCount++;
-                        const entry = document.createElement('div');
-
-                        // Basic syntax coloring
-                        let colorClass = 'text-slate-300';
-                        if (line.includes('[ERROR]') || line.toLowerCase().includes('failed')) colorClass = 'text-red-400';
-                        else if (line.includes('[SYSTEM]') || line.includes('Starting')) colorClass = 'text-primary';
-                        else if (line.includes('[SUCCESS]')) colorClass = 'text-green-400';
-
-                        entry.className = `${colorClass} py-0.5 border-b border-white/5 break-all`;
-                        entry.innerText = line;
-
-                        container.appendChild(entry);
-
-                        // Pruning
-                        if (container.children.length > this.MAX_LOGS) {
-                            container.removeChild(container.firstChild);
-                        }
+                        container.appendChild(this.createEntry(line));
+                        this.saveLog(line);
                     });
 
                     this.updateCount();
 
                     // UI Notification
-                    if (!this.isOpen) {
-                        document.getElementById('log-badge').classList.remove('hidden');
+                    if (!this.isOpen && lines.length > 0) {
+                        document.getElementById('log-badge').classList.add('active');
                     }
 
                     // Auto scroll
@@ -409,7 +509,7 @@ const Components = {
                 }
             } catch (err) {
                 if (err.name !== 'AbortError') {
-                    console.warn('Log stream lost, retrying in 5s...', err);
+                    console.warn('Logging offline. Retrying...', err);
                     setTimeout(() => this.connect(), 5000);
                 }
             }
@@ -418,3 +518,8 @@ const Components = {
 };
 
 window.Components = Components;
+
+// Automatic initialization for global components
+document.addEventListener('DOMContentLoaded', () => {
+    Components.Logger.init();
+});
