@@ -628,7 +628,10 @@ const Components = {
             // Track state in sessionStorage to detect completions across page nav
             const lastStateInput = sessionStorage.getItem('ftp_active_tracking');
             let lastState = [];
-            try { lastState = JSON.parse(lastStateInput || '[]'); } catch (e) { }
+            try {
+                const parsed = JSON.parse(lastStateInput || '[]');
+                lastState = Array.isArray(parsed) ? parsed : [];
+            } catch (e) { }
 
             const activeNames = new Set(activeData.map(d => d.Name));
 
@@ -636,10 +639,11 @@ const Components = {
                 // If it vanished from active list -> It completed
                 // We verify it was actually registered (Percent > 0) to avoid false completions
                 // during the backend's startup delay (where it returns nil for a second)
-                if (!activeNames.has(prev.Name) && prev.Percent > 0) {
+                if (!activeNames.has(prev.Name) && (prev.Percent > 0 || prev.Written > 0)) {
                     this.addCompleted({
                         ...prev,
                         Percent: 100,
+                        IsDownload: prev.IsDownload, // Preserve the property
                         Timestamp: Date.now()
                     });
                 }
