@@ -125,9 +125,6 @@ func downloadFile(localDirPath, remoteFilePath string, c *ftp.ServerConn) error 
 		return fmt.Errorf("\"%v\" is a directory, not a remote file", remoteFilePath)
 	}
 
-	wait := make(chan bool, 1)
-	go DownloadWithProgressBar(localFilePath, remoteFilePath, wait)
-	<-wait //Wait for sync
-
+	downloadWithProgressBar(localFilePath, remoteFilePath)
 	return nil
 }

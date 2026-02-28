@@ -13,9 +13,8 @@ import (
 	"github.com/machinebox/progress"
 )
 
-func DownloadWithProgressBar(localFilePath, remoteFilePath string, wait chan bool) { //Simply runs downloads
+func downloadWithProgressBar(localFilePath, remoteFilePath string) { //Simply runs downloads
 	<-downloadPass
-	defer func() { downloadPass <- true }()
 
 	//Make new connection for each download
 	c, err := GetNewConn()
@@ -55,14 +54,15 @@ func DownloadWithProgressBar(localFilePath, remoteFilePath string, wait chan boo
 	}
 	defer localFile.Close()
 
-	wait <- false
-
 	//Start tracking progress and download
 
 	trackedLFile := progress.NewWriter(localFile)
 	progressCh := progress.NewTicker(context.Background(), trackedLFile, int64(remoteEntry.Size), time.Second)
 	fmt.Printf("Total size: %v\n", remoteEntry.Size)
 
-	startTracking(remoteEntry.Name, int64(remoteEntry.Size), true, progressCh)
-	io.Copy(trackedLFile, remoteFile)
+	go startTracking(remoteEntry.Name, int64(remoteEntry.Size), true, progressCh)
+	go func() {
+		io.Copy(trackedLFile, remoteFile)
+		downloadPass <- true
+	}()
 }

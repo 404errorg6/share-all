@@ -1,8 +1,12 @@
 package clienthandlers
 
-import "github.com/404errorg6/FTP-server/ftp/config"
+import (
+	"sync"
 
-type ProgressInfo struct {
+	"github.com/404errorg6/FTP-server/ftp/config"
+)
+
+type TransferInfo struct {
 	Name       string
 	TotalSize  int64
 	Percent    float64
@@ -14,7 +18,8 @@ var (
 	verifiedUser string
 	verifiedPass string
 	verifiedAddr string
-	transferMap  = make(map[string]ProgressInfo)
+
+	transferMap  sync.Map
 	downloadPass = make(chan bool, config.DownloadLimit)
 	uploadPass   = make(chan bool, config.UploadLimit)
 )
