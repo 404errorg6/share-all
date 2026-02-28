@@ -56,5 +56,34 @@ export const Renderer = {
 
         const countEl = document.getElementById(`${type}-count`);
         if (countEl) countEl.innerText = `${visible.length} items`;
+    },
+
+    renderBreadcrumbs(container, path, type, onClick) {
+        if (!container) return;
+        container.innerHTML = '';
+        const isLocal = type === 'local';
+        const parts = path.split('/').filter(part => part && part !== '.');
+
+        const root = document.createElement('p');
+        root.className = `text-xs font-black uppercase tracking-widest cursor-pointer hover:underline px-2 py-1 rounded transition-colors ${isLocal ? 'text-success' : 'text-primary'}`;
+        root.innerText = isLocal ? "Local" : "Remote";
+        root.onclick = () => onClick('.');
+        container.appendChild(root);
+
+        let build = isLocal ? '.' : '';
+        parts.forEach(part => {
+            build += `/${part}`;
+            const sep = document.createElement('span');
+            sep.className = "text-slate-600 px-1";
+            sep.innerHTML = '<span class="material-symbols-outlined text-xs">chevron_right</span>';
+            container.appendChild(sep);
+
+            const node = document.createElement('p');
+            node.className = "text-xs font-bold text-slate-300 hover:text-white cursor-pointer px-2 py-1 rounded hover:bg-white/5 truncate max-w-[120px] transition-colors";
+            node.innerText = part;
+            const target = build;
+            node.onclick = () => onClick(target);
+            container.appendChild(node);
+        });
     }
 };
