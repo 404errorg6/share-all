@@ -24,10 +24,13 @@ class TransferManager {
 
     init() {
         console.log("TransferManager initialized");
+        this.renderHistory();
         this.startPolling();
 
-        // UNCOMMENT THE LINE BELOW TO SEE MOCK DATA IN ACTION
-        // this.startMockData();
+        // Listen for completions to update the history list
+        window.addEventListener('transfer-completed', (e) => {
+            this.renderHistory();
+        });
     }
 
     startPolling() {
@@ -35,9 +38,6 @@ class TransferManager {
         this.isPolling = true;
 
         const poll = async () => {
-            // If we have mock data running, don't poll
-            if (this.mockInterval) return;
-
             try {
                 // Fetch real data from the backend
                 const response = await fetch('/api/ftp/transfers');
@@ -45,9 +45,7 @@ class TransferManager {
                     const data = await response.json();
                     this.updateUI(data);
                 }
-            } catch (error) {
-                // console.debug('Polling failed (backend likely not ready)', error);
-            }
+            } catch (error) { }
 
             if (this.isPolling) {
                 setTimeout(poll, this.pollInterval);
@@ -57,33 +55,38 @@ class TransferManager {
         poll();
     }
 
+    renderHistory() {
+        const history = Components.Transfers.getHistory();
+        this.completedContainer.innerHTML = '';
+
+        if (history.length === 0) {
+            this.completedContainer.innerHTML = `
+                <div class="col-span-full flex flex-col items-center justify-center py-10 text-slate-400 text-center opacity-50 bg-slate-100/30 dark:bg-white/5 rounded-2xl border border-dashed border-slate-200 dark:border-white/5">
+                    <span class="material-symbols-outlined text-4xl mb-2">history</span>
+                    <p class="font-medium text-sm">Transfer history will appear here</p>
+                </div>
+            `;
+            return;
+        }
+
+        history.forEach(item => {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = this.getTemplate(item, `completed-${this.safeId(item.Name)}`, null, true);
+            this.completedContainer.appendChild(tempDiv.firstElementChild);
+        });
+    }
+
     updateUI(data) {
         if (!data) data = [];
 
+        // 1. Clean up active transfers that are no longer in the payload
         const currentActiveNames = new Set(data.map(d => d.Name));
-
-        // 1. Check for newly completed transfers
-        // Logic: If a transfer was in 'seenTransfers' but is NOT in the current 'data' payload,
-        // it implies the backend finished it and removed it from the active list.
-        for (const [name, lastKnownState] of this.seenTransfers) {
+        for (const [name, id] of this.transfers) {
             if (!currentActiveNames.has(name)) {
-                // Transfer is gone from backend response -> It completed
-                if (!this.completed.has(name)) {
-                    // Mark as 100% and move to completed
-                    lastKnownState.Percent = 100;
-                    lastKnownState.Written = lastKnownState.TotalSize;
-                    this.addCompletedItem(lastKnownState);
-                }
-
-                // Cleanup active state
-                const id = this.transfers.get(name);
-                if (id) {
-                    const el = document.getElementById(id);
-                    if (el) el.remove();
-                    this.transfers.delete(name);
-                }
+                const el = document.getElementById(id);
+                if (el) el.remove();
+                this.transfers.delete(name);
                 this.previousState.delete(name);
-                this.seenTransfers.delete(name);
             }
         }
 
@@ -91,16 +94,16 @@ class TransferManager {
         if (data.length === 0) {
             this.renderEmpty();
         } else {
-            // If transitioning from empty state
+            // Remove empty state if present
+            const emptyState = document.getElementById('active-empty-state');
+            if (emptyState) emptyState.remove();
+
             if (this.container.querySelector('.material-symbols-outlined') && !this.container.querySelector('[id^="transfer-"]')) {
                 this.container.innerHTML = '';
             }
         }
 
         data.forEach(item => {
-            // Update our record of seeing this transfer
-            this.seenTransfers.set(item.Name, item);
-
             // Calculate speed and ETA
             const metrics = this.calculateMetrics(item);
 
@@ -189,22 +192,6 @@ class TransferManager {
         const newEl = tempDiv.firstElementChild;
 
         this.container.appendChild(newEl);
-    }
-
-    addCompletedItem(item) {
-        this.completed.add(item.Name);
-
-        const tempDiv = document.createElement('div');
-        // Render completed template (simplified, no progress bar needed or full check)
-        tempDiv.innerHTML = this.getTemplate(item, `completed-${this.safeId(item.Name)}`, null, true);
-        const newEl = tempDiv.firstElementChild;
-
-        // Prepend to top of completed list
-        if (this.completedContainer.firstChild) {
-            this.completedContainer.insertBefore(newEl, this.completedContainer.firstChild);
-        } else {
-            this.completedContainer.appendChild(newEl);
-        }
     }
 
     updateItem(item, metrics) {
