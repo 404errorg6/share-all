@@ -1,27 +1,21 @@
 package clienthandlers
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/404errorg6/FTP-server/ftp/config"
 	"github.com/jlaffaye/ftp"
+	"github.com/machinebox/progress"
 )
-
-var (
-	uploadLimit = 3
-	uploadPass  = make(chan bool, uploadLimit)
-)
-
-func init() {
-	for range uploadLimit {
-		uploadPass <- true
-	}
-}
 
 func uploadWithProgress(remoteFilePath, localFilePath string, wait chan bool) {
 	<-uploadPass
 	defer func() { uploadPass <- true }()
+
+	//Confirm these are files (have trust issues with caller)
 
 	c, err := GetNewConn()
 	if err != nil {
@@ -43,9 +37,24 @@ func uploadWithProgress(remoteFilePath, localFilePath string, wait chan bool) {
 		return
 	}
 
-	if remoteInfo.Type == ftp.EntryTypeFolder {
-		config.LogsCh <- fmt.Sprintf("\"%v\" is a remote folder, not a file. Cannot upload. Exiting...", remoteFilePath)
+	if remoteInfo.Type != ftp.EntryTypeFolder {
+		config.LogsCh <- fmt.Sprintf("\"%v\" is not a remote folder. Cannot upload file. Exiting...", remoteFilePath)
 		return
 	}
 
+	localEntry, err := os.Lstat(localFilePath)
+	if err != nil {
+		config.LogsCh <- err.Error()
+		return
+	}
+
+	wait <- false
+
+	// Start with progress info
+	trackedFile := progress.NewReader(localFile)
+	progressCh := progress.NewTicker(context.Background(), trackedFile, localEntry.Size(), time.Second)
+
+	startTracking(localEntry.Name(), localEntry.Size(), false, progressCh)
+
+	c.Stor(remoteFilePath, trackedFile)
 }
