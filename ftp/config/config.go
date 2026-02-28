@@ -50,6 +50,7 @@ var (
 	DefAnonymous      = "true"
 	DownloadLimit     = 3
 	UploadLimit       = 3
+	MaxTimeout        = time.Second * 10 //Max timeout while trying to connect to server
 
 	HTTPPort               = "8085"
 	HTTPHost               = "127.0.0.1"

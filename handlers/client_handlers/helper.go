@@ -38,22 +38,29 @@ func GetNewConn() (*ftp.ServerConn, error) {
 }
 
 func startTracking(name string, size int64, isDownload bool, progressCh <-chan progress.Progress) {
-	info := ProgressInfo{
+	info := TransferInfo{
 		TotalSize:  size,
 		Name:       name,
 		IsDownload: isDownload,
 	}
 
+	if isDownload {
+		config.LogsCh <- fmt.Sprintf("Downloading %v...", name)
+	} else {
+		config.LogsCh <- fmt.Sprintf("Uploading %v...", name)
+	}
+
 	for p := range progressCh {
 		info.Percent = p.Percent()
 		info.Written = p.N()
-		transferMap[name] = info
+		transferMap.Store(name, info)
 
 		fmt.Printf("Downloaded: %.2f%%\nEstimated: %v\nWritten: %v\n", p.Percent(), p.Estimated(), p.N())
 		fmt.Println("--------------------------------------------------")
 		fmt.Printf("\n")
 	}
 
-	delete(transferMap, name)
+	transferMap.Delete(name)
+	config.LogsCh <- fmt.Sprintf("%v completed!", name)
 	fmt.Println("Completed!")
 }

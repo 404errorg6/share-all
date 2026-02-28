@@ -147,9 +147,6 @@ func uploadFile(remoteDirPath, localFilePath string, c *ftp.ServerConn) error {
 		return err
 	}
 
-	wait := make(chan bool, 1)
-	go uploadWithProgress(remoteFilePath, localFilePath, wait)
-	<-wait
-
+	uploadWithProgress(remoteFilePath, localFilePath)
 	return nil
 }

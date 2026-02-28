@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
 	"time"
 
 	"github.com/404errorg6/FTP-server/ftp/config"
@@ -11,18 +12,27 @@ import (
 	"github.com/machinebox/progress"
 )
 
-func uploadWithProgress(remoteFilePath, localFilePath string, wait chan bool) {
+func uploadWithProgress(remoteFilePath, localFilePath string) {
 	<-uploadPass
-	defer func() { uploadPass <- true }()
 
 	//Confirm these are files (have trust issues with caller)
-
 	c, err := GetNewConn()
 	if err != nil {
 		config.LogsCh <- err.Error()
 		return
 	}
 	defer c.Logout()
+
+	localEntry, err := os.Lstat(localFilePath)
+	if err != nil {
+		config.LogsCh <- err.Error()
+		return
+	}
+
+	if localEntry.IsDir() {
+		config.LogsCh <- fmt.Sprintf("\"%v\" is a local folder, not a file. Cannot upload folder. Exiting...", localFilePath)
+		return
+	}
 
 	localFile, err := os.Open(localFilePath)
 	if err != nil {
@@ -31,30 +41,24 @@ func uploadWithProgress(remoteFilePath, localFilePath string, wait chan bool) {
 	}
 	defer localFile.Close()
 
-	remoteInfo, err := c.GetEntry(remoteFilePath)
+	remoteEntry, err := c.GetEntry(path.Dir(remoteFilePath))
 	if err != nil {
 		config.LogsCh <- err.Error()
 		return
 	}
 
-	if remoteInfo.Type != ftp.EntryTypeFolder {
+	if remoteEntry.Type != ftp.EntryTypeFolder {
 		config.LogsCh <- fmt.Sprintf("\"%v\" is not a remote folder. Cannot upload file. Exiting...", remoteFilePath)
 		return
 	}
-
-	localEntry, err := os.Lstat(localFilePath)
-	if err != nil {
-		config.LogsCh <- err.Error()
-		return
-	}
-
-	wait <- false
 
 	// Start with progress info
 	trackedFile := progress.NewReader(localFile)
 	progressCh := progress.NewTicker(context.Background(), trackedFile, localEntry.Size(), time.Second)
 
-	startTracking(localEntry.Name(), localEntry.Size(), false, progressCh)
-
-	c.Stor(remoteFilePath, trackedFile)
+	go startTracking(localEntry.Name(), localEntry.Size(), false, progressCh)
+	go func() {
+		c.Stor(remoteFilePath, trackedFile)
+		uploadPass <- true
+	}()
 }
