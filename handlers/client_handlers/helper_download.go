@@ -30,7 +30,7 @@ func init() { //Initialze
 	}
 }
 
-func DownloadWithProgressBar(localFilePath, remoteFilePath string, wait chan bool) { //Simply runs downloads in parallel without checks
+func DownloadWithProgressBar(localFilePath, remoteFilePath string, wait chan bool) { //Simply runs downloads
 	<-downloadPass
 	defer func() { downloadPass <- true }()
 
@@ -43,6 +43,12 @@ func DownloadWithProgressBar(localFilePath, remoteFilePath string, wait chan boo
 	defer c.Logout()
 
 	err = areFiles("", remoteFilePath)
+	if err != nil {
+		config.LogsCh <- err.Error()
+		return
+	}
+
+	remoteEntry, err := c.GetEntry(remoteFilePath)
 	if err != nil {
 		config.LogsCh <- err.Error()
 		return
@@ -71,12 +77,6 @@ func DownloadWithProgressBar(localFilePath, remoteFilePath string, wait chan boo
 	fmt.Printf("Reached first end\n\n")
 	wait <- false
 	fmt.Printf("Starrt of transfer\n\n")
-
-	remoteEntry, err := c.GetEntry(remoteFilePath)
-	if err != nil {
-		config.LogsCh <- err.Error()
-		return
-	}
 
 	fmt.Println("Entered progress function")
 	trackedLFile := progress.NewWriter(localFile)
