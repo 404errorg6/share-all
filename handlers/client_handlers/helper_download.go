@@ -13,7 +13,7 @@ import (
 	"github.com/machinebox/progress"
 )
 
-func downloadWithProgressBar(localFilePath, remoteFilePath string) { //Simply runs downloads
+func downloadWithProgressBar(localFilePath, remoteFilePath string) { //Starts and tracks downloads in parallel
 	<-downloadPass
 
 	//Make new connection for each download
@@ -50,7 +50,6 @@ func downloadWithProgressBar(localFilePath, remoteFilePath string) { //Simply ru
 		config.LogsCh <- err.Error()
 		return
 	}
-	defer localFile.Close()
 
 	//Start tracking progress and download
 
@@ -65,5 +64,6 @@ func downloadWithProgressBar(localFilePath, remoteFilePath string) { //Simply ru
 		downloadPass <- true
 		c.Logout()
 		remoteFile.Close()
+		localFile.Close()
 	}()
 }

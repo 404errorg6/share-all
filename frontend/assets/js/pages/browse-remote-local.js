@@ -1,6 +1,7 @@
 import { FTP_API } from '../ftp-api.js';
 import { Renderer } from '../ftp-renderer.js';
 import { state, ui } from '../ftp-state.js';
+import { Clipboard } from '../ftp-clipboard.js';
 
 Components.injectSidebar('browse-remote-local');
 Components.injectModal();
@@ -70,7 +71,7 @@ async function fetchFiles(type, path) {
     try {
         const data = await FTP_API.fetchFiles(type, path);
         Renderer.renderList(type, data, path, handleAction);
-        renderBreadcrumbs(path, type);
+        renderActiveBreadcrumbs(path, type);
     } catch (e) {
         handleError(e);
     } finally {
@@ -82,11 +83,8 @@ function handleAction(e, entry, normalizedPath, type) {
     if (!optModal.classList.contains('hidden')) return;
 
     const optBtn = e.target.closest('.options-trigger');
-    console.log('handleAction called:', { type, entryName: entry.Name, hasOptBtn: !!optBtn, target: e.target });
-
     if (optBtn) {
         e.stopPropagation();
-        console.log('Opening options for:', type, entry.Name);
         if (type === 'remote') openRemoteOptions(entry, normalizedPath);
         else openLocalOptions(entry, normalizedPath);
         return;
@@ -109,116 +107,35 @@ function handleAction(e, entry, normalizedPath, type) {
     }
 }
 
-// --- Breadcrumbs (Kept Local as not in Renderer) ---
-function renderBreadcrumbs(path, type) {
-    const buildInto = (container, p, t) => {
-        if (!container) return;
-        container.innerHTML = '';
-        const isLocal = t === 'local';
-        const parts = p.split('/').filter(part => part && part !== '.');
-
-        const root = document.createElement('p');
-        root.className = `text-xs font-black uppercase tracking-widest cursor-pointer hover:underline px-2 py-1 rounded transition-colors ${isLocal ? 'text-success' : 'text-primary'}`;
-        root.innerText = isLocal ? "Local" : "Remote";
-        root.onclick = () => {
-            if (isLocal) { state.currentLocalPath = '.'; fetchFiles('local', '.'); }
-            else { state.currentRemotePath = '.'; fetchFiles('remote', '.'); }
-        };
-        container.appendChild(root);
-
-        let build = isLocal ? '.' : '';
-        parts.forEach(part => {
-            build += `/${part}`;
-            const sep = document.createElement('span');
-            sep.className = "text-slate-600 px-1";
-            sep.innerHTML = '<span class="material-symbols-outlined text-xs">chevron_right</span>';
-            container.appendChild(sep);
-
-            const node = document.createElement('p');
-            node.className = "text-xs font-bold text-slate-300 hover:text-white cursor-pointer px-2 py-1 rounded hover:bg-white/5 truncate max-w-[120px] transition-colors";
-            node.innerText = part;
-            const target = build;
-            node.onclick = () => {
-                if (isLocal) { state.currentLocalPath = target; fetchFiles('local', target); }
-                else { state.currentRemotePath = target; fetchFiles('remote', target); }
-            };
-            container.appendChild(node);
-        });
+// --- Breadcrumbs Re-integration ---
+function renderActiveBreadcrumbs(path, type) {
+    const onClick = (targetPath) => {
+        if (type === 'local') { state.currentLocalPath = targetPath; fetchFiles('local', targetPath); }
+        else { state.currentRemotePath = targetPath; fetchFiles('remote', targetPath); }
     };
 
     if (state.activePane === type) {
-        buildInto(bc, path, type);
+        Renderer.renderBreadcrumbs(bc, path, type, onClick);
     }
 
     const specific = document.getElementById(`${type}-breadcrumbs`);
-    buildInto(specific, path, type);
+    Renderer.renderBreadcrumbs(specific, path, type, onClick);
 }
 
-// --- Selection ---
+// --- Selection & Clipboard Wrappers ---
 function toggleSelectionMode() {
-    state.selectionMode = !state.selectionMode;
-    ui.sBtn.classList.toggle('bg-primary', state.selectionMode);
-    ui.sBtn.classList.toggle('text-white', state.selectionMode);
-    ui.sBtn.classList.toggle('text-slate-400', !state.selectionMode);
-    ui.sBtn.querySelector('span').innerText = state.selectionMode ? 'done_all' : 'rule';
-    updatePasteBarVisibility();
-    refreshCurrent();
+    Clipboard.toggleMode(refreshCurrent);
 }
 
 function toggleSelection(path, name, isFolder, pane) {
-    const index = state.clipboard.findIndex(f => f.path === path && f.pane === pane);
-    if (index > -1) {
-        state.clipboard.splice(index, 1);
-    } else {
-        if (state.clipboard.length > 0 && state.clipboard[0].pane !== pane) state.clipboard.length = 0;
-        state.clipboard.push({ path, name, isFolder, pane });
-    }
-    updatePasteBarVisibility();
-    refreshCurrent();
+    Clipboard.toggleSelection({ path, name, isFolder }, pane, refreshCurrent);
 }
 
 function clearClipboard() {
-    state.clipboard.length = 0;
-    updatePasteBarVisibility();
-    refreshCurrent();
+    Clipboard.clear(refreshCurrent);
 }
 
-function updatePasteBarVisibility() {
-    const hasSelection = state.clipboard.length > 0;
-    const btnPaste = document.getElementById('btn-paste-action');
-    const btnDelete = document.getElementById('btn-delete-selected');
-    const btnFinish = document.getElementById('btn-finish-selection');
-    const msg = document.getElementById('paste-message');
-    const info = document.getElementById('paste-info');
-
-    if (hasSelection) {
-        ui.pasteBar.classList.remove('hidden');
-        setTimeout(() => ui.pasteBar.classList.add('opacity-100', 'translate-y-0'), 10);
-
-        const selectedPane = state.clipboard[0].pane;
-        info.innerText = state.clipboard.length === 1 ? state.clipboard[0].name : `${state.clipboard.length} items`;
-
-        if (state.selectionMode) {
-            btnDelete.classList.remove('hidden');
-            if (btnFinish) btnFinish.classList.remove('hidden');
-            btnPaste.classList.add('hidden');
-            msg.innerText = "Items Selected";
-        } else {
-            btnDelete.classList.add('hidden');
-            if (btnFinish) btnFinish.classList.add('hidden');
-            if (selectedPane !== state.activePane) {
-                btnPaste.classList.remove('hidden');
-                msg.innerText = `Ready to ${selectedPane === 'remote' ? 'Copy' : 'Upload'}`;
-            } else {
-                btnPaste.classList.add('hidden');
-                msg.innerText = "Items in Clipboard";
-            }
-        }
-    } else {
-        ui.pasteBar.classList.remove('opacity-100', 'translate-y-0');
-        setTimeout(() => { if (state.clipboard.length === 0) ui.pasteBar.classList.add('hidden'); }, 300);
-    }
-}
+const updatePasteBarVisibility = () => Clipboard.updateBar();
 
 // --- File Actions ---
 function openRemoteOptions(entry, path) {
