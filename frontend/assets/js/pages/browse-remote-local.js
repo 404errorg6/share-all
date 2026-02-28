@@ -48,7 +48,7 @@ function switchPane(pane) {
             serverInfoEl.innerText = `${currentServer.host}:${currentServer.port}`;
         }
 
-        renderBreadcrumbs(state.currentRemotePath, 'remote');
+        renderActiveBreadcrumbs(state.currentRemotePath, 'remote');
     } else {
         tLoc.classList.remove('text-slate-400', 'text-slate-500'); tLoc.classList.add('text-primary');
         tRem.classList.remove('text-primary'); tRem.classList.add('text-slate-400');
@@ -60,7 +60,7 @@ function switchPane(pane) {
         serverNameEl.innerText = "Local Storage";
         serverInfoEl.innerText = "Internal Device";
 
-        renderBreadcrumbs(state.currentLocalPath, 'local');
+        renderActiveBreadcrumbs(state.currentLocalPath, 'local');
     }
     updatePasteBarVisibility();
 }
