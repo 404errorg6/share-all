@@ -113,6 +113,14 @@ func downloadDir(localDirPath, remoteDirPath string, c *ftp.ServerConn) error {
 }
 
 func downloadFile(localDirPath, remoteFilePath string, c *ftp.ServerConn) error { //Downloads remote file at remoteFilePath to local storage in localDirPath
+	defer func() { //Reassign a new fresh connection
+		c.Logout()
+		newC, err := client.GetClient()
+		if err == nil {
+			c = newC
+		}
+	}()
+
 	fileName := path.Base(remoteFilePath)
 	localFilePath := filepath.Join(localDirPath, fileName)
 
