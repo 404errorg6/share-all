@@ -49,6 +49,7 @@ var (
 	DefFTPWriteAccess = "false"
 	DefAnonymous      = "true"
 	DownloadLimit     = 3
+	UploadLimit       = 3
 
 	HTTPPort               = "8085"
 	HTTPHost               = "127.0.0.1"

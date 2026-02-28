@@ -2,15 +2,26 @@ package clienthandlers
 
 import (
 	"fmt"
-	"os"
 	"time"
 
+	"github.com/404errorg6/FTP-server/ftp/config"
 	"github.com/jlaffaye/ftp"
+	"github.com/machinebox/progress"
 )
 
-var (
-	savedConn, _ = GetNewConn()
-)
+// Initialize downloadPass
+func init() {
+	for range config.DownloadLimit {
+		downloadPass <- true
+	}
+}
+
+// Initialize uploadPass
+func init() {
+	for range config.UploadLimit {
+		uploadPass <- true
+	}
+}
 
 func GetNewConn() (*ftp.ServerConn, error) {
 	c, err := ftp.Dial(verifiedAddr, ftp.DialWithTimeout(5*time.Second))
@@ -26,51 +37,23 @@ func GetNewConn() (*ftp.ServerConn, error) {
 	return c, nil
 }
 
-func areFiles(localFilePath, remoteFilePath string) error { //Checks if the remote and local paths are files, must be authenticated for remote test
-	var isRemoteFile bool
-	var isLocalFile bool
-
-	if savedConn == nil {
-		var err error
-		savedConn, err = GetNewConn()
-		if err != nil {
-			return err
-		}
+func startTracking(name string, size int64, isDownload bool, progressCh <-chan progress.Progress) {
+	info := ProgressInfo{
+		TotalSize:  size,
+		Name:       name,
+		IsDownload: isDownload,
 	}
 
-	if remoteFilePath == "" {
-		isRemoteFile = true
+	for p := range progressCh {
+		info.Percent = p.Percent()
+		info.Written = p.N()
+		transferMap[name] = info
+
+		fmt.Printf("Downloaded: %.2f%%\nEstimated: %v\nWritten: %v\n", p.Percent(), p.Estimated(), p.N())
+		fmt.Println("--------------------------------------------------")
+		fmt.Printf("\n")
 	}
 
-	if localFilePath == "" {
-		isLocalFile = true
-	}
-
-	if !isRemoteFile {
-		e, err := savedConn.GetEntry(remoteFilePath)
-		if err != nil {
-			return err
-		}
-
-		if e.Type != ftp.EntryTypeFolder {
-			isRemoteFile = true
-		}
-	}
-
-	if !isLocalFile {
-		_, err := os.ReadFile(localFilePath)
-		if err == nil {
-			isLocalFile = true
-		}
-	}
-
-	if !isLocalFile {
-		return fmt.Errorf("\"%v\" is not a file", localFilePath)
-	}
-
-	if !isRemoteFile {
-		return fmt.Errorf("\"%v\" is not a file", remoteFilePath)
-	}
-
-	return nil
+	delete(transferMap, name)
+	fmt.Println("Completed!")
 }

@@ -119,7 +119,7 @@ func uploadDir(remoteDirPath, localDirPath string, c *ftp.ServerConn) error {
 
 func uploadFile(remoteDirPath, localFilePath string, c *ftp.ServerConn) error {
 	fileName := filepath.Base(localFilePath)
-	remoteFile := path.Join(remoteDirPath, fileName)
+	remoteFilePath := path.Join(remoteDirPath, fileName)
 
 	remoteEntry, err := c.GetEntry(remoteDirPath)
 	if err != nil {
@@ -131,26 +131,25 @@ func uploadFile(remoteDirPath, localFilePath string, c *ftp.ServerConn) error {
 		return err
 	}
 
-	file, err := os.Open(localFilePath)
+	localFile, err := os.Open(localFilePath)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer localFile.Close()
 
-	info, err := file.Stat()
+	localEntry, err := localFile.Stat()
 	if err != nil {
 		return err
 	}
 
-	if info.IsDir() {
+	if localEntry.IsDir() {
 		err := fmt.Errorf("\"%v\" is a directory, not a local file", localFilePath)
 		return err
 	}
 
-	err = c.Stor(remoteFile, file)
-	if err != nil {
-		return err
-	}
+	wait := make(chan bool, 1)
+	go uploadWithProgress(remoteFilePath, localFilePath, wait)
+	<-wait
 
 	return nil
 }

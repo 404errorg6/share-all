@@ -112,8 +112,6 @@ func downloadDir(localDirPath, remoteDirPath string, c *ftp.ServerConn) error {
 	return nil
 }
 
-// TODO: This is buggy and needs fixing(Hint: No logout)
-
 func downloadFile(localDirPath, remoteFilePath string, c *ftp.ServerConn) error { //Downloads remote file at remoteFilePath to local storage in localDirPath
 	fileName := path.Base(remoteFilePath)
 	localFilePath := filepath.Join(localDirPath, fileName)
