@@ -21,7 +21,6 @@ func uploadWithProgress(remoteFilePath, localFilePath string) {
 		config.LogsCh <- err.Error()
 		return
 	}
-	defer c.Logout()
 
 	localEntry, err := os.Lstat(localFilePath)
 	if err != nil {
@@ -39,7 +38,6 @@ func uploadWithProgress(remoteFilePath, localFilePath string) {
 		config.LogsCh <- err.Error()
 		return
 	}
-	defer localFile.Close()
 
 	remoteEntry, err := c.GetEntry(path.Dir(remoteFilePath))
 	if err != nil {
@@ -59,6 +57,9 @@ func uploadWithProgress(remoteFilePath, localFilePath string) {
 	go startTracking(localEntry.Name(), localEntry.Size(), false, progressCh)
 	go func() {
 		c.Stor(remoteFilePath, trackedFile)
+
 		uploadPass <- true
+		c.Logout()
+		localFile.Close()
 	}()
 }

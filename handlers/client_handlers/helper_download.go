@@ -22,7 +22,6 @@ func downloadWithProgressBar(localFilePath, remoteFilePath string) { //Simply ru
 		config.LogsCh <- err.Error()
 		return
 	}
-	defer c.Logout()
 
 	remoteEntry, err := c.GetEntry(remoteFilePath)
 	if err != nil {
@@ -39,7 +38,6 @@ func downloadWithProgressBar(localFilePath, remoteFilePath string) { //Simply ru
 		config.LogsCh <- err.Error()
 		return
 	}
-	defer remoteFile.Close()
 
 	err = os.MkdirAll(filepath.Dir(localFilePath), os.ModeDir)
 	if err != nil {
@@ -63,6 +61,9 @@ func downloadWithProgressBar(localFilePath, remoteFilePath string) { //Simply ru
 	go startTracking(remoteEntry.Name, int64(remoteEntry.Size), true, progressCh)
 	go func() {
 		io.Copy(trackedLFile, remoteFile)
+
 		downloadPass <- true
+		c.Logout()
+		remoteFile.Close()
 	}()
 }
