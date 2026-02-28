@@ -92,15 +92,34 @@
                 </div>
             </section>
 
-            <!-- Completed Transfers -->
+            <!-- History Section with Tabs -->
             <section>
-                <div class="flex items-center gap-2 mb-6">
-                    <h2 class="text-sm font-black text-slate-500 uppercase tracking-[0.2em]">History</h2>
-                    <div class="h-px flex-1 bg-slate-200 dark:bg-white/5 mx-2"></div>
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-sm font-black text-slate-500 uppercase tracking-[0.2em]">History</h2>
+                        <div class="h-px w-8 bg-slate-200 dark:bg-white/5 mx-2"></div>
+                    </div>
+
+                    <!-- Tabs -->
+                    <div
+                        class="flex p-1 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
+                        <button id="tab-downloads" onclick="TransferManager.switchTab('downloads')"
+                            class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-white dark:bg-primary text-slate-900 dark:text-white shadow-sm">
+                            Downloads
+                        </button>
+                        <button id="tab-uploads" onclick="TransferManager.switchTab('uploads')"
+                            class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
+                            Uploads
+                        </button>
+                    </div>
                 </div>
 
-                <div id="completed-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <!-- Completed items will go here -->
+                <!-- History Lists -->
+                <div id="completed-list-downloads" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Download items will go here -->
+                </div>
+                <div id="completed-list-uploads" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 hidden">
+                    <!-- Upload items will go here -->
                 </div>
             </section>
         </main>

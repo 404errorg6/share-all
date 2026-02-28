@@ -1,25 +1,15 @@
-
-// Utility functions are loaded globally via <script src="../assets/js/utils.js">
-// We can access them via window.Utils
-
 class TransferManager {
     constructor() {
         this.container = document.getElementById('transfer-list');
-        this.completedContainer = document.getElementById('completed-list');
+        this.downloadsContainer = document.getElementById('completed-list-downloads');
+        this.uploadsContainer = document.getElementById('completed-list-uploads');
         this.activeCountEl = document.getElementById('active-count');
-        this.globalDownEl = document.getElementById('global-down-speed');
-        this.globalUpEl = document.getElementById('global-up-speed');
 
         this.transfers = new Map(); // Map<string, ElementID>
-        this.completed = new Set(); // Set<string>
         this.previousState = new Map(); // Map<string, {written: number, timestamp: number}>
-
-        // New: Track transfers that we have seen as active to detect when they disappear (complete)
-        this.seenTransfers = new Map(); // Map<string, TransferItem>
-
+        this.currentTab = 'downloads';
         this.isPolling = false;
         this.pollInterval = 1000;
-        this.mockInterval = null;
     }
 
     init() {
@@ -27,7 +17,7 @@ class TransferManager {
         this.renderHistory();
         this.startPolling();
 
-        // Listen for completions to update the history list
+        // Listen for completions to update moving items to history list
         window.addEventListener('transfer-completed', (e) => {
             this.renderHistory();
         });
@@ -39,7 +29,6 @@ class TransferManager {
 
         const poll = async () => {
             try {
-                // Fetch real data from the backend
                 const response = await fetch('/api/ftp/transfers');
                 if (response.ok) {
                     const data = await response.json();
@@ -55,31 +44,61 @@ class TransferManager {
         poll();
     }
 
-    renderHistory() {
-        const history = Components.Transfers.getHistory();
-        this.completedContainer.innerHTML = '';
+    switchTab(tab) {
+        this.currentTab = tab;
 
-        if (history.length === 0) {
-            this.completedContainer.innerHTML = `
-                <div class="col-span-full flex flex-col items-center justify-center py-10 text-slate-400 text-center opacity-50 bg-slate-100/30 dark:bg-white/5 rounded-2xl border border-dashed border-slate-200 dark:border-white/5">
-                    <span class="material-symbols-outlined text-4xl mb-2">history</span>
-                    <p class="font-medium text-sm">Transfer history will appear here</p>
-                </div>
-            `;
-            return;
+        // Update UI Tabs
+        const tabDown = document.getElementById('tab-downloads');
+        const tabUp = document.getElementById('tab-uploads');
+        const listDown = document.getElementById('completed-list-downloads');
+        const listUp = document.getElementById('completed-list-uploads');
+
+        if (tab === 'downloads') {
+            tabDown.className = 'px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-white dark:bg-primary text-slate-900 dark:text-white shadow-sm';
+            tabUp.className = 'px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-700 dark:hover:text-slate-300';
+            listDown.classList.remove('hidden');
+            listUp.classList.add('hidden');
+        } else {
+            tabUp.className = 'px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-white dark:bg-primary text-slate-900 dark:text-white shadow-sm';
+            tabDown.className = 'px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-700 dark:hover:text-slate-300';
+            listUp.classList.remove('hidden');
+            listDown.classList.add('hidden');
         }
 
-        history.forEach(item => {
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = this.getTemplate(item, `completed-${this.safeId(item.Name)}`, null, true);
-            this.completedContainer.appendChild(tempDiv.firstElementChild);
-        });
+        this.renderHistory();
+    }
+
+    renderHistory() {
+        const history = Components.Transfers.getHistory();
+        const downloads = history.filter(h => h.IsDownload);
+        const uploads = history.filter(h => !h.IsDownload);
+
+        const renderItems = (items, container, typeLabel) => {
+            container.innerHTML = '';
+            if (items.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full flex flex-col items-center justify-center py-10 text-slate-400 text-center opacity-50 bg-slate-100/30 dark:bg-white/5 rounded-2xl border border-dashed border-slate-200 dark:border-white/5">
+                        <span class="material-symbols-outlined text-4xl mb-2">history</span>
+                        <p class="font-medium text-sm">No ${typeLabel} in history</p>
+                    </div>
+                `;
+                return;
+            }
+            items.forEach(item => {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = this.getTemplate(item, `completed-${this.safeId(item.Name)}`, null, true);
+                container.appendChild(tempDiv.firstElementChild);
+            });
+        };
+
+        renderItems(downloads, this.downloadsContainer, 'downloads');
+        renderItems(uploads, this.uploadsContainer, 'uploads');
     }
 
     updateUI(data) {
         if (!data) data = [];
 
-        // 1. Clean up active transfers that are no longer in the payload
+        // 1. Clean up active transfers
         const currentActiveNames = new Set(data.map(d => d.Name));
         for (const [name, id] of this.transfers) {
             if (!currentActiveNames.has(name)) {
@@ -94,7 +113,6 @@ class TransferManager {
         if (data.length === 0) {
             this.renderEmpty();
         } else {
-            // Remove empty state if present
             const emptyState = document.getElementById('active-empty-state');
             if (emptyState) emptyState.remove();
 
@@ -104,16 +122,12 @@ class TransferManager {
         }
 
         data.forEach(item => {
-            // Calculate speed and ETA
             const metrics = this.calculateMetrics(item);
-
             if (this.transfers.has(item.Name)) {
                 this.updateItem(item, metrics);
             } else {
                 this.addItem(item, metrics);
             }
-
-            // Update previous state
             this.previousState.set(item.Name, {
                 written: item.Written,
                 timestamp: Date.now()
@@ -125,35 +139,18 @@ class TransferManager {
 
     calculateMetrics(item) {
         if (!this.previousState.has(item.Name)) {
-            return {
-                speed: "Calculating...",
-                rawSpeed: 0,
-                eta: "Calculating..."
-            };
+            return { speed: "Calculating...", rawSpeed: 0, eta: "Calculating..." };
         }
-
         const prev = this.previousState.get(item.Name);
         const now = Date.now();
-        const timeDiff = (now - prev.timestamp) / 1000; // seconds
-
-        if (timeDiff <= 0) {
-            return {
-                speed: "Calculating...",
-                rawSpeed: 0,
-                eta: "Calculating..."
-            };
-        }
+        const timeDiff = (now - prev.timestamp) / 1000;
+        if (timeDiff <= 0) return { speed: "Calculating...", rawSpeed: 0, eta: "Calculating..." };
 
         const writtenDiff = item.Written - prev.written;
         const bytesPerSec = writtenDiff / timeDiff;
 
-        // If slow or stalled
         if (bytesPerSec <= 0) {
-            return {
-                speed: "0 B/s",
-                rawSpeed: 0,
-                eta: "Stalled"
-            };
+            return { speed: "0 B/s", rawSpeed: 0, eta: "Stalled" };
         }
 
         const remainingBytes = item.TotalSize - item.Written;
@@ -190,7 +187,6 @@ class TransferManager {
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = this.getTemplate(item, id, metrics, false);
         const newEl = tempDiv.firstElementChild;
-
         this.container.appendChild(newEl);
     }
 
@@ -199,25 +195,15 @@ class TransferManager {
         const el = document.getElementById(id);
         if (!el) return;
 
-        // Update Progress Bar Width
         const progressBar = el.querySelector('.progress-bar');
-        if (progressBar) {
-            progressBar.style.width = `${item.Percent}%`;
-        }
+        if (progressBar) progressBar.style.width = `${item.Percent}%`;
 
-        // Update Percent Text
         const percentEl = el.querySelector('.percent-text');
-        if (percentEl) {
-            percentEl.textContent = `${Math.round(item.Percent)}%`;
-        }
+        if (percentEl) percentEl.textContent = `${Math.round(item.Percent)}%`;
 
-        // Update Size Text
         const sizeEl = el.querySelector('.size-text');
-        if (sizeEl) {
-            sizeEl.textContent = `${Utils.formatFileSize(item.Written)} / ${Utils.formatFileSize(item.TotalSize)}`;
-        }
+        if (sizeEl) sizeEl.textContent = `${Utils.formatFileSize(item.Written)} / ${Utils.formatFileSize(item.TotalSize)}`;
 
-        // Update Info Text (Speed & ETA)
         const infoEl = el.querySelector('.info-text');
         if (infoEl) {
             infoEl.innerHTML = `
@@ -231,6 +217,9 @@ class TransferManager {
     getTemplate(item, id, metrics, isCompleted) {
         const typeInfo = this.getTypeInfo(item.Name);
         const total = Utils.formatFileSize(item.TotalSize);
+        const opTypeLabel = item.IsDownload ? 'Download' : 'Upload';
+        const opTypeColor = item.IsDownload ? 'text-primary bg-primary/10' : 'text-orange-500 bg-orange-500/10';
+        const opIcon = item.IsDownload ? 'download' : 'upload';
 
         let statusRow = '';
         if (isCompleted) {
@@ -239,24 +228,28 @@ class TransferManager {
                     <span class="text-[10px] font-bold uppercase tracking-wide text-green-500 bg-green-500/10 px-2 py-0.5 rounded-md flex items-center gap-1">
                         <span class="material-symbols-outlined text-[12px]">check_circle</span> Completed
                     </span>
-                    <span class="text-xs text-slate-400">${total}</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wide ${opTypeColor} px-2 py-0.5 rounded-md flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[12px]">${opIcon}</span> ${opTypeLabel}
+                    </span>
                 </div>
             `;
         } else {
-            const percent = Math.round(item.Percent);
-            const written = Utils.formatFileSize(item.Written);
             statusRow = `
-                <div class="flex items-center gap-3 mt-1">
-                     <div class="info-text flex items-center text-[10px] font-bold uppercase tracking-wide text-slate-500 bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-md">
-                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[10px]">speed</span>${metrics.speed}</span>
-                        <span class="mx-1 opacity-30">|</span>
-                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[10px]">timer</span>${metrics.eta}</span>
+                <div class="flex flex-col gap-2 mt-1">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold uppercase tracking-wide ${opTypeColor} px-2 py-0.5 rounded-md flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[12px]">${opIcon}</span> ${opTypeLabel}
+                        </span>
+                        <div class="info-text flex items-center text-[10px] font-bold uppercase tracking-wide text-slate-500 bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-md">
+                            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[10px]">speed</span>${metrics.speed}</span>
+                            <span class="mx-1 opacity-30">|</span>
+                            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[10px]">timer</span>${metrics.eta}</span>
+                        </div>
                     </div>
                 </div>
             `;
         }
 
-        // Progress bar is 100% and green for completed
         const progressSection = isCompleted ? '' : `
             <div class="space-y-2 mt-3">
                 <div class="flex justify-between text-xs font-medium">
@@ -280,6 +273,7 @@ class TransferManager {
                             <h3 class="font-semibold truncate pr-2 text-slate-900 dark:text-slate-100">${item.Name}</h3>
                         </div>
                         ${statusRow}
+                        ${isCompleted ? `<div class="mt-2 text-[10px] text-slate-400 font-medium">Size: ${total}</div>` : ''}
                     </div>
                 </div>
                 ${progressSection}
@@ -289,8 +283,6 @@ class TransferManager {
 
     getTypeInfo(name) {
         const ext = name.split('.').pop().toLowerCase();
-
-        // Extended Colors & Icons mapping
         const t = {
             archive: { bg: 'bg-green-500/10', text: 'text-green-500', bgFull: 'bg-green-500', icon: 'folder_zip' },
             image: { bg: 'bg-purple-500/10', text: 'text-purple-500', bgFull: 'bg-purple-500', icon: 'image' },
@@ -302,7 +294,6 @@ class TransferManager {
             app: { bg: 'bg-teal-500/10', text: 'text-teal-500', bgFull: 'bg-teal-500', icon: 'install_desktop' },
             default: { bg: 'bg-gray-500/10', text: 'text-gray-500', bgFull: 'bg-gray-500', icon: 'draft' }
         };
-
         if (['zip', 'rar', 'tar', 'gz', '7z', 'bz2', 'xz'].includes(ext)) return t.archive;
         if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'tiff'].includes(ext)) return t.image;
         if (['mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm'].includes(ext)) return t.video;
@@ -311,14 +302,13 @@ class TransferManager {
         if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'rtf'].includes(ext)) return t.doc;
         if (['sql', 'db', 'xml', 'csv', 'yaml', 'yml'].includes(ext)) return t.data;
         if (['exe', 'msi', 'dmg', 'pkg', 'deb', 'rpm', 'apk', 'iso'].includes(ext)) return t.app;
-
         return t.default;
     }
 
     renderEmpty() {
-        if (this.container.querySelector('.material-symbols-outlined')) return;
+        if (this.container.querySelector('.material-symbols-outlined') && !this.container.querySelector('[id^="transfer-"]')) return;
         this.container.innerHTML = `
-            <div class="flex flex-col items-center justify-center py-10 text-slate-400 text-center opacity-50">
+            <div id="active-empty-state" class="col-span-full flex flex-col items-center justify-center py-10 text-slate-400 text-center opacity-50">
                 <span class="material-symbols-outlined text-4xl mb-2">sync_disabled</span>
                 <p class="font-medium text-sm">No Active Transfers</p>
             </div>
@@ -326,41 +316,7 @@ class TransferManager {
     }
 
     updateCounts(count) {
-        if (this.activeCountEl) {
-            this.activeCountEl.textContent = count;
-        }
-    }
-
-    // --- Mock Data for Demo ---
-    startMockData() {
-        console.log("Starting mock data simulation...");
-        const mockItems = [
-
-            {
-                Name: "database_backup_daily.sql",
-                TotalSize: 9019431321, // ~8.4GB
-                Percent: 28,
-                Written: 2525440770
-            },
-            {
-                Name: "completed_video.mp4",
-                TotalSize: 524288000,
-                Percent: 100,
-                Written: 524288000
-            }
-        ];
-
-        this.mockInterval = setInterval(() => {
-            // Update items randomly
-            mockItems.forEach(item => {
-                if (item.Percent < 100) {
-                    item.Percent += Math.random() * 2;
-                    if (item.Percent > 100) item.Percent = 100;
-                    item.Written = Math.floor((item.Percent / 100) * item.TotalSize);
-                }
-            });
-            this.updateUI(mockItems);
-        }, 1000);
+        if (this.activeCountEl) this.activeCountEl.textContent = count;
     }
 }
 
