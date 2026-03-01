@@ -24,7 +24,7 @@ type ServerInfo struct {
 func HandlerDiscoverServers(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "close")
+	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("X-Accel-Buffering", "no")
 
@@ -35,7 +35,7 @@ func discover(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	entries := make(chan *zeroconf.ServiceEntry, 100)
 
-	resolver, err := zeroconf.NewResolver(zeroconf.SelectIPTraffic(zeroconf.IPv4), zeroconf.SelectIfaces(config.WifiOrDataInterface))
+	resolver, err := zeroconf.NewResolver(zeroconf.SelectIPTraffic(zeroconf.IPv4))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
