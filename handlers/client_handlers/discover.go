@@ -30,13 +30,18 @@ func HandlerDiscoverServers(w http.ResponseWriter, req *http.Request) {
 func discover(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 
-	go config.DiscoveryClient.Browse(
+	discovery, err := zeroconf.New().Browse(
 		func(e zeroconf.Event) {
 			log.Println(e.Op, e.Name)
 			config.LogsCh <- fmt.Sprintln(e.Op, e.Name)
 		},
-		zeroconf.NewType(config.SERVICE),
-	)
+	).Open()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	defer discovery.Close()
 
 	<-ctx.Done()
 
