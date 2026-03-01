@@ -60,6 +60,21 @@
             outline: 2px solid rgba(80, 194, 247, 0.25);
             outline-offset: 2px;
         }
+
+        /* Remove browser default white focus outline on all text inputs */
+        input:not(.toggle-input):focus {
+            outline: none;
+        }
+
+        /* Kill the white autofill background that overrides bg-transparent */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus {
+            -webkit-box-shadow: 0 0 0px 1000px #1b2327 inset;
+            -webkit-text-fill-color: #9cb0ba;
+            caret-color: #9cb0ba;
+            transition: background-color 9999s ease-in-out 0s;
+        }
     </style>
 </head>
 
@@ -117,7 +132,7 @@
             </div>
 
             <!-- Section B: Configuration -->
-            <form id="ftp-config-form" class="flex flex-col">
+            <form id="ftp-config-form" class="flex flex-col" onsubmit="return false;">
                 <h3 class="text-primary text-sm font-bold uppercase tracking-[0.1em] px-4 pb-2 pt-6">Configuration</h3>
 
                 <!-- Name -->

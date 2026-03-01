@@ -62,13 +62,11 @@ func discover(w http.ResponseWriter, req *http.Request) {
 func sendEntries(entry zeroconf.Event, w http.ResponseWriter, flusher http.Flusher) error {
 	svrInfo, err := convertEntryToServerInfo(entry)
 	if err != nil {
-		config.LogsCh <- err.Error()
 		return err
 	}
 
 	data, err := json.Marshal(svrInfo)
 	if err != nil {
-		config.LogsCh <- err.Error()
 		return err
 	}
 
@@ -78,7 +76,12 @@ func sendEntries(entry zeroconf.Event, w http.ResponseWriter, flusher http.Flush
 }
 
 func convertEntryToServerInfo(entry zeroconf.Event) (ServerInfo, error) {
-	serverInfo := ServerInfo{}
+	svrInfo := ServerInfo{}
+
+	ip, err := getUsableIP(entry.Addrs)
+	if err != nil {
+		return svrInfo, err
+	}
 
 	// Check for AnonymousAllowed in Text records
 	anonAllowed := false
@@ -95,20 +98,33 @@ func convertEntryToServerInfo(entry zeroconf.Event) (ServerInfo, error) {
 		}
 	}
 
-	serverInfo.Name = entry.Name
-	serverInfo.IP = getUsableIP(entry.Addrs)
-	serverInfo.Port = strconv.Itoa(int(entry.Port))
-	serverInfo.AnonymousAllowed = anonAllowed
-	return serverInfo, nil
+	svrInfo.Name = entry.Name
+	svrInfo.IP = ip.String()
+	svrInfo.Port = strconv.Itoa(int(entry.Port))
+	svrInfo.AnonymousAllowed = anonAllowed
+	return svrInfo, nil
 }
 
-func getUsableIP(addrs []netip.Addr) string {
+func getUsableIP(addrs []netip.Addr) (netip.Addr, error) {
 	for _, addr := range addrs {
 		if addr.Is4() && addr.IsPrivate() && !addr.IsLoopback() {
-			return addr.String()
+			if isLocal(addr) {
+				continue
+			}
+
+			return addr, nil
 		}
 
 	}
 
-	return "Unknown"
+	return addrs[0], fmt.Errorf("No usable ip found")
+}
+
+func isLocal(ip netip.Addr) bool {
+	firstOctet := ip.As4()[0]
+	if firstOctet >= 192 && firstOctet <= 223 {
+		return false
+	}
+
+	return true
 }
