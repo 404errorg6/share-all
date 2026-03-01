@@ -1,9 +1,12 @@
 package clienthandlers
 
 import (
+	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
+	"net/netip"
+	"strconv"
+	"strings"
 
 	"github.com/404errorg6/FTP-server/ftp/config"
 	"github.com/betamos/zeroconf"
@@ -28,56 +31,56 @@ func HandlerDiscoverServers(w http.ResponseWriter, req *http.Request) {
 }
 
 func discover(w http.ResponseWriter, req *http.Request) {
-	ctx := req.Context()
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "Unable to typecast to flusher", http.StatusInternalServerError)
+		return
+	}
 
 	discovery, err := zeroconf.New().Browse(
-		func(e zeroconf.Event) {
-			log.Println(e.Op, e.Name)
-			config.LogsCh <- fmt.Sprintln(e.Op, e.Name)
+		func(entry zeroconf.Event) {
+			config.LogsCh <- fmt.Sprintln(entry.Op, entry.Name)
+
+			err := sendEntries(entry, w, flusher)
+			if err != nil {
+				config.LogsCh <- err.Error()
+			}
 		},
+		zeroconf.NewType(config.SERVICE),
 	).Open()
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	defer discovery.Close()
 
-	<-ctx.Done()
-
+	<-req.Context().Done()
 	fmt.Println("Exited discover")
 }
 
-/*
-func sendEntries(ctx context.Context, entries zeroconf.Event, w http.ResponseWriter) {
-	flusher, ok := w.(http.Flusher)
-	if !ok {
-		http.Error(w, "Could not type-cast to flusher", http.StatusInternalServerError)
-		return
+func sendEntries(entry zeroconf.Event, w http.ResponseWriter, flusher http.Flusher) error {
+	svrInfo, err := convertEntryToServerInfo(entry)
+	if err != nil {
+		config.LogsCh <- err.Error()
+		return err
 	}
 
+	config.LogsCh <- fmt.Sprintf("Sending %+v", svrInfo)
+
+	data, err := json.Marshal(svrInfo)
+	if err != nil {
+		config.LogsCh <- err.Error()
+		return err
+	}
+
+	w.Write(data)
+	flusher.Flush()
+	return nil
 }
 
-func convertEntryToServerInfo(entry *zeroconf.ServiceEntry) (ServerInfo, error) {
+func convertEntryToServerInfo(entry zeroconf.Event) (ServerInfo, error) {
 	serverInfo := ServerInfo{}
-	// Use Instance name as it's more descriptive in Zeroconf
-	instance := strings.ReplaceAll(entry.Instance, "\\", "") //Clean it
-	serverInfo.Name = instance
-	if serverInfo.Name == "" {
-		serverInfo.Name = entry.HostName
-	}
-
-	// Try IPv4 first, fallback to IPv6 if needed
-	serverInfo.IP = getUsableIP(entry.AddrIPv4)
-	if serverInfo.IP == "Unknown" && len(entry.AddrIPv6) > 0 {
-		serverInfo.IP = entry.AddrIPv6[0].String()
-	}
-
-	if serverInfo.IP == config.DefFTPHost {
-		return serverInfo, fmt.Errorf("Skipping local server...")
-	}
-
-	serverInfo.Port = strconv.Itoa(entry.Port)
 
 	// Check for AnonymousAllowed in Text records
 	anonAllowed := false
@@ -93,29 +96,21 @@ func convertEntryToServerInfo(entry *zeroconf.ServiceEntry) (ServerInfo, error) 
 			break
 		}
 	}
+
+	serverInfo.Name = entry.Name
+	serverInfo.IP = getUsableIP(entry.Addrs)
+	serverInfo.Port = strconv.Itoa(int(entry.Port))
 	serverInfo.AnonymousAllowed = anonAllowed
 	return serverInfo, nil
 }
 
-func getUsableIP(ips []net.IP) string {
-	for _, ip := range ips {
-		// 1. Ensure it is an IPv4 address
-		ipv4 := ip.To4()
-		if ipv4 == nil {
-			continue
+func getUsableIP(addrs []netip.Addr) string {
+	for _, addr := range addrs {
+		if addr.Is4() && addr.IsPrivate() && !addr.IsLoopback() {
+			return addr.String()
 		}
 
-		// 2. Ignore Loopback (127.0.0.1) and Link-Local (169.254.x.x)
-		if !ipv4.IsLoopback() && !ipv4.IsLinkLocalUnicast() {
-			return ipv4.String()
-		}
-	}
-
-	// Fallback: If no "good" IP is found, take the first one available
-	if len(ips) > 0 {
-		return ips[0].String()
 	}
 
 	return "Unknown"
 }
-*/
