@@ -35,7 +35,7 @@ func discover(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	entries := make(chan *zeroconf.ServiceEntry, 100)
 
-	resolver, err := zeroconf.NewResolver()
+	resolver, err := zeroconf.NewResolver(zeroconf.SelectIPTraffic(zeroconf.IPv4), zeroconf.SelectIfaces(config.WifiOrDataInterface))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -100,6 +100,10 @@ func convertEntryToServerInfo(entry *zeroconf.ServiceEntry) (ServerInfo, error) 
 	serverInfo.IP = getUsableIP(entry.AddrIPv4)
 	if serverInfo.IP == "Unknown" && len(entry.AddrIPv6) > 0 {
 		serverInfo.IP = entry.AddrIPv6[0].String()
+	}
+
+	if serverInfo.IP == config.DefFTPHost {
+		return serverInfo, fmt.Errorf("Skipping local server...")
 	}
 
 	serverInfo.Port = strconv.Itoa(entry.Port)

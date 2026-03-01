@@ -26,7 +26,7 @@ func registerFTP() error {
 	if err != nil {
 		return err
 	}
-	server.TTL(5)
+	server.TTL(120)
 
 	return nil
 }
