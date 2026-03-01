@@ -3,6 +3,7 @@ package clienthandlers
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"net/netip"
 	"strconv"
@@ -12,7 +13,7 @@ import (
 	"github.com/betamos/zeroconf"
 )
 
-// TODO: Do not discover your own server
+// TODO: refactor this shit after kotlin integration
 type ServerInfo struct {
 	Name             string
 	IP               string
@@ -108,7 +109,15 @@ func convertEntryToServerInfo(entry zeroconf.Event) (ServerInfo, error) {
 func getUsableIP(addrs []netip.Addr) (netip.Addr, error) {
 	for _, addr := range addrs {
 		if addr.Is4() && addr.IsPrivate() && !addr.IsLoopback() {
+			firstOctet := addr.As4()[0]
+
+			if !(firstOctet >= 192 && firstOctet <= 223) { //Ensure we're checking class C addresses
+				config.LogsCh <- fmt.Sprintf("Skipped not class C addr: %v", addr.String())
+				continue
+			}
+
 			if isLocal(addr) {
+				config.LogsCh <- fmt.Sprintf("Skipped local addr: %v", addr.String())
 				continue
 			}
 
@@ -117,14 +126,36 @@ func getUsableIP(addrs []netip.Addr) (netip.Addr, error) {
 
 	}
 
-	return addrs[0], fmt.Errorf("No usable ip found")
+	return netip.Addr{}, fmt.Errorf("No usable ip found")
 }
 
-func isLocal(ip netip.Addr) bool {
-	firstOctet := ip.As4()[0]
-	if firstOctet >= 192 && firstOctet <= 223 {
+func isLocal(addr netip.Addr) bool {
+	localAddr, found := convertIfaceToAddr(config.WifiOrDataInterface)
+	if !found {
+		config.LogsCh <- fmt.Sprintf("[FATAL]: Invalid WifiOrDataInterface: %v", config.WifiOrDataInterface)
 		return false
 	}
 
-	return true
+	if addr.Compare(localAddr) == 0 {
+		return true
+	}
+
+	return false
+}
+
+func convertIfaceToAddr(iface net.Interface) (netip.Addr, bool) {
+	addrs, _ := iface.Addrs()
+	for _, addr := range addrs {
+		if ipNet, ok := addr.(*net.IPNet); ok && !ipNet.IP.IsLoopback() {
+			// Ensure it's IPv4 for this example
+			if ip4 := ipNet.IP.To4(); ip4 != nil {
+				finalAddr, ok := netip.AddrFromSlice(ip4)
+				if ok {
+					return finalAddr, true
+				}
+			}
+		}
+	}
+
+	return netip.Addr{}, false
 }

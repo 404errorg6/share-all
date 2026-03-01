@@ -2,13 +2,14 @@ package server
 
 import (
 	"fmt"
+	"net"
 
 	"github.com/404errorg6/FTP-server/ftp/config"
 	ftpserver "github.com/fclairamb/ftpserverlib"
 )
 
 func StartFTP() error {
-	if config.WifiOrDataInterface == nil {
+	if !isInitialized(config.WifiOrDataInterface) {
 		return fmt.Errorf("Neither wifi, nor cellular is enabled")
 	}
 
@@ -36,4 +37,9 @@ func startLogsAndFTP() {
 	if err := config.FTPServer.Conn.ListenAndServe(); err != nil {
 		config.LogsCh <- err.Error()
 	}
+}
+
+func isInitialized(iface net.Interface) bool {
+	// A valid interface will always have an Index > 0
+	return iface.Index != 0
 }
