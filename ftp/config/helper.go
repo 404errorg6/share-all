@@ -8,34 +8,39 @@ import (
 )
 
 // TODO: Refactor this shit after kotlin integration
-func getWifiOrCellularInterface() ([]net.Interface, error) {
-	var WifiOrMobileInterfaces []net.Interface
+func getWifiOrCellularInterface() (net.Interface, error) {
+	var nilIface net.Interface
 	ifs, err := net.Interfaces()
 	if err != nil {
-		return nil, err
+		return nilIface, err
 	}
 
 	fmt.Printf("Up and Broadcast Interfaces:\n")
-	for _, iface := range ifs {
 
+	for _, iface := range ifs {
 		name := strings.ToLower(iface.Name)
 		if iface.Flags&net.FlagUp != 0 && iface.Flags&net.FlagBroadcast != 0 {
 			fmt.Printf("	%v: %v\n", iface.Name, iface)
 			isWifi := strings.Contains(name, "wi-fi") || strings.Contains(name, "wifi") || strings.HasPrefix(name, "wlan")
-			isCellular := strings.Contains(name, "cellular") || strings.HasPrefix(name, "ap") || strings.HasPrefix(iface.Name, "rmnet")
 
-			if isWifi || isCellular {
-				WifiOrMobileInterfaces = append(WifiOrMobileInterfaces, iface)
+			if isWifi {
+				return iface, nil
 			}
 		}
 	}
 
-	if len(WifiOrMobileInterfaces) == 0 {
-		return nil, fmt.Errorf("Neither wifi nor mobile data enabled")
+	for _, iface := range ifs {
+		name := strings.ToLower(iface.Name)
+		if iface.Flags&net.FlagUp != 0 && iface.Flags&net.FlagBroadcast != 0 {
+			isCellular := strings.Contains(name, "cellular") || strings.HasPrefix(name, "ap") || strings.HasPrefix(name, "rmnet")
+
+			if isCellular {
+				return iface, nil
+			}
+		}
 	}
 
-	LogsCh <- fmt.Sprintf("Choosen interfaces: %v\n", WifiOrMobileInterfaces)
-	return WifiOrMobileInterfaces, nil
+	return nilIface, fmt.Errorf("Neither wifi nor mobile data enabled")
 }
 
 func getDefRootDir() string {
