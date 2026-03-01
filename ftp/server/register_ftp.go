@@ -5,12 +5,11 @@ import (
 	"strconv"
 
 	"github.com/404errorg6/FTP-server/ftp/config"
-	"github.com/grandcat/zeroconf"
+	"github.com/betamos/zeroconf"
 )
 
 func registerFTP() error {
-	instance := config.FTPServer.Name
-
+	var err error
 	portInt, err := strconv.Atoi(config.FTPServer.Port)
 	if err != nil {
 		return err
@@ -20,13 +19,16 @@ func registerFTP() error {
 		fmt.Sprintf("AnonymousAllowed=%v", config.FTPServer.AnonymousAccessAllowed),
 	}
 
-	config.LogsCh <- fmt.Sprintf("Wifi or Mobile interfaces: \n%v", config.WifiOrDataInterface)
+	svcType := zeroconf.NewType(config.SERVICE)
 
-	server, err = zeroconf.Register(instance, config.SERVICE, config.DOMAIN, portInt, text, nil)
+	service := zeroconf.NewService(svcType, config.FTPServer.Name, uint16(portInt))
+	service.Text = text
+	service.Name = config.FTPServer.Name
+
+	config.DiscoveryClient, err = zeroconf.New().Publish(service).Open()
 	if err != nil {
 		return err
 	}
-	server.TTL(120)
 
 	return nil
 }

@@ -1,16 +1,12 @@
 package clienthandlers
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
-	"net"
+	"log"
 	"net/http"
-	"strconv"
-	"strings"
 
 	"github.com/404errorg6/FTP-server/ftp/config"
-	"github.com/grandcat/zeroconf"
+	"github.com/betamos/zeroconf"
 )
 
 // TODO: Do not discover your own server
@@ -33,58 +29,27 @@ func HandlerDiscoverServers(w http.ResponseWriter, req *http.Request) {
 
 func discover(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
-	entries := make(chan *zeroconf.ServiceEntry, 100)
 
-	resolver, err := zeroconf.NewResolver(zeroconf.SelectIPTraffic(zeroconf.IPv4))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	go config.DiscoveryClient.Browse(
+		func(e zeroconf.Event) {
+			log.Println(e.Op, e.Name)
+		},
+		zeroconf.NewType(config.SERVICE),
+	)
 
-	err = resolver.Browse(ctx, config.SERVICE, config.DOMAIN, entries)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	go sendEntries(ctx, entries, w)
 	<-ctx.Done()
 
 	fmt.Println("Exited discover")
 }
 
-func sendEntries(ctx context.Context, entries <-chan *zeroconf.ServiceEntry, w http.ResponseWriter) {
+/*
+func sendEntries(ctx context.Context, entries zeroconf.Event, w http.ResponseWriter) {
 	flusher, ok := w.(http.Flusher)
 	if !ok {
 		http.Error(w, "Could not type-cast to flusher", http.StatusInternalServerError)
 		return
 	}
 
-	for {
-		select {
-		case entry := <-entries:
-			svrInfo, err := convertEntryToServerInfo(entry)
-			if err != nil {
-				config.LogsCh <- err.Error()
-				continue
-			}
-
-			data, err := json.Marshal(svrInfo)
-			if err != nil {
-				config.LogsCh <- err.Error()
-				continue
-			}
-
-			_, err = fmt.Fprintf(w, "data: %s\n\n", data)
-			if err != nil {
-				config.LogsCh <- err.Error()
-			}
-			flusher.Flush()
-
-		case <-ctx.Done(): //Exit function if user moves to another page
-			return
-		}
-	}
 }
 
 func convertEntryToServerInfo(entry *zeroconf.ServiceEntry) (ServerInfo, error) {
@@ -147,3 +112,4 @@ func getUsableIP(ips []net.IP) string {
 
 	return "Unknown"
 }
+*/

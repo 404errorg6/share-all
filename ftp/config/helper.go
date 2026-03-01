@@ -34,7 +34,7 @@ func getWifiOrCellularInterface() ([]net.Interface, error) {
 		return nil, fmt.Errorf("Neither wifi nor mobile data enabled")
 	}
 
-	fmt.Printf("Choosen interfaces: %v\n", WifiOrMobileInterfaces)
+	LogsCh <- fmt.Sprintf("Choosen interfaces: %v\n", WifiOrMobileInterfaces)
 	return WifiOrMobileInterfaces, nil
 }
 

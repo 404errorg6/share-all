@@ -18,7 +18,7 @@ func StopFTP() error {
 	}
 	config.FTPServer.Conn = nil
 	config.FTPServer.IsRunning = false
-	server.Shutdown()
+	config.DiscoveryClient.Close()
 
 	config.LogsCh <- "server stopped"
 	return nil

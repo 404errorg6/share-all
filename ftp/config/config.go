@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/betamos/zeroconf"
 	ftpserver "github.com/fclairamb/ftpserverlib"
 )
 
@@ -25,9 +26,10 @@ type MyServer struct {
 	AnonymousAccessAllowed bool
 	WriteAllowed           bool
 	IsRunning              bool
-	Conn                   *ftpserver.FtpServer
-	ConnectedClients       sync.Map
-	BlackList              []string
+
+	Conn             *ftpserver.FtpServer
+	ConnectedClients sync.Map
+	BlackList        []string
 }
 
 type Client struct {
@@ -59,6 +61,8 @@ var (
 	DefLocalDir            = getDefRootDir()
 	WifiOrDataInterface, _ = getWifiOrCellularInterface()
 	FTPServer              = MyServer{}
+
+	DiscoveryClient *zeroconf.Client
 )
 
 func (s *MyServer) BlockUser(host string) {
