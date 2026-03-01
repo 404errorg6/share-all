@@ -19,15 +19,17 @@ const RemoteConnections = {
         this.discoverServers();
     },
 
-    discoveryEventSource: null,
+    discoveryAbortController: null,
     discoveredCards: new Map(),
 
-    discoverServers() {
-        if (this.discoveryEventSource) {
-            this.discoveryEventSource.close();
+    async discoverServers() {
+        if (this.discoveryAbortController) {
+            this.discoveryAbortController.abort();
+            this.discoveryAbortController = null;
         }
         if (this.discoveryTimeout) {
             clearTimeout(this.discoveryTimeout);
+            this.discoveryTimeout = null;
         }
 
         // Clear existing results to ensure fresh discovery
@@ -45,45 +47,101 @@ const RemoteConnections = {
         // Hide re-scan button
         if (this.rescanBtn) this.rescanBtn.classList.add('hidden');
 
-        this.discoveryEventSource = new EventSource('/api/ftp/discover');
+        this.discoveryAbortController = new AbortController();
+        const signal = this.discoveryAbortController.signal;
 
-        // Set 10s timeout
+        // Set hard 10s limit for discovery
         this.discoveryTimeout = setTimeout(() => {
+            if (this.discoveryAbortController) {
+                this.discoveryAbortController.abort();
+            }
+        }, 10000);
+
+        try {
+            const response = await fetch('/api/ftp/discover', { signal });
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+
+                // Try to parse JSON objects from buffer (bare structs)
+                while (true) {
+                    let startIdx = buffer.indexOf('{');
+                    if (startIdx === -1) {
+                        buffer = '';
+                        break;
+                    }
+                    if (startIdx > 0) buffer = buffer.substring(startIdx);
+
+                    let depth = 0;
+                    let endIdx = -1;
+                    let inString = false;
+                    let escaped = false;
+
+                    for (let i = 0; i < buffer.length; i++) {
+                        const char = buffer[i];
+                        if (escaped) { escaped = false; continue; }
+                        if (char === '\\') { escaped = true; continue; }
+                        if (char === '"') { inString = !inString; continue; }
+                        if (!inString) {
+                            if (char === '{') depth++;
+                            else if (char === '}') {
+                                depth--;
+                                if (depth === 0) {
+                                    endIdx = i;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (endIdx !== -1) {
+                        const jsonStr = buffer.substring(0, endIdx + 1);
+                        try {
+                            const server = JSON.parse(jsonStr);
+                            // Identity: Combination of Name, IP, and Port to distinguish "another one"
+                            const serverId = `${server.Name || ''}-${server.IP}:${server.Port}`;
+
+                            this.discoveryState.classList.add('hidden');
+                            this.renderDiscoveredServer(serverId, server);
+                        } catch (err) {
+                            console.error('Discovery parse error:', err, jsonStr);
+                        }
+                        buffer = buffer.substring(endIdx + 1);
+                    } else {
+                        break;
+                    }
+                }
+            }
+        } catch (err) {
+            if (err.name === 'AbortError') {
+                console.info('Discovery scan completed (time limit reached).');
+            } else {
+                console.error('Discovery error:', err);
+            }
+        } finally {
+            if (this.discoveryTimeout) {
+                clearTimeout(this.discoveryTimeout);
+                this.discoveryTimeout = null;
+            }
             if (this.discoveredCards.size === 0) {
-                if (this.discoveryEventSource) this.discoveryEventSource.close();
                 this.discoveryState.innerHTML = `
                     <span class="material-symbols-outlined text-4xl text-slate-500 mb-3 opacity-20">search_off</span>
                     <p class="text-sm font-bold text-slate-300">No Servers Found</p>
                     <p class="text-[10px] text-slate-500 mt-1 uppercase tracking-widest font-medium">Make sure other devices are on the same network</p>
                 `;
-                if (this.rescanBtn) this.rescanBtn.classList.remove('hidden');
+                this.discoveryState.classList.remove('hidden');
             }
-        }, 10000);
-
-        this.discoveryEventSource.onmessage = (event) => {
-            // Cancel timeout since we got data
-            if (this.discoveryTimeout) {
-                clearTimeout(this.discoveryTimeout);
-                this.discoveryTimeout = null;
-            }
-
-            try {
-                const server = JSON.parse(event.data);
-                const serverId = `${server.IP}:${server.Port}`;
-
-                this.discoveryState.classList.add('hidden');
-                if (this.rescanBtn) this.rescanBtn.classList.remove('hidden');
-
-                this.renderDiscoveredServer(serverId, server);
-            } catch (err) {
-                console.error('Discovery parse error:', err);
-            }
-        };
-
-        this.discoveryEventSource.onerror = (err) => {
-            console.info('Discovery stream closed or interrupted. Reconnecting...');
             if (this.rescanBtn) this.rescanBtn.classList.remove('hidden');
-        };
+            this.discoveryAbortController = null;
+        }
     },
 
     renderDiscoveredServer(serverId, server, fromCache = false) {

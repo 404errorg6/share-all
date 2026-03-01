@@ -66,8 +66,6 @@ func sendEntries(entry zeroconf.Event, w http.ResponseWriter, flusher http.Flush
 		return err
 	}
 
-	config.LogsCh <- fmt.Sprintf("Sending %+v", svrInfo)
-
 	data, err := json.Marshal(svrInfo)
 	if err != nil {
 		config.LogsCh <- err.Error()
