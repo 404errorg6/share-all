@@ -62,7 +62,7 @@ var (
 	WifiOrDataInterface, _ = getWifiOrCellularInterface()
 	FTPServer              = MyServer{}
 
-	DiscoveryClient *zeroconf.Client
+	DiscoveryClient = zeroconf.New()
 )
 
 func (s *MyServer) BlockUser(host string) {

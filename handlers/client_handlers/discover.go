@@ -33,6 +33,7 @@ func discover(w http.ResponseWriter, req *http.Request) {
 	go config.DiscoveryClient.Browse(
 		func(e zeroconf.Event) {
 			log.Println(e.Op, e.Name)
+			config.LogsCh <- fmt.Sprintln(e.Op, e.Name)
 		},
 		zeroconf.NewType(config.SERVICE),
 	)
