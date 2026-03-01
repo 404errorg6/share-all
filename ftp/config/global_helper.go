@@ -77,8 +77,8 @@ func SendJSON(w http.ResponseWriter, data any) {
 		return
 	}
 
+	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(body))
-	w.WriteHeader(200)
 }
 
 func RemoteFolderExists(remotePath string, c *ftp.ServerConn) bool {

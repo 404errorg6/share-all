@@ -5,11 +5,6 @@ import (
 
 	"github.com/404errorg6/FTP-server/ftp/config"
 	ftpserver "github.com/fclairamb/ftpserverlib"
-	"github.com/grandcat/zeroconf"
-)
-
-var (
-	server *zeroconf.Server
 )
 
 func StartFTP() error {
@@ -39,11 +34,6 @@ func StartFTP() error {
 func startLogsAndFTP() {
 	config.FTPServer.IsRunning = true
 	if err := config.FTPServer.Conn.ListenAndServe(); err != nil {
-		// send error to logs channel without blocking
-		select {
-		case config.LogsCh <- err.Error():
-		default:
-			fmt.Printf("logs channel full, dropping: %v", err)
-		}
+		config.LogsCh <- err.Error()
 	}
 }

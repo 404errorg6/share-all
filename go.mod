@@ -8,14 +8,16 @@ require (
 	github.com/fclairamb/ftpserverlib v0.29.0
 	github.com/grandcat/zeroconf v1.0.0
 	github.com/jlaffaye/ftp v0.2.0
+	github.com/machinebox/progress v0.2.0
 	github.com/spf13/afero v1.15.0
 )
 
 require (
+	github.com/betamos/zeroconf v0.1.8-0.20250208023331-d559d61612b7 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
-	github.com/machinebox/progress v0.2.0 // indirect
+	github.com/matryer/is v1.4.1 // indirect
 	github.com/miekg/dns v1.1.72 // indirect
 	golang.org/x/mod v0.32.0 // indirect
 	golang.org/x/net v0.49.0 // indirect
