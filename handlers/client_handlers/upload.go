@@ -149,6 +149,7 @@ func uploadFile(remoteDirPath, localFilePath string, c *ftp.ServerConn) error {
 
 	uploadWithProgress(remoteFilePath, localFilePath)
 	//Reassign a fresh connection
+	c.Logout()
 	c, err = GetNewConn()
 	if err != nil {
 		return err
