@@ -1,4 +1,4 @@
-package serverhandlers
+package clienthandlers
 
 import (
 	"fmt"
@@ -42,11 +42,11 @@ func HandleListRemoteDir(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//Store and send in json
-	dirObj := getDirObj(dir)
+	dirObj := getRemoteDirObj(dir)
 	config.SendJSON(w, dirObj)
 }
 
-func getDirObj(dir []*ftp.Entry) []config.FSObject {
+func getRemoteDirObj(dir []*ftp.Entry) []config.FSObject {
 	dirObj := []config.FSObject{}
 	for _, entry := range dir {
 		e := config.FSObject{
