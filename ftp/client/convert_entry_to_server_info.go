@@ -47,7 +47,7 @@ func getUsableIP(addrs []netip.Addr) (netip.Addr, error) {
 			firstOctet := addr.As4()[0]
 
 			if !(firstOctet >= 192 && firstOctet <= 223) { //Ensure we're checking class C addresses
-				config.LogsCh <- fmt.Sprintf("Skipped not class C addr: %v", addr.String())
+				config.LogsCh <- fmt.Sprintf("Skipped address %v: does not match required /24 subnet", addr.String())
 				continue
 			}
 
