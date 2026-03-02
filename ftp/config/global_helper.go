@@ -15,8 +15,13 @@ import (
 )
 
 func ResolveRemotePath(c *ftp.ServerConn, remotePath string) (string, *ftp.Entry, error) {
-	if remotePath == "" {
-		return ".", nil, nil
+	if remotePath == "" || remotePath == "." {
+		entry, err := c.GetEntry(remotePath)
+		if err != nil {
+			return "", nil, err
+		}
+
+		return ".", entry, nil
 	}
 
 	remotePath = filepath.ToSlash(remotePath)
