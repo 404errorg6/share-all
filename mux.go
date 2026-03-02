@@ -38,7 +38,6 @@ func Mux() *http.ServeMux {
 	mux.HandleFunc("POST /api/ftp/server/start-ftp", serverhandlers.HandleStartFTP) //start ftp server
 	mux.HandleFunc("POST /api/ftp/server/stop-ftp", serverhandlers.HandleStopFTP)   //stop ftp server
 	mux.HandleFunc("GET /api/ftp/server/running-status", serverhandlers.HandleServerStatus)
-	mux.HandleFunc("GET /api/ftp/server/ls", serverhandlers.HandleListRemoteDir)                      //list other server directory
 	mux.HandleFunc("GET /api/ftp/server/get-file", serverhandlers.HandleServeFile)                    //stream file for preview
 	mux.HandleFunc("GET /api/ftp/server/connected-clients", serverhandlers.HandleGetConnectedClients) //get clients connected to own server
 	mux.HandleFunc("GET /api/ftp/server/blacklist-client", serverhandlers.HandlerGetBlacklist)        //get list of blacklisted ips
@@ -47,7 +46,8 @@ func Mux() *http.ServeMux {
 
 	//FTP client Handles
 	mux.HandleFunc("POST /api/ftp/client/connect-to-server", clienthandlers.HandleConnectToServer) //connect to server
-	mux.HandleFunc("GET /api/ftp/client/ls", clienthandlers.HandleListLocalDir)                    //Get local folder info, path required
+	mux.HandleFunc("GET /api/ftp/client/local/ls", clienthandlers.HandleListLocalDir)              //Get local folder info, path required
+	mux.HandleFunc("GET /api/ftp/client/remote/ls", clienthandlers.HandleListRemoteDir)            //Get remote folder info, remote_path required
 	mux.HandleFunc("GET /api/ftp/client/get-file", clienthandlers.HandleServeFile)                 //stream file for preview, path required
 	mux.HandleFunc("POST /api/ftp/client/download", clienthandlers.HandleDownload)                 //download from server, remote_path, local_path required
 	mux.HandleFunc("POST /api/ftp/client/upload", clienthandlers.HandleUpload)                     //upload to server, remote_path, local_path required

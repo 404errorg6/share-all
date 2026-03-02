@@ -18,7 +18,7 @@ func HandleListLocalDir(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	dirObj, err := getDirObj(dir)
+	dirObj, err := getLcoalDirObj(dir)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -27,7 +27,7 @@ func HandleListLocalDir(w http.ResponseWriter, req *http.Request) {
 	config.SendJSON(w, dirObj)
 }
 
-func getDirObj(dir []os.DirEntry) ([]config.FSObject, error) {
+func getLcoalDirObj(dir []os.DirEntry) ([]config.FSObject, error) {
 	dirObj := []config.FSObject{}
 	for _, entry := range dir {
 		info, err := entry.Info()
