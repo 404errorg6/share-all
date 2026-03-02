@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/404errorg6/FTP-server/ftp/config"
 	"github.com/404errorg6/FTP-server/ftp/server"
@@ -51,6 +52,10 @@ func initServer(name, user, pass, host, port, root, writeAllowed, anonymous stri
 
 	if name == "" {
 		return fmt.Errorf("name is required")
+	}
+
+	if strings.EqualFold(name, config.DefFTPServerName) {
+		name = getHostname()
 	}
 
 	if host == "" {

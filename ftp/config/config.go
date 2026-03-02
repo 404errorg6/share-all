@@ -53,6 +53,7 @@ const (
 )
 
 var (
+	DefFTPServerName  = "my ftp server"
 	DefFTPPort        = "2121"
 	DefFTPHost        = GetLocalIP()
 	DefFTPWriteAccess = "false"
