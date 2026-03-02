@@ -1,7 +1,6 @@
 package clienthandlers
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -31,10 +30,14 @@ func discover(w http.ResponseWriter, req *http.Request) {
 		func(entry zeroconf.Event) {
 			config.LogsCh <- fmt.Sprintln(entry.Op, entry.Name)
 
-			err := sendEntry(entry, w, flusher)
+			svrInfo, err := client.ConvertEntryToServerInfo(entry)
 			if err != nil {
 				config.LogsCh <- err.Error()
+				return
 			}
+
+			config.SendJSON(w, svrInfo)
+			flusher.Flush()
 		},
 		zeroconf.NewType(config.SERVICE),
 	).Open()
@@ -47,21 +50,4 @@ func discover(w http.ResponseWriter, req *http.Request) {
 
 	<-req.Context().Done()
 	fmt.Println("Exited discover")
-}
-
-func sendEntry(entry zeroconf.Event, w http.ResponseWriter, flusher http.Flusher) error {
-	svrInfo, err := client.ConvertEntryToServerInfo(entry)
-	if err != nil {
-		return err
-	}
-
-	data, err := json.Marshal(svrInfo)
-	if err != nil {
-		return err
-	}
-
-	w.Write(data)
-	flusher.Flush()
-
-	return nil
 }

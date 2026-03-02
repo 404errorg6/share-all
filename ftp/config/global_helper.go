@@ -28,7 +28,7 @@ func ResolveRemotePath(c *ftp.ServerConn, remotePath string) (string, *ftp.Entry
 	}
 
 	//File/folder is safe to send now
-	if !isAbsPath(remotePath) {
+	if !isAbsRemotePath(remotePath) {
 		remotePath = path.Join(FTPServer.RootDir, remotePath)
 	}
 
@@ -42,11 +42,11 @@ func ResolveLocalPath(localPath string) string {
 		return DefLocalDir
 	}
 
-	if isAbsPath(localPath) {
-		return filepath.Clean(localPath)
+	if !isAbsLocalPath(localPath) {
+		return filepath.Join(DefLocalDir, localPath)
 	}
 
-	return filepath.Join(DefLocalDir, localPath)
+	return filepath.Clean(localPath)
 }
 
 func GetHostPort(addr string) (string, string, error) {
@@ -70,17 +70,6 @@ func ConvertIfaceToAddr(iface net.Interface) (netip.Addr, bool) {
 	return netip.Addr{}, false
 }
 
-/*
-	func GetHostPort(addr string) (string, string, error) {
-		host, port, found := strings.Cut(addr, ":")
-		if !found {
-			err := fmt.Errorf("[INFO]: \":\" not found. Using \"%v\" as host", addr)
-			LogsCh <- err.Error()
-			return addr, "", err
-		}
-		return host, port, nil
-	}
-*/
 func SendJSON(w http.ResponseWriter, data any) {
 	body, err := json.Marshal(data)
 	if err != nil {
@@ -90,7 +79,7 @@ func SendJSON(w http.ResponseWriter, data any) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(body))
+	w.Write(body)
 }
 
 func RemoteFolderExists(remotePath string, c *ftp.ServerConn) bool {
