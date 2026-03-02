@@ -25,8 +25,11 @@ func GetConnectedHosts() []config.Client {
 }
 
 func alreadyConnected(addr string) bool {
-	host, _, _ := config.GetHostPort(addr)
 	var matchFound bool
+	host, _, err := config.GetHostPort(addr)
+	if err != nil {
+		config.LogsCh <- fmt.Sprintf("Function error in alreadyConnected while parsing addr: %v", err.Error())
+	}
 
 	config.FTPServer.ConnectedClients.Range(func(key, value any) bool {
 		client, ok := value.(config.Client)

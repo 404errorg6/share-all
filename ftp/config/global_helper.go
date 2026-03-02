@@ -49,6 +49,10 @@ func ResolveLocalPath(localPath string) string {
 	return filepath.Join(DefLocalDir, localPath)
 }
 
+func GetHostPort(addr string) (string, string, error) {
+	return net.SplitHostPort(addr)
+}
+
 func ConvertIfaceToAddr(iface net.Interface) (netip.Addr, bool) {
 	addrs, _ := iface.Addrs()
 	for _, addr := range addrs {
