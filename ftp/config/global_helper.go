@@ -32,11 +32,8 @@ func ResolveRemotePath(c *ftp.ServerConn, remotePath string) (string, *ftp.Entry
 		return "", nil, err
 	}
 
-	//File/folder is safe to send now
-	if !isAbsRemotePath(remotePath) {
-		remotePath = path.Join(FTPServer.RootDir, remotePath)
-	}
-
+	// Don't prefix with FTPServer.RootDir — that's a LOCAL path (e.g. C:\Users\Gamer).
+	// The remote FTP server resolves relative paths against its own CWD.
 	remotePath = path.Clean(remotePath)
 	return remotePath, entry, nil
 }
