@@ -7,7 +7,7 @@ import (
 	"github.com/404errorg6/FTP-server/ftp/config"
 )
 
-func HandleGetLocalFolderEntries(w http.ResponseWriter, req *http.Request) {
+func HandleListLocalDir(w http.ResponseWriter, req *http.Request) {
 	localPath := req.FormValue("local_path")
 	localPath = config.ResolveLocalPath(localPath)
 

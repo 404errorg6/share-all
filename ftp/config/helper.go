@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -44,8 +45,19 @@ func getWifiOrCellularInterface() (net.Interface, error) {
 	return nilIface, fmt.Errorf("Neither wifi nor mobile data enabled")
 }
 
-func isAbsPath(p string) bool {
+func isAbsLocalPath(p string) bool {
 	if filepath.IsAbs(p) {
+		return true
+	}
+	// Manual check for Windows drive letters (e.g., C:/ or D:\)
+	if len(p) >= 3 && p[1] == ':' && (p[2] == '/' || p[2] == '\\') {
+		return true
+	}
+	return false
+}
+
+func isAbsRemotePath(p string) bool {
+	if path.IsAbs(p) {
 		return true
 	}
 	// Manual check for Windows drive letters (e.g., C:/ or D:\)
