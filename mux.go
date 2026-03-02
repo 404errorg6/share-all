@@ -24,16 +24,17 @@ func Mux() *http.ServeMux {
 
 	assetsServer := http.FileServer(http.FS(assets))
 
-	// Root Redirect to Browse Local
-	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+	// HTTP Handles
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) { // Root Redirect to Browse Local
 		if r.URL.Path == "/" {
 			http.Redirect(w, r, "/pages/browse-local.html", http.StatusTemporaryRedirect)
 			return
 		}
 		assetsServer.ServeHTTP(w, r)
 	})
-
 	mux.HandleFunc("GET /api/logs", httphandlers.HandleLogs) //get logs
+	mux.HandleFunc("POST /api/http/start-web-ui", httphandlers.HandleStartWebUI)
+
 	//FTP server Handles
 	mux.HandleFunc("POST /api/ftp/server/start-ftp", serverhandlers.HandleStartFTP) //start ftp server
 	mux.HandleFunc("POST /api/ftp/server/stop-ftp", serverhandlers.HandleStopFTP)   //stop ftp server
@@ -42,7 +43,7 @@ func Mux() *http.ServeMux {
 	mux.HandleFunc("GET /api/ftp/server/connected-clients", serverhandlers.HandleGetConnectedClients) //get clients connected to own server
 	mux.HandleFunc("GET /api/ftp/server/blacklist-client", serverhandlers.HandlerGetBlacklist)        //get list of blacklisted ips
 	mux.HandleFunc("POST /api/ftp/server/blacklist-client", serverhandlers.BlockClient)               //block a new ip
-	mux.HandleFunc("POST /api/ftp/server/whitelist-client", serverhandlers.WhitelistClient)           //whitelist a blocked ip
+	mux.HandleFunc("POST /api/ftp/server/whitelist-client", serverhandlers.WhitelistClient)           //whitelist a blocked transfers
 
 	//FTP client Handles
 	mux.HandleFunc("POST /api/ftp/client/connect-to-server", clienthandlers.HandleConnectToServer) //connect to server

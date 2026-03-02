@@ -57,8 +57,10 @@ func (d *AndroidMainDriver) AuthUser(cc ftpserver.ClientContext, user, pass stri
 		}
 
 		clientDriver.Fs = fileSystem
+		if !alreadyConnected(cc.RemoteAddr().String()) { //Add new client only if not already connected
+			addToConnectedClient(user, cc)
+		}
 
-		addToConnectedClient(user, cc)
 		config.LogsCh <- fmt.Sprintf("%v authorization successful", cc.RemoteAddr().String())
 		return clientDriver, nil
 	}

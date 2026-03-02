@@ -15,17 +15,17 @@ func HandleGetConnectedClients(w http.ResponseWriter, req *http.Request) {
 		Port    string
 		Network string
 	}
-	connectedClients := []constrainedConnClient{}
+	constrainedConClients := []constrainedConnClient{}
 
 	clients := server.GetConnectedHosts() //Get full connected clients
 	for _, c := range clients {
-		ccc := constrainedConnClient{}
-		ccc.Name = c.Name
-		ccc.Host = c.Host
-		ccc.Port = c.Port
-		ccc.Network = c.Context.RemoteAddr().Network()
-		connectedClients = append(connectedClients, ccc)
+		constrainedConClient := constrainedConnClient{}
+		constrainedConClient.Name = c.Name
+		constrainedConClient.Host = c.Host
+		constrainedConClient.Port = c.Port
+		constrainedConClient.Network = c.Context.RemoteAddr().Network()
+		constrainedConClients = append(constrainedConClients, constrainedConClient)
 	}
 
-	config.SendJSON(w, connectedClients)
+	config.SendJSON(w, constrainedConClients)
 }
