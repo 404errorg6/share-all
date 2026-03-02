@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"mime"
+	"net"
 	"net/http"
+	"net/netip"
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/jlaffaye/ftp"
 )
@@ -48,27 +49,34 @@ func ResolveLocalPath(localPath string) string {
 	return filepath.Join(DefLocalDir, localPath)
 }
 
-func isAbsPath(p string) bool {
-	if filepath.IsAbs(p) {
-		return true
+func ConvertIfaceToAddr(iface net.Interface) (netip.Addr, bool) {
+	addrs, _ := iface.Addrs()
+	for _, addr := range addrs {
+		if ipNet, ok := addr.(*net.IPNet); ok && !ipNet.IP.IsLoopback() {
+			// Ensure it's IPv4 for this example
+			if ip4 := ipNet.IP.To4(); ip4 != nil {
+				finalAddr, ok := netip.AddrFromSlice(ip4)
+				if ok {
+					return finalAddr, true
+				}
+			}
+		}
 	}
-	// Manual check for Windows drive letters (e.g., C:/ or D:\)
-	if len(p) >= 3 && p[1] == ':' && (p[2] == '/' || p[2] == '\\') {
-		return true
-	}
-	return false
+
+	return netip.Addr{}, false
 }
 
-func GetHostPort(addr string) (string, string, error) {
-	host, port, found := strings.Cut(addr, ":")
-	if !found {
-		err := fmt.Errorf("[INFO]: \":\" not found. Using \"%v\" as host", addr)
-		LogsCh <- err.Error()
-		return addr, "", err
+/*
+	func GetHostPort(addr string) (string, string, error) {
+		host, port, found := strings.Cut(addr, ":")
+		if !found {
+			err := fmt.Errorf("[INFO]: \":\" not found. Using \"%v\" as host", addr)
+			LogsCh <- err.Error()
+			return addr, "", err
+		}
+		return host, port, nil
 	}
-	return host, port, nil
-}
-
+*/
 func SendJSON(w http.ResponseWriter, data any) {
 	body, err := json.Marshal(data)
 	if err != nil {

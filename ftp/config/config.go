@@ -9,14 +9,14 @@ import (
 	ftpserver "github.com/fclairamb/ftpserverlib"
 )
 
-type FSObject struct {
+type FSObject struct { //Struct used for ls apis(/api/ftp/server/ls and /api/ftp/client/ls)
 	Name         string
 	IsFolder     bool
 	LastModified time.Time
 	Size         int
 }
 
-type MyServer struct {
+type MyServer struct { //This server's struct
 	Name                   string
 	User                   string
 	Password               string
@@ -32,12 +32,19 @@ type MyServer struct {
 	BlackList        []string
 }
 
-type Client struct {
+type Client struct { //Struct for clients connected to this server
 	Name    string
 	Host    string
 	Port    string
 	Msg     string
 	Context ftpserver.ClientContext
+}
+
+type ServerInfo struct { //Data sent in service discovery
+	Name             string
+	IP               string
+	Port             string
+	AnonymousAllowed bool
 }
 
 const (
