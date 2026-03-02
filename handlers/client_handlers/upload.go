@@ -131,13 +131,7 @@ func uploadFile(remoteDirPath, localFilePath string, c *ftp.ServerConn) error {
 		return err
 	}
 
-	localFile, err := os.Open(localFilePath)
-	if err != nil {
-		return err
-	}
-	defer localFile.Close()
-
-	localEntry, err := localFile.Stat()
+	localEntry, err := os.Stat(localFilePath)
 	if err != nil {
 		return err
 	}
@@ -148,12 +142,16 @@ func uploadFile(remoteDirPath, localFilePath string, c *ftp.ServerConn) error {
 	}
 
 	uploadWithProgress(remoteFilePath, localFilePath)
-	//Reassign a fresh connection
-	c.Logout()
-	c, err = GetNewConn()
-	if err != nil {
-		return err
-	}
 
+	// TODO: Remove this later if nothing breaks
+	//Reassign a fresh connection
+
+	/*
+		c.Logout()
+		c, err = GetNewConn()
+		if err != nil {
+			return err
+		}
+	*/
 	return nil
 }

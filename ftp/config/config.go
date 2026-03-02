@@ -9,7 +9,7 @@ import (
 	ftpserver "github.com/fclairamb/ftpserverlib"
 )
 
-type FSObject struct { //Struct used for ls apis(/api/ftp/server/ls and /api/ftp/client/ls)
+type FSObject struct { //Struct used for ls apis(/api/ftp/client/local/ls and /api/ftp/client/remote/ls)
 	Name         string
 	IsFolder     bool
 	LastModified time.Time
@@ -75,23 +75,28 @@ var (
 
 func (s *MyServer) BlockUser(host string) {
 	s.ConnectedClients.Range(func(serverID, value any) bool {
+		continew := true
+		brake := false
+
 		client, ok := value.(Client)
 		if !ok {
 			LogsCh <- fmt.Sprintf("Could not convert to client: %v", value)
-			return false
+			return brake
 		}
 
 		if client.Host == host {
 			FTPServer.BlackList = append(FTPServer.BlackList, host)
 			client.Context.Close()
-			return false
+			return brake
 		}
-		return true
+
+		return continew
 	})
 }
 
 func (s *MyServer) UnblockUser(host string) []string {
 	newBL := []string{}
+
 	for _, s := range s.BlackList {
 		if host == s {
 			continue
