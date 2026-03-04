@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"net"
+	"net/netip"
 	"os"
 	"path"
 	"path/filepath"
@@ -45,6 +46,48 @@ func getWifiOrCellularInterface() (net.Interface, error) {
 	return nilIface, fmt.Errorf("Neither wifi nor mobile data enabled")
 }
 
+// TODO: Duplicate
+func getUsableIP(addrs []netip.Addr) (netip.Addr, error) {
+	for _, addr := range addrs {
+		if addr.Is4() && addr.IsPrivate() && !addr.IsLoopback() {
+			firstOctet := addr.As4()[0]
+
+			if !(firstOctet >= 192 && firstOctet <= 223) { //Ensure we're checking class C addresses
+				LogsCh <- fmt.Sprintf("Skipped address %v: does not match required /24 subnet", addr.String())
+				continue
+			}
+
+			return addr, nil
+		}
+
+	}
+
+	return netip.Addr{}, fmt.Errorf("No usable ip found")
+}
+
+func GetInterfaceIpv4Addr(interfaceName string) (addr string, err error) {
+	var (
+		ief      *net.Interface
+		addrs    []net.Addr
+		ipv4Addr net.IP
+	)
+	if ief, err = net.InterfaceByName(interfaceName); err != nil { // get interface
+		return
+	}
+	if addrs, err = ief.Addrs(); err != nil { // get addresses
+		return
+	}
+	for _, addr := range addrs { // get ipv4 address
+		if ipv4Addr = addr.(*net.IPNet).IP.To4(); ipv4Addr != nil {
+			break
+		}
+	}
+	if ipv4Addr == nil {
+		return "", fmt.Errorf(fmt.Sprintf("interface %s don't have an ipv4 address\n", interfaceName))
+	}
+	return ipv4Addr.String(), nil
+}
+
 func isAbsLocalPath(p string) bool {
 	if filepath.IsAbs(p) {
 		return true
@@ -84,7 +127,7 @@ func getDefRootDir() string {
 	return home
 }
 
-func GetLocalIP() string {
+func GetLocalIP() string { //TODO: Deprecated, waiitng for removal
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
 		return "127.0.0.1"

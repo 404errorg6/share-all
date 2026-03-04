@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
@@ -55,7 +56,7 @@ const (
 var (
 	DefFTPServerName  = "my ftp server"
 	DefFTPPort        = "2121"
-	DefFTPHost        = GetLocalIP()
+	DefFTPHost        = "localhost"
 	DefFTPWriteAccess = "false"
 	DefAnonymous      = "true"
 	DownloadLimit     = 3
@@ -72,6 +73,22 @@ var (
 
 	DiscoveryClient = zeroconf.New()
 )
+
+func init() {
+	iface, err := getWifiOrCellularInterface()
+	if err != nil {
+		LogsCh <- err.Error()
+		return
+	}
+
+	addr, err := GetInterfaceIpv4Addr(iface.Name)
+	if err != nil {
+		LogsCh <- err.Error()
+		return
+	}
+
+	DefFTPHost = addr
+}
 
 func (s *MyServer) BlockUser(host string) {
 	s.ConnectedClients.Range(func(serverID, value any) bool {
