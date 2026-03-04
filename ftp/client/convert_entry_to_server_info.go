@@ -41,6 +41,7 @@ func ConvertEntryToServerInfo(entry zeroconf.Event) (config.ServerInfo, error) {
 	return svrInfo, nil
 }
 
+// TODO: Duplicate
 func getUsableIP(addrs []netip.Addr) (netip.Addr, error) {
 	for _, addr := range addrs {
 		if addr.Is4() && addr.IsPrivate() && !addr.IsLoopback() {
