@@ -11,6 +11,7 @@ import (
 )
 
 // TODO: Clean up this mess
+// TODO: Disconnect even the ongoing transgfers?
 
 type AndroidMainDriver struct {
 }

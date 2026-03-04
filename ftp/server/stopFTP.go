@@ -12,7 +12,9 @@ func StopFTP() error {
 	}
 
 	config.FTPServer.ConnectedClients.Range(disconnectClients)
-	if err := config.FTPServer.Conn.Stop(); err != nil {
+
+	err := config.FTPServer.Conn.Stop()
+	if err != nil {
 		config.LogsCh <- err.Error()
 		return err
 	}
