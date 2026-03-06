@@ -83,7 +83,7 @@ func GetInterfaceIpv4Addr(interfaceName string) (addr string, err error) {
 		}
 	}
 	if ipv4Addr == nil {
-		return "", fmt.Errorf(fmt.Sprintf("interface %s don't have an ipv4 address\n", interfaceName))
+		return "", fmt.Errorf("%s", fmt.Sprintf("interface %s don't have an ipv4 address\n", interfaceName))
 	}
 	return ipv4Addr.String(), nil
 }

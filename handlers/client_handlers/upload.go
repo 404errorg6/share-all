@@ -6,7 +6,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/404errorg6/FTP-server/ftp/client"
 	"github.com/404errorg6/FTP-server/ftp/config"
@@ -28,7 +27,7 @@ func HandleUpload(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = smartUpload(remotePath, localPath, c)
+	err = uploadFile(remotePath, localPath, c)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -37,6 +36,7 @@ func HandleUpload(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+/*
 func smartUpload(remotePath, localPath string, c *ftp.ServerConn) error {
 	localPath = config.ResolveLocalPath(localPath)
 	remotePath, _, err := config.ResolveRemotePath(c, remotePath)
@@ -116,12 +116,14 @@ func uploadDir(remoteDirPath, localDirPath string, c *ftp.ServerConn) error {
 
 	return nil
 }
+*/
 
 func uploadFile(remoteDirPath, localFilePath string, c *ftp.ServerConn) error {
+	localFilePath = config.ResolveLocalPath(localFilePath)
 	fileName := filepath.Base(localFilePath)
 	remoteFilePath := path.Join(remoteDirPath, fileName)
 
-	remoteEntry, err := c.GetEntry(remoteDirPath)
+	remoteDirPath, remoteEntry, err := config.ResolveRemotePath(c, remoteDirPath)
 	if err != nil {
 		return err
 	}
@@ -133,11 +135,12 @@ func uploadFile(remoteDirPath, localFilePath string, c *ftp.ServerConn) error {
 
 	localEntry, err := os.Stat(localFilePath)
 	if err != nil {
+		config.LogsCh <- "Found bug"
 		return err
 	}
 
 	if localEntry.IsDir() {
-		err := fmt.Errorf("\"%v\" is a directory, not a local file", localFilePath)
+		err := fmt.Errorf("Folder upload not supported. \"%v\" is a directory, not a local file", localFilePath)
 		return err
 	}
 
@@ -146,12 +149,10 @@ func uploadFile(remoteDirPath, localFilePath string, c *ftp.ServerConn) error {
 	// TODO: Remove this later if nothing breaks
 	//Reassign a fresh connection
 
-	/*
-		c.Logout()
-		c, err = GetNewConn()
-		if err != nil {
-			return err
-		}
-	*/
+	c.Logout()
+	c, err = GetNewConn()
+	if err != nil {
+		return err
+	}
 	return nil
 }
