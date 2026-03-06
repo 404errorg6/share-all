@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
@@ -60,7 +59,7 @@ var (
 	DefFTPWriteAccess = "false"
 	DefAnonymous      = "true"
 	DownloadLimit     = 3
-	UploadLimit       = 3
+	UploadLimit       = 1
 	MaxTimeout        = time.Second * 10 //Max timeout while trying to connect to server
 
 	HTTPPort               = "8085"

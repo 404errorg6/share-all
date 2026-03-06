@@ -12,16 +12,28 @@ import (
 	"github.com/machinebox/progress"
 )
 
+var uploadConn *ftp.ServerConn
+
 func uploadWithProgress(remoteFilePath, localFilePath string) {
 	<-uploadPass
 
-	//Confirm these are files (have trust issues with caller)
-	c, err := GetNewConn()
-	if err != nil {
-		config.LogsCh <- err.Error()
-		return
+	if uploadConn == nil {
+		var err error
+		uploadConn, err = GetNewConn()
+		if err != nil {
+			config.LogsCh <- err.Error()
+			return
+		}
 	}
 
+	//Confirm these are files (have trust issues with caller)
+	/*
+		c, err := GetNewConn()
+		if err != nil {
+			config.LogsCh <- err.Error()
+			return
+		}
+	*/
 	localEntry, err := os.Lstat(localFilePath)
 	if err != nil {
 		config.LogsCh <- err.Error()
@@ -39,7 +51,7 @@ func uploadWithProgress(remoteFilePath, localFilePath string) {
 		return
 	}
 
-	remoteEntry, err := c.GetEntry(path.Dir(remoteFilePath))
+	remoteEntry, err := uploadConn.GetEntry(path.Dir(remoteFilePath))
 	if err != nil {
 		config.LogsCh <- err.Error()
 		return
@@ -53,13 +65,14 @@ func uploadWithProgress(remoteFilePath, localFilePath string) {
 	// Start with progress info
 	trackedFile := progress.NewReader(localFile)
 	progressCh := progress.NewTicker(context.Background(), trackedFile, localEntry.Size(), time.Second)
+	time.Sleep(time.Second)
 
 	go startTracking(localEntry.Name(), localEntry.Size(), false, progressCh)
-	go func() {
-		c.Stor(remoteFilePath, trackedFile)
+	func() {
+		uploadConn.Stor(remoteFilePath, trackedFile)
 
 		uploadPass <- true
-		c.Logout()
+		//	uploadConn.Logout()
 		localFile.Close()
 	}()
 }
