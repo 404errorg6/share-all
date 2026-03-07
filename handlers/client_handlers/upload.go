@@ -13,6 +13,7 @@ import (
 	"github.com/jlaffaye/ftp"
 )
 
+// TODO: Breaking on concurrency
 var (
 	limit   = 1
 	limitCh = make(chan bool, limit)
@@ -79,7 +80,6 @@ func uploadDir(remoteDirPath, localDirPath string, c *ftp.ServerConn) error {
 	dirName := filepath.Base(localDirPath)
 	remoteEntry, err := c.GetEntry(remoteDirPath)
 	if err != nil {
-		config.LogsCh <- "1"
 		return err
 	}
 
