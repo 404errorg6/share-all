@@ -93,20 +93,36 @@ class TransferManager {
     }
 
     clearAll() {
-        if (confirm('Are you sure you want to clear all transfer history?')) {
-            Components.Transfers.clearHistory();
-            this.selectedNames.clear();
-            this.updateActionButtons();
-        }
+        Components.openGuiModal({
+            title: 'Clear All History?',
+            message: 'Are you sure you want to clear all transfer history? This action cannot be undone.',
+            icon: 'delete_forever',
+            type: 'danger',
+            primaryText: 'Clear All',
+            onPrimary: () => {
+                Components.Transfers.clearHistory();
+                this.selectedNames.clear();
+                this.updateActionButtons();
+                Components.showToast('Transfer history cleared');
+            }
+        });
     }
 
     clearSelected() {
         if (this.selectedNames.size === 0) return;
-        if (confirm(`Are you sure you want to clear ${this.selectedNames.size} selected items?`)) {
-            Components.Transfers.clearItems(Array.from(this.selectedNames));
-            this.selectedNames.clear();
-            this.updateActionButtons();
-        }
+        Components.openGuiModal({
+            title: 'Clear Selected?',
+            message: `Are you sure you want to clear ${this.selectedNames.size} selected items from history?`,
+            icon: 'delete_sweep',
+            type: 'danger',
+            primaryText: 'Delete Selected',
+            onPrimary: () => {
+                Components.Transfers.clearItems(Array.from(this.selectedNames));
+                this.selectedNames.clear();
+                this.updateActionButtons();
+                Components.showToast(`${this.selectedNames.size} items removed`);
+            }
+        });
     }
 
     renderHistory() {
@@ -307,15 +323,20 @@ class TransferManager {
 
         const selectCheckbox = isCompleted ? `
             <div class="flex items-center ml-auto">
-                <input type="checkbox" 
-                    ${isSelected ? 'checked' : ''} 
-                    onchange="TransferManager.toggleSelect('${item.Name.replace(/'/g, "\\'")}')"
-                    class="w-4 h-4 text-primary bg-slate-100 border-slate-300 rounded focus:ring-primary dark:focus:ring-offset-slate-900 focus:ring-2 dark:bg-slate-700 dark:border-slate-600 cursor-pointer">
+                <label class="cursor-pointer group relative flex items-center justify-center">
+                    <input type="checkbox" 
+                        ${isSelected ? 'checked' : ''} 
+                        onchange="TransferManager.toggleSelect('${item.Name.replace(/'/g, "\\'")}')"
+                        class="hidden peer">
+                    <div class="size-7 rounded-xl border-2 border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 peer-checked:bg-primary peer-checked:border-primary flex items-center justify-center transition-all duration-300 shadow-sm group-hover:border-primary/50 group-hover:bg-primary/5">
+                        <span class="material-symbols-outlined text-white text-[18px] scale-0 peer-checked:scale-100 transition-transform duration-300 font-bold">check</span>
+                    </div>
+                </label>
             </div>
         ` : '';
 
         return `
-            <div id="${id}" class="p-4 rounded-xl bg-white dark:bg-surface-dark border ${isSelected ? 'border-primary' : 'border-slate-100 dark:border-slate-800/50'} shadow-sm animate-fade-in transition-all">
+            <div id="${id}" class="p-4 rounded-xl bg-white dark:bg-surface-dark border ${isSelected ? 'border-primary ring-1 ring-primary/20 bg-primary/5' : 'border-slate-100 dark:border-slate-800/50'} shadow-sm animate-fade-in transition-all">
                 <div class="flex items-start gap-4">
                     <div class="w-12 h-12 flex items-center justify-center rounded-2xl ${typeInfo.bg} ${typeInfo.text}">
                         <span class="material-symbols-outlined text-3xl">${typeInfo.icon}</span>
