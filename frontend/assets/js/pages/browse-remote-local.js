@@ -313,6 +313,10 @@ function finishSelection() {
     toggleSelectionMode();
 }
 
+function goToDiscovery() {
+    window.location.href = 'discover-servers.html?ignoreStatus=true';
+}
+
 // --- Init ---
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize modal content with correct starting classes
@@ -371,3 +375,4 @@ window.clearClipboard = clearClipboard;
 window.deleteSelected = deleteSelected;
 window.pasteFiles = pasteFiles;
 window.finishSelection = finishSelection;
+window.goToDiscovery = goToDiscovery;

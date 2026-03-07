@@ -21,3 +21,7 @@ func AuthClient(user, pass, addr string) error {
 	client = c
 	return nil
 }
+
+func DeAuthClient() {
+	client = nil
+}

@@ -47,12 +47,13 @@ func Mux() *http.ServeMux {
 
 	//FTP client Handles
 	mux.HandleFunc("POST /api/ftp/client/connect-to-server", clienthandlers.HandleConnectToServer) //connect to server
-	mux.HandleFunc("GET /api/ftp/client/local/ls", clienthandlers.HandleListLocalDir)              //Get local folder info, path required
-	mux.HandleFunc("GET /api/ftp/client/remote/ls", clienthandlers.HandleListRemoteDir)            //Get remote folder info, remote_path required
-	mux.HandleFunc("GET /api/ftp/client/get-file", clienthandlers.HandleServeFile)                 //stream file for preview, path required
-	mux.HandleFunc("POST /api/ftp/client/download", clienthandlers.HandleDownload)                 //download from server, remote_path, local_path required
-	mux.HandleFunc("POST /api/ftp/client/upload", clienthandlers.HandleUpload)                     //upload to server, remote_path, local_path required
-	mux.HandleFunc("POST /api/ftp/client/delete", clienthandlers.HandleDelete)                     //delete from local, local_path required
+	mux.HandleFunc("GET /api/ftp/client/status", clienthandlers.HandleStatus)
+	mux.HandleFunc("GET /api/ftp/client/local/ls", clienthandlers.HandleListLocalDir)   //Get local folder info, path required
+	mux.HandleFunc("GET /api/ftp/client/remote/ls", clienthandlers.HandleListRemoteDir) //Get remote folder info, remote_path required
+	mux.HandleFunc("GET /api/ftp/client/get-file", clienthandlers.HandleServeFile)      //stream file for preview, path required
+	mux.HandleFunc("POST /api/ftp/client/download", clienthandlers.HandleDownload)      //download from server, remote_path, local_path required
+	mux.HandleFunc("POST /api/ftp/client/upload", clienthandlers.HandleUpload)          //upload to server, remote_path, local_path required
+	mux.HandleFunc("POST /api/ftp/client/delete", clienthandlers.HandleDelete)          //delete from local, local_path required
 	mux.HandleFunc("GET /api/ftp/discover", clienthandlers.HandlerDiscoverServers)
 	mux.HandleFunc("GET /api/ftp/transfers", clienthandlers.HandleTransfer)
 	return mux
