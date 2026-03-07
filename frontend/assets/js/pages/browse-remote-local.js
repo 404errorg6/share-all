@@ -314,7 +314,20 @@ function finishSelection() {
 }
 
 function goToDiscovery() {
-    window.location.href = 'discover-servers.html?ignoreStatus=true';
+    Components.openGuiModal({
+        title: 'Scan New Servers?',
+        message: 'You are currently connected to a server. Starting discovery will terminate your active session. Continue?',
+        icon: 'warning',
+        type: 'warning',
+        primaryText: 'Continue & Scan',
+        secondaryText: 'Stay Connected',
+        onPrimary: () => {
+            window.location.href = 'discover-servers.html?ignoreStatus=true';
+        },
+        onSecondary: () => {
+            // Stay here
+        }
+    });
 }
 
 // --- Init ---
