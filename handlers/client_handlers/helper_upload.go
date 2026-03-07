@@ -15,7 +15,7 @@ import (
 var uploadConn *ftp.ServerConn
 
 func uploadWithProgress(remoteFilePath, localFilePath string) {
-	<-uploadPass
+	//	<-uploadPass
 
 	if uploadConn == nil {
 		var err error
@@ -71,7 +71,7 @@ func uploadWithProgress(remoteFilePath, localFilePath string) {
 	func() {
 		uploadConn.Stor(remoteFilePath, trackedFile)
 
-		uploadPass <- true
+		//		uploadPass <- true
 		//	uploadConn.Logout()
 		localFile.Close()
 	}()
