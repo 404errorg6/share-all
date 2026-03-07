@@ -263,13 +263,11 @@ async function pasteFiles() {
             // We don't refresh local immediately because files are still downloading
 
         } else {
-            // UPLOAD: Async
-            for (const item of state.clipboard) {
-                const targetPath = state.currentRemotePath;
-                FTP_API.transferFile(item, targetPath, false).catch(handleError);
-            }
+            // UPLOAD: ONE request for ALL items
+            const targetPath = state.currentRemotePath;
+            FTP_API.transferFile(state.clipboard, targetPath, false).catch(handleError);
 
-            // Give a moment for requests to fire
+            // Give a moment for request to fire
             await new Promise(r => setTimeout(r, 500));
 
             Components.showToast('Uploads started. Check Transfers page.');

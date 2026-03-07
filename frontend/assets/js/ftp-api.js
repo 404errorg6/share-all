@@ -21,16 +21,23 @@ export const FTP_API = {
     return true;
   },
 
-  async transferFile(item, targetPath, isDownload) {
+  async transferFile(items, targetPath, isDownload) {
     const params = new URLSearchParams();
     const endpoint = isDownload ? '/api/ftp/client/download' : '/api/ftp/client/upload';
+    const itemsArray = Array.isArray(items) ? items : [items];
 
     if (isDownload) {
-      params.append('remote_path', item.path);
+      // For now, download still handles one by one or is not requested to be changed
+      // but let's make it support the first item at least to keep compatibility
+      params.append('remote_path', itemsArray[0].path);
       params.append('local_path', targetPath);
     } else {
-      params.append('local_path', item.path);
+      // UPLOAD: Source is Local, Destination is Remote
+      // Ensuring semantic consistency: remote_path = FTP, local_path = Local
       params.append('remote_path', targetPath);
+      itemsArray.forEach(item => {
+        params.append('local_paths', item.path);
+      });
     }
 
     const res = await fetch(endpoint, {
