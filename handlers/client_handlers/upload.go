@@ -14,8 +14,15 @@ import (
 )
 
 var (
-	limit = make(chan bool, 1)
+	limit   = 1
+	limitCh = make(chan bool, limit)
 )
+
+func init() {
+	for range limit {
+		limitCh <- true
+	}
+}
 
 func HandleUpload(w http.ResponseWriter, req *http.Request) {
 	err := req.ParseForm()
@@ -24,8 +31,8 @@ func HandleUpload(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	localPath := req.FormValue("local_path")
-	remotePaths := req.Form["remote_path"]
+	remotePath := req.FormValue("remote_path")
+	localPaths := req.Form["local_paths"]
 
 	c, err := client.GetClient()
 	if err != nil {
@@ -33,12 +40,12 @@ func HandleUpload(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if localPath == "" || remotePaths == nil {
+	if localPaths == nil || remotePath == "" {
 		http.Error(w, "local_path/remote_path are required", http.StatusBadRequest)
 		return
 	}
 
-	for _, remotePath := range remotePaths {
+	for _, localPath := range localPaths {
 		err = smartUpload(remotePath, localPath, c)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -72,6 +79,7 @@ func uploadDir(remoteDirPath, localDirPath string, c *ftp.ServerConn) error {
 	dirName := filepath.Base(localDirPath)
 	remoteEntry, err := c.GetEntry(remoteDirPath)
 	if err != nil {
+		config.LogsCh <- "1"
 		return err
 	}
 
@@ -89,6 +97,7 @@ func uploadDir(remoteDirPath, localDirPath string, c *ftp.ServerConn) error {
 		return fmt.Errorf("\"%v\" is a file, not a remote directory", remoteDirPath)
 	}
 
+	//Make dir on server
 	updatedRemoteDirPath := path.Join(remoteDirPath, dirName)
 	err = c.MakeDir(updatedRemoteDirPath)
 	if err != nil && !strings.Contains(err.Error(), "file exists") {
@@ -100,6 +109,7 @@ func uploadDir(remoteDirPath, localDirPath string, c *ftp.ServerConn) error {
 		return err
 	}
 
+	//Handle uploads
 	for _, e := range localDir {
 		if e.Name() == "." || e.Name() == ".." {
 			continue
@@ -130,8 +140,10 @@ func uploadDir(remoteDirPath, localDirPath string, c *ftp.ServerConn) error {
 }
 
 func uploadFile(remoteDirPath, localFilePath string, c *ftp.ServerConn) error {
-	<-limit
-	defer func() { limit <- true }()
+	<-limitCh
+	defer func() { limitCh <- true }()
+
+	config.LogsCh <- fmt.Sprintf("Uploading file: %v", localFilePath)
 	localFilePath = config.ResolveLocalPath(localFilePath)
 	fileName := filepath.Base(localFilePath)
 	remoteFilePath := path.Join(remoteDirPath, fileName)
@@ -158,13 +170,5 @@ func uploadFile(remoteDirPath, localFilePath string, c *ftp.ServerConn) error {
 
 	uploadWithProgress(remoteFilePath, localFilePath)
 
-	// TODO: Remove this later if nothing breaks
-	//Reassign a fresh connection
-
-	//	c.Quit()
-	//	c, err = GetNewConn()
-	//	if err != nil {
-	//		return err
-	//	}
 	return nil
 }
