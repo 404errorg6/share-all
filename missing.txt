@@ -1,0 +1,2 @@
+concurrent uploads
+transfers cancel button
