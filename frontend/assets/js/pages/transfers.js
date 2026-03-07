@@ -10,6 +10,7 @@ class TransferManager {
         this.currentTab = 'downloads';
         this.isPolling = false;
         this.pollInterval = 1000;
+        this.selectedNames = new Set();
     }
 
     init() {
@@ -65,7 +66,47 @@ class TransferManager {
             listDown.classList.add('hidden');
         }
 
+        this.selectedNames.clear();
         this.renderHistory();
+        this.updateActionButtons();
+    }
+
+    updateActionButtons() {
+        const clearSelectedBtn = document.getElementById('clear-selected-btn');
+        if (clearSelectedBtn) {
+            clearSelectedBtn.disabled = this.selectedNames.size === 0;
+            if (this.selectedNames.size > 0) {
+                clearSelectedBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                clearSelectedBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
+    }
+
+    toggleSelect(name) {
+        if (this.selectedNames.has(name)) {
+            this.selectedNames.delete(name);
+        } else {
+            this.selectedNames.add(name);
+        }
+        this.updateActionButtons();
+    }
+
+    clearAll() {
+        if (confirm('Are you sure you want to clear all transfer history?')) {
+            Components.Transfers.clearHistory();
+            this.selectedNames.clear();
+            this.updateActionButtons();
+        }
+    }
+
+    clearSelected() {
+        if (this.selectedNames.size === 0) return;
+        if (confirm(`Are you sure you want to clear ${this.selectedNames.size} selected items?`)) {
+            Components.Transfers.clearItems(Array.from(this.selectedNames));
+            this.selectedNames.clear();
+            this.updateActionButtons();
+        }
     }
 
     renderHistory() {
@@ -86,13 +127,15 @@ class TransferManager {
             }
             items.forEach(item => {
                 const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = this.getTemplate(item, `completed-${this.safeId(item.Name)}`, null, true);
+                const isSelected = this.selectedNames.has(item.Name);
+                tempDiv.innerHTML = this.getTemplate(item, `completed-${this.safeId(item.Name)}`, null, true, isSelected);
                 container.appendChild(tempDiv.firstElementChild);
             });
         };
 
         renderItems(downloads, this.downloadsContainer, 'downloads');
         renderItems(uploads, this.uploadsContainer, 'uploads');
+        this.updateActionButtons();
     }
 
     updateUI(data) {
@@ -214,7 +257,7 @@ class TransferManager {
         }
     }
 
-    getTemplate(item, id, metrics, isCompleted) {
+    getTemplate(item, id, metrics, isCompleted, isSelected = false) {
         const typeInfo = this.getTypeInfo(item.Name);
         const total = Utils.formatFileSize(item.TotalSize);
         const opTypeLabel = item.IsDownload ? 'Download' : 'Upload';
@@ -262,8 +305,17 @@ class TransferManager {
             </div>
         `;
 
+        const selectCheckbox = isCompleted ? `
+            <div class="flex items-center ml-auto">
+                <input type="checkbox" 
+                    ${isSelected ? 'checked' : ''} 
+                    onchange="TransferManager.toggleSelect('${item.Name.replace(/'/g, "\\'")}')"
+                    class="w-4 h-4 text-primary bg-slate-100 border-slate-300 rounded focus:ring-primary dark:focus:ring-offset-slate-900 focus:ring-2 dark:bg-slate-700 dark:border-slate-600 cursor-pointer">
+            </div>
+        ` : '';
+
         return `
-            <div id="${id}" class="p-4 rounded-xl bg-white dark:bg-surface-dark border border-slate-100 dark:border-slate-800/50 shadow-sm animate-fade-in transition-all">
+            <div id="${id}" class="p-4 rounded-xl bg-white dark:bg-surface-dark border ${isSelected ? 'border-primary' : 'border-slate-100 dark:border-slate-800/50'} shadow-sm animate-fade-in transition-all">
                 <div class="flex items-start gap-4">
                     <div class="w-12 h-12 flex items-center justify-center rounded-2xl ${typeInfo.bg} ${typeInfo.text}">
                         <span class="material-symbols-outlined text-3xl">${typeInfo.icon}</span>
@@ -271,6 +323,7 @@ class TransferManager {
                     <div class="flex-1 min-w-0">
                         <div class="flex justify-between items-start">
                             <h3 class="font-semibold truncate pr-2 text-slate-900 dark:text-slate-100">${item.Name}</h3>
+                            ${selectCheckbox}
                         </div>
                         ${statusRow}
                         ${isCompleted ? `<div class="mt-2 text-[10px] text-slate-400 font-medium">Size: ${total}</div>` : ''}
