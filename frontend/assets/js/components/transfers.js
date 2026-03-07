@@ -87,5 +87,18 @@ Components.Transfers = {
         });
 
         sessionStorage.setItem('ftp_active_tracking', JSON.stringify(activeData));
+    },
+
+    clearHistory() {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify([]));
+        window.dispatchEvent(new CustomEvent('transfer-completed')); // Trigger re-render
+    },
+
+    clearItems(names) {
+        if (!names || names.length === 0) return;
+        let history = this.getHistory();
+        history = history.filter(h => !names.includes(h.Name));
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(history));
+        window.dispatchEvent(new CustomEvent('transfer-completed')); // Trigger re-render
     }
 };
