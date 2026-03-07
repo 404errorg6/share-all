@@ -16,6 +16,8 @@ func HandlerDiscoverServers(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("X-Accel-Buffering", "no")
 
+	client.DeAuthClient()
+
 	discover(w, req)
 }
 

@@ -25,28 +25,37 @@ Components.Modal = {
     },
 
     onPrimary: null,
+    onSecondary: null,
 
-    open({ title, message, icon, type, primaryText, onPrimary }) {
+    open({ title, message, icon, type, primaryText, secondaryText, onPrimary, onSecondary }) {
         const mTitle = document.getElementById('modal-title');
         const mMsg = document.getElementById('modal-message');
         const mIcon = document.getElementById('modal-icon');
         const mPrimaryBtn = document.getElementById('modal-primary-btn');
+        const mSecondaryBtn = document.getElementById('modal-secondary-btn');
         const mIconContainer = document.getElementById('modal-icon-container');
 
         mTitle.innerText = title;
         mMsg.innerText = message;
         mIcon.innerText = icon;
         mPrimaryBtn.innerText = primaryText || 'Confirm';
+        mSecondaryBtn.innerText = secondaryText || 'Cancel';
         this.onPrimary = onPrimary;
+        this.onSecondary = onSecondary;
 
         mIconContainer.className = "mx-auto size-24 rounded-full flex items-center justify-center mb-6 transition-all duration-500 " +
-            (type === 'danger' ? 'icon-glow-danger' : 'icon-glow-primary');
+            (type === 'danger' ? 'icon-glow-danger' : type === 'warning' ? 'icon-glow-warning' : 'icon-glow-primary');
 
         mPrimaryBtn.className = "h-16 w-full rounded-2xl font-bold text-lg transition-all active:scale-95 text-white shadow-lg " +
-            (type === 'danger' ? 'modal-btn-danger' : 'modal-btn-primary');
+            (type === 'danger' ? 'modal-btn-danger' : type === 'warning' ? 'modal-btn-warning' : 'modal-btn-primary');
 
         mPrimaryBtn.onclick = () => {
             if (this.onPrimary) this.onPrimary();
+            this.close();
+        };
+
+        mSecondaryBtn.onclick = () => {
+            if (this.onSecondary) this.onSecondary();
             this.close();
         };
 

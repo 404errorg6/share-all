@@ -16,7 +16,55 @@ const RemoteConnections = {
         this.loginModal = document.getElementById('login-modal');
         this.rescanBtn = document.getElementById('rescan-btn');
 
+        this.checkExistingConnection();
+    },
+
+    async checkExistingConnection() {
+        const params = new URLSearchParams(window.location.search);
+        const forceDiscovery = params.get('ignoreStatus') === 'true';
+
+        try {
+            const response = await fetch('/api/ftp/client/status');
+            if (response.ok) {
+                const status = await response.json();
+                if (status === "connected") {
+                    if (forceDiscovery) {
+                        this.showDeauthWarning();
+                        return;
+                    }
+                    console.log("RemoteConnections: Already connected, redirecting...");
+                    window.location.href = 'browse-remote-local.html';
+                    return;
+                }
+            }
+        } catch (e) {
+            console.error("Error checking connection status:", e);
+        }
         this.discoverServers();
+    },
+
+    showDeauthWarning() {
+        this.discoveryState.innerHTML = `
+            <span class="material-symbols-outlined text-4xl text-amber-500 mb-3 animate-pulse">warning</span>
+            <p class="text-sm font-bold text-slate-300 uppercase tracking-widest">Active Session</p>
+            <p class="text-[10px] text-slate-500 mt-1 uppercase tracking-widest font-medium">Auto-Discovery will disconnect your current session</p>
+        `;
+        this.discoveryState.classList.remove('hidden');
+
+        Components.openGuiModal({
+            title: 'Scan New Servers?',
+            message: 'You are currently connected to a server. Starting discovery will terminate your active session. Continue?',
+            icon: 'warning',
+            type: 'warning',
+            primaryText: 'Continue & Scan',
+            secondaryText: 'Stay Connected',
+            onPrimary: () => {
+                this.discoverServers();
+            },
+            onSecondary: () => {
+                window.location.href = 'browse-remote-local.html';
+            }
+        });
     },
 
     discoveryAbortController: null,
