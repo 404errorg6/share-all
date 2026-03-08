@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Shared files - FTP Mini Server</title>
+    <!-- We assume assets are served at /assets/ by the mini server -->
+    <script src="/assets/vendor/tailwind-cdn.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#50c2f7",
+                        "background-dark": "#101c22",
+                        "surface-dark": "#1b2327",
+                    }
+                }
+            }
+        };
+    </script>
+    <link rel="stylesheet" href="/assets/css/fonts.css">
+    <link rel="stylesheet" href="/assets/css/main.css">
+    <style>
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased overflow-x-hidden">
+    <div
+        class="relative flex min-h-screen w-full flex-col max-w-6xl mx-auto shadow-2xl bg-background-light dark:bg-background-dark md:my-8 md:rounded-[2rem] overflow-hidden">
+        <!-- Header -->
+        <header
+            class="sticky top-0 z-20 bg-background-light dark:bg-background-dark/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+            <div class="flex items-center p-4 justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="text-primary flex size-10 items-center justify-center rounded-full bg-primary/10">
+                        <span class="material-symbols-outlined text-3xl">share</span>
+                    </div>
+                    <h2 class="text-xl font-bold leading-tight tracking-tight">Shared Files</h2>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="refresh-btn"
+                        class="flex items-center justify-center size-10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                        <span class="material-symbols-outlined text-2xl">refresh</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Path Breadcrumbs -->
+        <div
+            class="flex items-center gap-2 bg-slate-100 dark:bg-slate-900/50 px-4 py-3 border-b border-slate-200 dark:border-slate-800">
+            <button id="up-dir-btn" title="Parent Directory"
+                class="flex items-center justify-center size-9 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shrink-0">
+                <span class="material-symbols-outlined text-[20px]">arrow_upward</span>
+            </button>
+            <div id="breadcrumb-path" class="flex items-center gap-1 overflow-x-auto scrollbar-hide flex-1 min-w-0">
+            </div>
+        </div>
+
+        <main class="flex-1 flex flex-col pb-24 relative" id="local-file-list">
+            <div id="empty-state"
+                class="flex flex-col items-center justify-center h-full text-slate-400 p-8 text-center hidden">
+                <span class="material-symbols-outlined text-6xl mb-4 opacity-20">folder_open</span>
+                <p class="font-bold text-xl text-slate-600 dark:text-slate-300">No files found</p>
+                <p class="text-sm opacity-60 mt-2 max-w-[240px]">This directory is empty.</p>
+            </div>
+
+            <div id="file-list-container"
+                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4"></div>
+
+            <!-- Loading Indicator Overlay -->
+            <div id="sync-overlay"
+                class="absolute inset-0 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm z-30 flex items-center justify-center hidden">
+                <div class="flex flex-col items-center gap-4">
+                    <div class="animate-spin size-10 border-4 border-primary border-t-transparent rounded-full"></div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="p-6 text-center text-xs text-slate-500 border-t border-slate-200 dark:border-slate-800">
+            <p>Powered by FTP Mini Server</p>
+        </footer>
+    </div>
+
+    <!-- Core Scripts -->
+    <script src="/assets/js/utils.js"></script>
+    <script src="./share.js"></script>
+</body>
+
+</html>
