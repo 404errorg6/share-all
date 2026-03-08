@@ -52,10 +52,10 @@ export const Clipboard = {
             info.innerText = state.clipboard.length === 1 ? state.clipboard[0].name : `${state.clipboard.length} items`;
 
             if (state.selectionMode) {
-                btnDelete.classList.remove('hidden');
+                btnDelete.classList.toggle('hidden', selectedPane === 'remote');
                 if (btnFinish) btnFinish.classList.remove('hidden');
                 btnPaste.classList.add('hidden');
-                msg.innerText = "Items Selected";
+                msg.innerText = selectedPane === 'remote' ? "Remote Items Selected" : "Items Selected";
             } else {
                 btnDelete.classList.add('hidden');
                 if (btnFinish) btnFinish.classList.add('hidden');
