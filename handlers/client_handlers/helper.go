@@ -4,24 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/404errorg6/FTP-server/ftp/config"
+	"github.com/404errorg6/FTP-server/config"
 	"github.com/jlaffaye/ftp"
 	"github.com/machinebox/progress"
 )
-
-// Initialize downloadPass
-func init() {
-	for range config.DownloadLimit {
-		downloadPass <- true
-	}
-}
-
-// Initialize uploadPass
-func init() {
-	for range config.UploadLimit {
-		uploadPass <- true
-	}
-}
 
 func GetNewConn() (*ftp.ServerConn, error) {
 	c, err := ftp.Dial(verifiedAddr, ftp.DialWithTimeout(5*time.Second))

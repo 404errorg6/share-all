@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/404errorg6/FTP-server/config"
 	"github.com/404errorg6/FTP-server/ftp/client"
-	"github.com/404errorg6/FTP-server/ftp/config"
 )
 
 func HandleConnectToServer(w http.ResponseWriter, req *http.Request) {

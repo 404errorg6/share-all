@@ -2,8 +2,6 @@ package clienthandlers
 
 import (
 	"sync"
-
-	"github.com/404errorg6/FTP-server/ftp/config"
 )
 
 type TransferInfo struct {
@@ -19,7 +17,5 @@ var (
 	verifiedPass string
 	verifiedAddr string
 
-	transferMap  sync.Map
-	downloadPass = make(chan bool, config.DownloadLimit)
-	uploadPass   = make(chan bool, config.UploadLimit)
+	transferMap sync.Map
 )

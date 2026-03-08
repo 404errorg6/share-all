@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/404errorg6/FTP-server/ftp/config"
+	"github.com/404errorg6/FTP-server/config"
 )
 
 func HandleDelete(w http.ResponseWriter, req *http.Request) {

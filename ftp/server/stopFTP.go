@@ -3,7 +3,7 @@ package server
 import (
 	"fmt"
 
-	"github.com/404errorg6/FTP-server/ftp/config"
+	"github.com/404errorg6/FTP-server/config"
 )
 
 func StopFTP() error {

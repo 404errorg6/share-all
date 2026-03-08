@@ -1,0 +1,123 @@
+package config
+
+import (
+	"fmt"
+	"sync"
+	"time"
+
+	"github.com/betamos/zeroconf"
+	ftpserver "github.com/fclairamb/ftpserverlib"
+)
+
+type FSObject struct { //Struct used for ls apis(/api/ftp/client/local/ls and /api/ftp/client/remote/ls)
+	Name         string
+	IsFolder     bool
+	LastModified time.Time
+	Size         int
+}
+
+type MyServer struct { //This server's struct
+	Name                   string
+	User                   string
+	Password               string
+	Host                   string
+	Port                   string
+	RootDir                string
+	AnonymousAccessAllowed bool
+	WriteAllowed           bool
+	IsRunning              bool
+
+	Conn             *ftpserver.FtpServer
+	ConnectedClients sync.Map
+	BlackList        []string
+}
+
+type Client struct { //Struct for clients connected to this server
+	Name    string
+	Host    string
+	Port    string
+	Msg     string
+	Context ftpserver.ClientContext
+}
+
+type ServerInfo struct { //Data sent in service discovery
+	Name             string
+	IP               string
+	Port             string
+	AnonymousAllowed bool
+}
+
+const (
+	SERVICE = "_ftp._tcp"
+	DOMAIN  = "local."
+)
+
+var (
+	DefFTPServerName  = "my ftp server"
+	DefFTPPort        = "2121"
+	DefFTPHost        = "localhost"
+	DefFTPWriteAccess = "false"
+	DefAnonymous      = "true"
+	DownloadLimit     = 1                //Won't change anything
+	UploadLimit       = 1                //Won't change anything
+	MaxTimeout        = time.Second * 10 //Max timeout while trying to connect to server
+
+	HTTPPort               = "8085"
+	HTTPHost               = "127.0.0.1"
+	LogsTestingCount       = 0
+	LogsCh                 = make(chan string, 100) //Channel that sends logs
+	DefLocalDir            = getDefRootDir()
+	WifiOrDataInterface, _ = getWifiOrCellularInterface()
+	FTPServer              = MyServer{}
+
+	DiscoveryClient = zeroconf.New()
+)
+
+func init() {
+	iface, err := getWifiOrCellularInterface()
+	if err != nil {
+		LogsCh <- err.Error()
+		return
+	}
+
+	addr, err := GetInterfaceIpv4Addr(iface.Name)
+	if err != nil {
+		LogsCh <- err.Error()
+		return
+	}
+
+	DefFTPHost = addr
+}
+
+func (s *MyServer) BlockUser(host string) {
+	s.ConnectedClients.Range(func(serverID, value any) bool {
+		continew := true
+		brake := false
+
+		client, ok := value.(Client)
+		if !ok {
+			LogsCh <- fmt.Sprintf("Could not convert to client: %v", value)
+			return brake
+		}
+
+		if client.Host == host {
+			FTPServer.BlackList = append(FTPServer.BlackList, host)
+			client.Context.Close()
+			return brake
+		}
+
+		return continew
+	})
+}
+
+func (s *MyServer) UnblockUser(host string) []string {
+	newBL := []string{}
+
+	for _, s := range s.BlackList {
+		if host == s {
+			continue
+		}
+		newBL = append(newBL, s)
+	}
+	return newBL
+}

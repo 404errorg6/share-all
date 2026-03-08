@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/404errorg6/FTP-server/config"
 	"github.com/404errorg6/FTP-server/ftp/client"
-	"github.com/404errorg6/FTP-server/ftp/config"
 	"github.com/jlaffaye/ftp"
 )
 
