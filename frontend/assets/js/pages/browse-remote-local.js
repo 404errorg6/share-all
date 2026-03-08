@@ -247,13 +247,9 @@ async function pasteFiles() {
 
     try {
         if (isRemoteToLocal) {
-            // DOWNLOAD: Async (Fire and forget from UI perspective)
-            // The backend handles progress via /api/ftp/transfers
-            for (const item of state.clipboard) {
-                const targetPath = state.currentLocalPath;
-                // Don't await the full transfer, just the initiation request
-                FTP_API.transferFile(item, targetPath, true).catch(handleError);
-            }
+            // DOWNLOAD: Single request for ALL items
+            const targetPath = state.currentLocalPath;
+            FTP_API.transferFile(state.clipboard, targetPath, true).catch(handleError);
 
             // Give a moment for requests to fire
             await new Promise(r => setTimeout(r, 500));

@@ -13,17 +13,19 @@ import (
 	"github.com/machinebox/progress"
 )
 
-func downloadWithProgressBar(localFilePath, remoteFilePath string) { //Starts and tracks downloads in parallel
-	<-downloadPass
+var downloadConn *ftp.ServerConn
 
-	//Make new connection for each download
-	c, err := GetNewConn()
-	if err != nil {
-		config.LogsCh <- err.Error()
-		return
+func downloadWithProgressBar(localFilePath, remoteFilePath string) { //Starts and tracks downloads in parallel
+	if downloadConn == nil {
+		var err error
+		downloadConn, err = GetNewConn()
+		if err != nil {
+			config.LogsCh <- err.Error()
+			return
+		}
 	}
 
-	remoteEntry, err := c.GetEntry(remoteFilePath)
+	remoteEntry, err := downloadConn.GetEntry(remoteFilePath)
 	if err != nil {
 		config.LogsCh <- err.Error()
 		return
@@ -33,7 +35,7 @@ func downloadWithProgressBar(localFilePath, remoteFilePath string) { //Starts an
 		config.LogsCh <- fmt.Sprintf("\"%v\" is a folder, not a file. Cannot download. Exiting...", remoteFilePath)
 	}
 
-	remoteFile, err := c.Retr(remoteFilePath)
+	remoteFile, err := downloadConn.Retr(remoteFilePath)
 	if err != nil {
 		config.LogsCh <- err.Error()
 		return
@@ -58,11 +60,9 @@ func downloadWithProgressBar(localFilePath, remoteFilePath string) { //Starts an
 	fmt.Printf("Total size: %v\n", remoteEntry.Size)
 
 	go startTracking(remoteEntry.Name, int64(remoteEntry.Size), true, progressCh)
-	go func() {
+	func() {
 		io.Copy(trackedLFile, remoteFile)
 
-		downloadPass <- true
-		c.Logout()
 		remoteFile.Close()
 		localFile.Close()
 	}()

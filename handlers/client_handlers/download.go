@@ -13,15 +13,24 @@ import (
 )
 
 var (
-	globalW   http.ResponseWriter
-	globalReq *http.Request
+	downloadLimitCh = make(chan bool, config.DownloadLimit)
 )
 
+func init() {
+	for range config.DownloadLimit {
+		downloadLimitCh <- true
+	}
+}
+
 func HandleDownload(w http.ResponseWriter, req *http.Request) {
-	globalW = w
-	globalReq = req
+	err := req.ParseForm()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	localPath := req.FormValue("local_path")
-	remotePath := req.FormValue("remote_path")
+	remotePaths := req.Form["remote_paths"]
 
 	c, err := client.GetClient()
 	if err != nil {
@@ -29,20 +38,22 @@ func HandleDownload(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if remotePath == "" || localPath == "" {
+	if remotePaths == nil || localPath == "" {
 		http.Error(w, "remote_path/local_path are required", http.StatusBadRequest)
 		return
 	}
 
-	err = smartDownload(localPath, remotePath, c)
-	if err != nil {
-		if strings.Contains(err.Error(), "226") { //Treat 226 closing connection as a success instead of error
-			w.WriteHeader(http.StatusNoContent)
+	for _, remotePath := range remotePaths {
+		err = smartDownload(localPath, remotePath, c)
+		if err != nil {
+			if strings.Contains(err.Error(), "226") { //Treat 226 closing connection as a success instead of error
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
+
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
@@ -58,7 +69,6 @@ func smartDownload(localDirPath, remotePath string, c *ftp.ServerConn) error { /
 
 	// 2. Decide what to do based on entry type
 	if remoteEntry.Type == ftp.EntryTypeFolder {
-		fmt.Printf("Detected directory: %s. Starting recursive download...\n", remotePath)
 		return downloadDir(localDirPath, remotePath, c)
 	}
 
@@ -113,13 +123,8 @@ func downloadDir(localDirPath, remoteDirPath string, c *ftp.ServerConn) error {
 }
 
 func downloadFile(localDirPath, remoteFilePath string, c *ftp.ServerConn) error { //Downloads remote file at remoteFilePath to local storage in localDirPath
-	defer func() { //Reassign a new fresh connection
-		c.Logout()
-		newC, err := client.GetClient()
-		if err == nil {
-			c = newC
-		}
-	}()
+	<-downloadLimitCh
+	defer func() { downloadLimitCh <- true }()
 
 	fileName := path.Base(remoteFilePath)
 	localFilePath := filepath.Join(localDirPath, fileName)
