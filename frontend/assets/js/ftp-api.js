@@ -27,13 +27,13 @@ export const FTP_API = {
     const itemsArray = Array.isArray(items) ? items : [items];
 
     if (isDownload) {
-      // For now, download still handles one by one or is not requested to be changed
-      // but let's make it support the first item at least to keep compatibility
-      params.append('remote_path', itemsArray[0].path);
+      // DOWNLOAD: Source is Remote (List), Destination is Local (Single)
       params.append('local_path', targetPath);
+      itemsArray.forEach(item => {
+        params.append('remote_paths', item.path);
+      });
     } else {
-      // UPLOAD: Source is Local, Destination is Remote
-      // Ensuring semantic consistency: remote_path = FTP, local_path = Local
+      // UPLOAD: Source is Local (List), Destination is Remote (Single)
       params.append('remote_path', targetPath);
       itemsArray.forEach(item => {
         params.append('local_paths', item.path);

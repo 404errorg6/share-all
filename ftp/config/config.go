@@ -58,8 +58,8 @@ var (
 	DefFTPHost        = "localhost"
 	DefFTPWriteAccess = "false"
 	DefAnonymous      = "true"
-	DownloadLimit     = 3
-	UploadLimit       = 1
+	DownloadLimit     = 1                //Won't change anything
+	UploadLimit       = 1                //Won't change anything
 	MaxTimeout        = time.Second * 10 //Max timeout while trying to connect to server
 
 	HTTPPort               = "8085"

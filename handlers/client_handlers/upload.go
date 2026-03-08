@@ -15,13 +15,12 @@ import (
 
 // TODO: Breaking on concurrency
 var (
-	limit   = 1
-	limitCh = make(chan bool, limit)
+	uploadLimitCh = make(chan bool, config.UploadLimit)
 )
 
 func init() {
-	for range limit {
-		limitCh <- true
+	for range config.UploadLimit {
+		uploadLimitCh <- true
 	}
 }
 
@@ -140,15 +139,13 @@ func uploadDir(remoteDirPath, localDirPath string, c *ftp.ServerConn) error {
 }
 
 func uploadFile(remoteDirPath, localFilePath string, c *ftp.ServerConn) error {
-	<-limitCh
-	defer func() { limitCh <- true }()
+	<-uploadLimitCh
+	defer func() { uploadLimitCh <- true }()
 
-	config.LogsCh <- fmt.Sprintf("Uploading file: %v", localFilePath)
-	localFilePath = config.ResolveLocalPath(localFilePath)
 	fileName := filepath.Base(localFilePath)
 	remoteFilePath := path.Join(remoteDirPath, fileName)
 
-	remoteDirPath, remoteEntry, err := config.ResolveRemotePath(c, remoteDirPath)
+	remoteEntry, err := c.GetEntry(remoteDirPath)
 	if err != nil {
 		return err
 	}
