@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net/http"
 	"sync"
 	"time"
 
@@ -51,6 +52,14 @@ const (
 	SERVICE = "_ftp._tcp"
 	DOMAIN  = "local."
 )
+
+//Frontend vars
+
+var (
+	AssetsServer http.Handler //will be initalized from root/init.go
+)
+
+//Backend vars
 
 var (
 	DefFTPServerName  = "my ftp server"
