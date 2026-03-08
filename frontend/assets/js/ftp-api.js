@@ -35,7 +35,8 @@ export const FTP_API = {
         if (!item.isFolder && window.Components && Components.Transfers && Components.Transfers.startTracking) {
           Components.Transfers.startTracking({
             Name: item.name,
-            IsDownload: true
+            IsDownload: true,
+            Size: item.size
           });
         }
       });
@@ -48,7 +49,8 @@ export const FTP_API = {
         if (!item.isFolder && window.Components && Components.Transfers && Components.Transfers.startTracking) {
           Components.Transfers.startTracking({
             Name: item.name,
-            IsDownload: false
+            IsDownload: false,
+            Size: item.size
           });
         }
       });

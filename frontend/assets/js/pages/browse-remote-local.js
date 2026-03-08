@@ -91,7 +91,7 @@ function handleAction(e, entry, normalizedPath, type) {
     }
 
     if (state.selectionMode) {
-        toggleSelection(normalizedPath, entry.Name, entry.IsFolder, type);
+        toggleSelection(normalizedPath, entry.Name, entry.IsFolder, type, entry.Size);
     } else {
         if (entry.IsFolder) {
             if (type === 'remote') {
@@ -127,8 +127,8 @@ function toggleSelectionMode() {
     Clipboard.toggleMode(refreshCurrent);
 }
 
-function toggleSelection(path, name, isFolder, pane) {
-    Clipboard.toggleSelection({ path, name, isFolder }, pane, refreshCurrent);
+function toggleSelection(path, name, isFolder, pane, size) {
+    Clipboard.toggleSelection({ path, name, isFolder, size }, pane, refreshCurrent);
 }
 
 function clearClipboard() {
@@ -155,7 +155,7 @@ function openRemoteOptions(entry, path) {
     btnPreview.onclick = () => { closeOptionsModal(); Preview.show(path, entry.Name, true); };
 
     btnCopy.classList.remove('hidden');
-    btnCopy.onclick = () => { closeOptionsModal(); toggleSelection(path, entry.Name, entry.IsFolder, 'remote'); };
+    btnCopy.onclick = () => { closeOptionsModal(); toggleSelection(path, entry.Name, entry.IsFolder, 'remote', entry.Size); };
 
     btnDelete.classList.add('hidden');
 }
@@ -177,7 +177,7 @@ function openLocalOptions(entry, path) {
     btnPreview.onclick = () => { closeOptionsModal(); Preview.show(path, entry.Name, false); };
 
     btnCopy.classList.remove('hidden');
-    btnCopy.onclick = () => { closeOptionsModal(); toggleSelection(path, entry.Name, entry.IsFolder, 'local'); };
+    btnCopy.onclick = () => { closeOptionsModal(); toggleSelection(path, entry.Name, entry.IsFolder, 'local', entry.Size); };
 
     btnDelete.classList.remove('hidden');
     btnDelete.onclick = () => { closeOptionsModal(); confirmDelete(path, entry.Name, false); };
