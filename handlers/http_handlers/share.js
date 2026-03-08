@@ -9,8 +9,14 @@ const breadcrumbEl = document.getElementById('breadcrumb-path');
 const upDirBtn = document.getElementById('up-dir-btn');
 const loader = document.getElementById('sync-overlay');
 const refreshBtn = document.getElementById('refresh-btn');
+const hBtn = document.getElementById('toggle-hidden-btn');
+const fileCountEl = document.getElementById('file-count');
+
+const optModal = document.getElementById('options-modal');
+const optContent = document.getElementById('options-modal-content');
 
 let currentPath = '.';
+let showHiddenFiles = false;
 
 /**
  * Load directory listing from the mini server API
@@ -26,8 +32,11 @@ async function loadDirectory(path) {
         renderEntries(entries, path);
     } catch (err) {
         console.error('Error loading directory:', err);
-        // Fallback or simple alert if toast is not available
-        alert('Error: ' + err.message);
+        if (window.Components && Components.showToast) {
+            Components.showToast(err.message, 'error');
+        } else {
+            alert('Error: ' + err.message);
+        }
     } finally {
         loader.classList.add('hidden');
     }
@@ -39,9 +48,13 @@ async function loadDirectory(path) {
 function renderEntries(entries, path) {
     listContainer.innerHTML = '';
 
-    if (!entries || entries.length === 0) {
+    const visible = entries.filter(e => showHiddenFiles || (window.Utils ? !Utils.isHiddenFile(e.Name) : !e.Name.startsWith('.')))
+        .sort((a, b) => (b.IsFolder - a.IsFolder) || a.Name.localeCompare(b.Name));
+
+    if (!visible || visible.length === 0) {
         emptyState.classList.remove('hidden');
         listContainer.classList.add('hidden');
+        fileCountEl.innerText = '0 items';
         updateBreadcrumb(path);
         return;
     }
@@ -49,10 +62,7 @@ function renderEntries(entries, path) {
     emptyState.classList.add('hidden');
     listContainer.classList.remove('hidden');
 
-    // Sort: Folders first, then Alphabetical
-    const sorted = entries.sort((a, b) => (b.IsFolder - a.IsFolder) || a.Name.localeCompare(b.Name));
-
-    sorted.forEach(entry => {
+    visible.forEach(entry => {
         const fullPath = (path === '.' || path === '') ? entry.Name : `${path}/${entry.Name}`;
         const normalizedPath = fullPath.replace('//', '/');
 
@@ -73,7 +83,7 @@ function renderEntries(entries, path) {
                 </div>
                 ${!entry.IsFolder ? `
                 <div class="size-8 flex items-center justify-center rounded-full bg-primary/10 text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                     <span class="material-symbols-outlined text-xl">download</span>
+                     <span class="material-symbols-outlined text-xl">more_vert</span>
                 </div>` : ''}
             </div>
             <div class="mt-auto pt-2 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
@@ -86,15 +96,111 @@ function renderEntries(entries, path) {
             if (entry.IsFolder) {
                 loadDirectory(normalizedPath);
             } else {
-                // BROWSER DOWNLOAD: Using query parameter for path
-                window.location.href = `/file?path=${encodeURIComponent(normalizedPath)}`;
+                openOptions(entry, normalizedPath);
             }
         };
 
         listContainer.appendChild(item);
     });
 
+    fileCountEl.innerText = `${visible.length} items`;
     updateBreadcrumb(path);
+}
+
+/**
+ * File Options
+ */
+function openOptions(entry, path) {
+    document.getElementById('options-filename').innerText = entry.Name;
+    document.getElementById('options-type').innerText = "Shared " + (entry.IsFolder ? "Folder" : "File") + " Actions";
+    optModal.classList.remove('hidden');
+    setTimeout(() => {
+        optContent.classList.remove('scale-95', 'opacity-0');
+        optContent.classList.add('scale-100', 'opacity-100');
+    }, 10);
+
+    // Preview
+    document.getElementById('btn-preview').classList.toggle('hidden', entry.IsFolder);
+    document.getElementById('btn-preview').onclick = () => {
+        closeOptionsModal();
+        if (window.Preview) {
+            // shareFS might have a different API endpoint or prefix
+            // In start_web_ui.go, we have /api/ls and /file?path=...
+            // the preview system defaults to /api/ftp/client/get-file for local
+            // we need to override the URL logic or use a custom caller.
+            // Let's monkey-patch or just call Preview.show with a custom logic if needed.
+            // Actually, Preview.show constructs URL: `${api}?${paramName}=${encodeURIComponent(path)}`
+            // and we want /file?path=...
+            // So we can temporarily override the preview constants or build a custom previewer.
+            // Let's use a simpler approach: if it's the share page, we use /file
+            Preview.showShared(path, entry.Name);
+        }
+    };
+
+    // Download
+    document.getElementById('btn-download').onclick = () => {
+        closeOptionsModal();
+        const downloadUrl = `/file?path=${encodeURIComponent(path)}`;
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = entry.Name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+}
+
+function closeOptionsModal() {
+    optContent.classList.add('scale-95', 'opacity-0');
+    optContent.classList.remove('scale-100', 'opacity-100');
+    setTimeout(() => { optModal.classList.add('hidden'); }, 300);
+}
+
+// Extend Preview system for shared files
+if (window.Preview) {
+    Preview.showShared = async function (path, name) {
+        const modal = document.getElementById('preview-modal');
+        const container = document.getElementById('preview-container');
+        const filenameLabel = document.getElementById('preview-filename');
+
+        if (!modal || !container) return;
+
+        filenameLabel.innerText = name;
+        modal.classList.remove('hidden');
+        container.innerHTML = `
+            <div class="flex flex-col items-center gap-4">
+                <div class="animate-spin size-10 border-4 border-primary border-t-transparent rounded-full font-bold"></div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-primary">Loading Preview...</p>
+            </div>
+        `;
+
+        const ext = name.split('.').pop().toLowerCase();
+        const url = `/file?path=${encodeURIComponent(path)}`;
+
+        if (!this.isSupported(ext)) {
+            this.showUnsupported(name, path, false);
+            return;
+        }
+
+        try {
+            if (this.supportedFormats.image.includes(ext)) {
+                container.innerHTML = `<img src="${url}" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl animate-fade-in">`;
+            } else if (this.supportedFormats.video.includes(ext)) {
+                container.innerHTML = `<video controls autoplay class="max-w-full max-h-full rounded-lg shadow-2xl animate-fade-in"><source src="${url}"></video>`;
+            } else if (this.supportedFormats.pdf.includes(ext)) {
+                container.innerHTML = `<iframe src="${url}" class="w-full h-full border-0 bg-white rounded-lg shadow-inner animate-fade-in"></iframe>`;
+            } else {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('Failed to load text content');
+                const text = await res.text();
+                container.innerHTML = `
+                    <pre class="w-full h-full p-6 text-[11px] font-mono text-slate-300 overflow-auto whitespace-pre-wrap bg-black/30 rounded-lg selection:bg-primary/20 leading-relaxed animate-fade-in">${this.escapeHtml(text)}</pre>
+                `;
+            }
+        } catch (e) {
+            this.showUnsupported(name, path, false, true);
+        }
+    };
 }
 
 /**
@@ -136,7 +242,16 @@ upDirBtn.onclick = () => {
     loadDirectory(parts.length === 0 ? '.' : parts.join('/'));
 };
 
+hBtn.onclick = () => {
+    showHiddenFiles = !showHiddenFiles;
+    hBtn.classList.toggle('opacity-50', !showHiddenFiles);
+    hBtn.querySelector('span').innerText = showHiddenFiles ? 'visibility' : 'visibility_off';
+    loadDirectory(currentPath);
+};
+
 // Initial Load
 document.addEventListener('DOMContentLoaded', () => {
     loadDirectory('.');
 });
+
+window.closeOptionsModal = closeOptionsModal;
