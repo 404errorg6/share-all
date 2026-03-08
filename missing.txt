@@ -1,2 +1,3 @@
 concurrent uploads
 transfers cancel button
+pause/resume transfers

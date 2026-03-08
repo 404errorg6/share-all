@@ -97,12 +97,12 @@ Components.Transfers = {
             });
         } else if (line.includes(' completed!') && !line.includes('ERROR')) {
             const lastState = this.getTracking();
-            const trackedItem = lastState.find(s => s.Name === name);
-            const isDownload = trackedItem ? trackedItem.IsDownload : true;
+            const trackedItem = lastState.find(s => s.Name === name) || {};
 
             this.addCompleted({
+                ...trackedItem,
                 Name: name,
-                IsDownload: isDownload,
+                IsDownload: trackedItem.IsDownload !== undefined ? trackedItem.IsDownload : true,
                 Timestamp: Date.now()
             });
 
@@ -129,19 +129,27 @@ Components.Transfers = {
     startTracking(item) {
         if (!item || !item.Name) return;
         let lastState = this.getTracking();
+        const existingIndex = lastState.findIndex(s => s.Name === item.Name);
 
-        if (lastState.some(s => s.Name === item.Name)) return;
-
-        lastState.push({
-            Name: item.Name,
-            TotalSize: item.TotalSize || 0,
-            Written: 0,
-            Percent: 0,
-            IsDownload: item.isDownload === undefined ? item.IsDownload : item.isDownload,
-            Timestamp: Date.now(),
-            _manual: true,
-            _seenActive: false
-        });
+        if (existingIndex > -1) {
+            // Update existing entry with any new metadata (like Size)
+            lastState[existingIndex] = {
+                ...lastState[existingIndex],
+                TotalSize: lastState[existingIndex].TotalSize || item.TotalSize || item.Size || 0,
+                IsDownload: item.IsDownload !== undefined ? item.IsDownload : lastState[existingIndex].IsDownload
+            };
+        } else {
+            lastState.push({
+                Name: item.Name,
+                TotalSize: item.TotalSize || item.Size || 0,
+                Written: 0,
+                Percent: 0,
+                IsDownload: item.IsDownload !== undefined ? item.IsDownload : true,
+                Timestamp: Date.now(),
+                _manual: true,
+                _seenActive: false
+            });
+        }
 
         sessionStorage.setItem('ftp_active_tracking', JSON.stringify(lastState));
     },
