@@ -1,28 +1,16 @@
 package main
 
 import (
-	"embed"
-	"io/fs"
-	"log"
 	"net/http"
 
+	"github.com/404errorg6/FTP-server/config"
 	clienthandlers "github.com/404errorg6/FTP-server/handlers/client_handlers"
 	httphandlers "github.com/404errorg6/FTP-server/handlers/http_handlers"
 	serverhandlers "github.com/404errorg6/FTP-server/handlers/server_handlers"
 )
 
-//go:embed frontend
-var frontend embed.FS
-
 func Mux() *http.ServeMux {
 	mux := http.NewServeMux()
-	// Static Assets & Pages
-	assets, err := fs.Sub(frontend, "frontend") //cd into the frontend
-	if err != nil {
-		log.Fatalf("Error while removing frontend prefix: %v\n", err)
-	}
-
-	assetsServer := http.FileServer(http.FS(assets))
 
 	// HTTP Handles
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) { // Root Redirect to Browse Local
@@ -30,7 +18,7 @@ func Mux() *http.ServeMux {
 			http.Redirect(w, r, "/pages/browse-local.html", http.StatusTemporaryRedirect)
 			return
 		}
-		assetsServer.ServeHTTP(w, r)
+		config.AssetsServer.ServeHTTP(w, r)
 	})
 	mux.HandleFunc("GET /api/logs", httphandlers.HandleLogs) //get logs
 	mux.HandleFunc("POST /api/http/start-web-ui", httphandlers.HandleStartWebUI)

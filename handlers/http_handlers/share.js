@@ -19,8 +19,6 @@ async function loadDirectory(path) {
     currentPath = path;
     loader.classList.remove('hidden');
     try {
-        // We assume the mini-server provides a simple /api/ls endpoint
-        // or we can reuse the existing local/ls if the mini-server is part of the same backend
         const response = await fetch(`/api/ls?path=${encodeURIComponent(path)}`);
         if (!response.ok) throw new Error('Failed to load path');
 
@@ -88,10 +86,8 @@ function renderEntries(entries, path) {
             if (entry.IsFolder) {
                 loadDirectory(normalizedPath);
             } else {
-                // BROWSER DOWNLOAD: Instead of POST request, we use direct link
-                // We assume files are served at /files/path
-                const downloadUrl = `/files/${encodeURIComponent(normalizedPath)}`;
-                window.location.href = downloadUrl;
+                // BROWSER DOWNLOAD: Using query parameter for path
+                window.location.href = `/file?path=${encodeURIComponent(normalizedPath)}`;
             }
         };
 

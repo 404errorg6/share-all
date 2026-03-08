@@ -10,7 +10,7 @@ import (
 )
 
 //go:embed share.*
-var assets embed.FS
+var shareFS embed.FS
 
 func HandleStartWebUI(w http.ResponseWriter, req *http.Request) {
 	server := &http.Server{
@@ -20,38 +20,62 @@ func HandleStartWebUI(w http.ResponseWriter, req *http.Request) {
 
 	config.LogsCh <- fmt.Sprintln("Starting unsecure sharing...")
 
-	err := server.ListenAndServe()
-	if err != nil {
-		config.LogsCh <- err.Error()
-	}
+	go func() {
+		err := server.ListenAndServe()
+		if err != nil {
+			config.LogsCh <- err.Error()
+		}
+	}()
 }
 
 func miniMux() *http.ServeMux {
-	mux := &http.ServeMux{}
+	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /", serveHTML)
+	mux.HandleFunc("GET /assets/", serveAssets)
 
-	mux.HandleFunc("GET /api/ls", clienthandlers.HandleListLocalDir)
+	mux.HandleFunc("GET /api/ls", handleLS)
 	mux.HandleFunc("GET /file", serveFile)
 
 	return mux
 }
 
-func serveHTML(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path == "/" {
-		http.Redirect(w, r, "share.html", http.StatusPermanentRedirect)
+func handleLS(w http.ResponseWriter, req *http.Request) {
+	path := req.URL.Query().Get("path")
+	if path == "" {
+		http.Error(w, "path is required", http.StatusBadRequest)
+		return
 	}
-	httpServer := http.FileServer(http.FS(assets))
-	httpServer.ServeHTTP(w, r)
+
+	err := req.ParseForm()
+	if err != nil {
+		config.LogsCh <- err.Error()
+	}
+
+	req.Form.Add("local_path", path)
+	clienthandlers.HandleListLocalDir(w, req)
 }
 
-func serveFile(w http.ResponseWriter, r *http.Request) {
-	localPath := r.FormValue("local_path")
+func serveAssets(w http.ResponseWriter, req *http.Request) {
+	config.AssetsServer.ServeHTTP(w, req)
+}
+
+func serveHTML(w http.ResponseWriter, req *http.Request) {
+	if req.URL.Path == "/" {
+		http.Redirect(w, req, "share.html", http.StatusPermanentRedirect)
+	}
+
+	httpServer := http.FileServer(http.FS(shareFS))
+	httpServer.ServeHTTP(w, req)
+}
+
+func serveFile(w http.ResponseWriter, req *http.Request) {
+	localPath := req.FormValue("path")
 	if localPath == "" {
-		http.Error(w, "local_path is required", http.StatusBadRequest)
+		http.Error(w, "path is required", http.StatusBadRequest)
 		return
 	}
 
 	localPath = config.ResolveLocalPath(localPath)
-	http.ServeFile(w, r, localPath)
+	http.ServeFile(w, req, localPath)
 }
