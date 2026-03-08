@@ -158,9 +158,24 @@
         </div>
     </div>
 
+    <style>
+        /* Shared page specific overrides */
+        #floating-log-trigger,
+        #mini-log-window {
+            display: none !important;
+        }
+    </style>
+
     <!-- Core Scripts -->
     <script src="/assets/js/utils.js"></script>
     <script src="/assets/js/components.js"></script>
+    <script>
+        // Disable specific background components for this page
+        if (window.Components) {
+            if (Components.Logger) Components.Logger.init = () => { };
+            if (Components.Transfers) Components.Transfers.init = () => { };
+        }
+    </script>
     <script src="/assets/js/preview.js"></script>
     <script src="./share.js"></script>
 </body>
