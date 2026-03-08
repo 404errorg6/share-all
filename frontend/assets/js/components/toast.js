@@ -68,7 +68,69 @@ Components.Toast = {
             }, 5000);
         };
 
-        toast.onclick = () => {
+        // --- Swipe Logic ---
+        let startX = 0;
+        let diffX = 0;
+        let isDragging = false;
+
+        const onMove = (e) => {
+            if (!isDragging) return;
+            const currentX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            diffX = currentX - startX;
+
+            const opacity = Math.max(0, 1 - Math.abs(diffX) / 300);
+            toast.style.transform = `translateX(${diffX}px)`;
+            toast.style.opacity = opacity;
+
+            if (Math.abs(diffX) > 10 && e.cancelable) {
+                e.preventDefault();
+            }
+        };
+
+        const onEnd = () => {
+            if (!isDragging) return;
+            isDragging = false;
+
+            // Cleanup window listeners
+            window.removeEventListener('mousemove', onMove);
+            window.removeEventListener('touchmove', onMove);
+            window.removeEventListener('mouseup', onEnd);
+            window.removeEventListener('touchend', onEnd);
+
+            toast.style.transition = 'all 0.5s cubic-bezier(0.2, 1, 0.3, 1)';
+
+            const threshold = toast.offsetWidth * 0.4;
+            if (Math.abs(diffX) > threshold) {
+                const direction = diffX > 0 ? 1 : -1;
+                toast.style.transform = `translateX(${direction * 120}%)`;
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 500);
+            } else {
+                toast.style.transform = '';
+                toast.style.opacity = '1';
+                startHideTimer();
+            }
+        };
+
+        const onStart = (e) => {
+            isDragging = true;
+            startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            diffX = 0;
+            toast.style.transition = 'none';
+            clearTimeout(hideTimeout);
+
+            // Add window listeners only during drag
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('touchmove', onMove, { passive: false });
+            window.addEventListener('mouseup', onEnd);
+            window.addEventListener('touchend', onEnd);
+        };
+
+        toast.addEventListener('mousedown', onStart);
+        toast.addEventListener('touchstart', onStart, { passive: true });
+
+        toast.onclick = (e) => {
+            if (Math.abs(diffX) > 10) return;
             if (toast.classList.toggle('toast-expanded')) {
                 clearTimeout(hideTimeout);
             } else {
@@ -76,6 +138,7 @@ Components.Toast = {
             }
         };
 
+        // Entry animation
         setTimeout(() => toast.classList.remove('translate-x-full', 'opacity-0'), 50);
         startHideTimer();
     }
