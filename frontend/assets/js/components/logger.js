@@ -252,6 +252,11 @@ Components.Logger = {
                     this.logCount++;
                     container.appendChild(this.createEntry(line));
                     this.saveLog(line);
+
+                    // Notify history/transfer service
+                    if (window.Components && Components.Transfers && Components.Transfers.handleLog) {
+                        Components.Transfers.handleLog(line);
+                    }
                 });
 
                 this.updateCount();

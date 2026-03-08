@@ -29,13 +29,8 @@ class TransferManager {
         this.isPolling = true;
 
         const poll = async () => {
-            try {
-                const response = await fetch('/api/ftp/transfers');
-                if (response.ok) {
-                    const data = await response.json();
-                    this.updateUI(data);
-                }
-            } catch (error) { }
+            const data = Components.Transfers.getActive();
+            this.updateUI(data);
 
             if (this.isPolling) {
                 setTimeout(poll, this.pollInterval);
@@ -187,9 +182,11 @@ class TransferManager {
             } else {
                 this.addItem(item, metrics);
             }
+
             this.previousState.set(item.Name, {
                 written: item.Written,
-                timestamp: Date.now()
+                timestamp: Date.now(),
+                lastMetrics: metrics
             });
         });
 
@@ -203,23 +200,37 @@ class TransferManager {
         const prev = this.previousState.get(item.Name);
         const now = Date.now();
         const timeDiff = (now - prev.timestamp) / 1000;
-        if (timeDiff <= 0) return { speed: "Calculating...", rawSpeed: 0, eta: "Calculating..." };
+
+        // Don't update speed if less than 500ms has passed to avoid noise
+        if (timeDiff < 0.5) {
+            return prev.lastMetrics || { speed: "Calculating...", rawSpeed: 0, eta: "Calculating..." };
+        }
 
         const writtenDiff = item.Written - prev.written;
-        const bytesPerSec = writtenDiff / timeDiff;
+        let bytesPerSec = writtenDiff / timeDiff;
 
-        if (bytesPerSec <= 0) {
-            return { speed: "0 B/s", rawSpeed: 0, eta: "Stalled" };
+        // Smooth speed with previous value (70% current, 30% previous)
+        if (prev.lastMetrics && prev.lastMetrics.rawSpeed > 0) {
+            bytesPerSec = (bytesPerSec * 0.7) + (prev.lastMetrics.rawSpeed * 0.3);
+        }
+
+        if (bytesPerSec <= 0.1) {
+            const metrics = { speed: "0 B/s", rawSpeed: 0, eta: "Stalled" };
+            prev.lastMetrics = metrics;
+            return metrics;
         }
 
         const remainingBytes = item.TotalSize - item.Written;
         const etaSeconds = remainingBytes / bytesPerSec;
 
-        return {
+        const metrics = {
             speed: Utils.formatFileSize(bytesPerSec) + "/s",
             rawSpeed: bytesPerSec,
             eta: this.formatDuration(etaSeconds)
         };
+
+        prev.lastMetrics = metrics;
+        return metrics;
     }
 
     formatDuration(seconds) {

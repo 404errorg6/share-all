@@ -31,12 +31,26 @@ export const FTP_API = {
       params.append('local_path', targetPath);
       itemsArray.forEach(item => {
         params.append('remote_paths', item.path);
+        // Start proactive tracking for history
+        if (window.Components && Components.Transfers && Components.Transfers.startTracking) {
+          Components.Transfers.startTracking({
+            Name: item.name,
+            isDownload: true
+          });
+        }
       });
     } else {
       // UPLOAD: Source is Local (List), Destination is Remote (Single)
       params.append('remote_path', targetPath);
       itemsArray.forEach(item => {
         params.append('local_paths', item.path);
+        // Start proactive tracking for history
+        if (window.Components && Components.Transfers && Components.Transfers.startTracking) {
+          Components.Transfers.startTracking({
+            Name: item.name,
+            isDownload: false
+          });
+        }
       });
     }
 
