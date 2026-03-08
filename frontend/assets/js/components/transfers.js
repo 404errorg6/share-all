@@ -4,7 +4,7 @@
 
 Components.Transfers = {
     STORAGE_KEY: 'ftp_transfer_history',
-    LIMIT: 50,
+    LIMIT: 1000,
     isPolling: false,
 
     init() {
@@ -25,17 +25,19 @@ Components.Transfers = {
         if (!item || !item.Name) return;
         let history = this.getHistory();
 
-        // Check for duplicates
+        // Check for duplicates within a small time window
         const isDup = history.some(h =>
             h.Name === item.Name &&
-            Math.abs((h.Timestamp || 0) - (item.Timestamp || Date.now())) < 10000
+            Math.abs((h.Timestamp || 0) - (item.Timestamp || Date.now())) < 5000
         );
-
         if (isDup) return;
 
         item.Timestamp = item.Timestamp || Date.now();
         item.Status = 'Completed';
         item.Percent = 100;
+
+        // Ensure IsDownload is boolean and properly set
+        if (item.IsDownload === undefined) item.IsDownload = true;
 
         history.unshift(item);
         if (history.length > this.LIMIT) {
@@ -44,7 +46,7 @@ Components.Transfers = {
 
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(history));
 
-        // Dispatch event
+        // Dispatch events for UI updates
         window.dispatchEvent(new CustomEvent('transfer-completed', { detail: item }));
     },
 
@@ -58,35 +60,140 @@ Components.Transfers = {
                 }
             } catch (e) { }
 
-            setTimeout(() => poll(), 1000);
+            setTimeout(() => poll(), 500);
         };
 
         poll();
     },
 
+    extractFileName(line) {
+        if (!line) return null;
+        // Strip [LOGS]: prefix and any leading timestamps or system tags
+        let clean = line.replace(/^\[.*?\]:\s*/, '')
+            .replace(/^.*?\d{2}:\d{2}:\d{2}\s*/, '')
+            .trim();
+
+        // Match "Downloading NAME..." or "Uploading NAME..."
+        const startMatch = clean.match(/^(?:Downloading|Uploading)\s+(.+?)(?:\.\.\.)?$/);
+        if (startMatch) return startMatch[1].trim();
+
+        // Match "NAME completed!"
+        const endMatch = clean.match(/^(.+?)\s+completed!$/);
+        if (endMatch) return endMatch[1].trim();
+
+        return null;
+    },
+
+    handleLog(line) {
+        if (!line) return;
+
+        const name = this.extractFileName(line);
+        if (!name) return;
+
+        if (line.includes('Downloading ') || line.includes('Uploading ')) {
+            this.startTracking({
+                Name: name,
+                IsDownload: line.includes('Downloading')
+            });
+        } else if (line.includes(' completed!') && !line.includes('ERROR')) {
+            const lastState = this.getTracking();
+            const trackedItem = lastState.find(s => s.Name === name);
+            const isDownload = trackedItem ? trackedItem.IsDownload : true;
+
+            this.addCompleted({
+                Name: name,
+                IsDownload: isDownload,
+                Timestamp: Date.now()
+            });
+
+            // Immediately remove from tracking since it's confirmed finished
+            const updated = lastState.filter(s => s.Name !== name);
+            sessionStorage.setItem('ftp_active_tracking', JSON.stringify(updated));
+        }
+    },
+
+    getActive() {
+        return this.getTracking();
+    },
+
+    getTracking() {
+        try {
+            const input = sessionStorage.getItem('ftp_active_tracking');
+            const parsed = JSON.parse(input || '[]');
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            return [];
+        }
+    },
+
+    startTracking(item) {
+        if (!item || !item.Name) return;
+        let lastState = this.getTracking();
+
+        if (lastState.some(s => s.Name === item.Name)) return;
+
+        lastState.push({
+            Name: item.Name,
+            TotalSize: item.TotalSize || 0,
+            Written: 0,
+            Percent: 0,
+            IsDownload: item.isDownload === undefined ? item.IsDownload : item.isDownload,
+            Timestamp: Date.now(),
+            _manual: true,
+            _seenActive: false
+        });
+
+        sessionStorage.setItem('ftp_active_tracking', JSON.stringify(lastState));
+    },
+
     processActiveTransfers(activeData) {
         if (!activeData || activeData === "null") activeData = [];
+        const lastState = this.getTracking();
+        const liveMap = new Map(activeData.map(d => [d.Name, d]));
 
-        const lastStateInput = sessionStorage.getItem('ftp_active_tracking');
-        let lastState = [];
-        try {
-            const parsed = JSON.parse(lastStateInput || '[]');
-            lastState = Array.isArray(parsed) ? parsed : [];
-        } catch (e) { }
-
-        const activeNames = new Set(activeData.map(d => d.Name));
+        const stillInState = [];
 
         lastState.forEach(prev => {
-            if (!activeNames.has(prev.Name) && (prev.Percent > 0 || prev.Written > 0)) {
-                this.addCompleted({
+            const liveItem = liveMap.get(prev.Name);
+
+            if (liveItem) {
+                // Merge live metrics (Percent, Written, TotalSize) into Tracking
+                const updated = {
                     ...prev,
-                    Percent: 100,
-                    Timestamp: Date.now()
-                });
+                    ...liveItem,
+                    _seenActive: true
+                };
+                stillInState.push(updated);
+
+                // Remove from liveMap so we don't add it as "brand new" later
+                liveMap.delete(prev.Name);
+            } else {
+                // Trigger completion if it disappeared from active list
+                const age = Date.now() - (prev.Timestamp || 0);
+                if (prev._seenActive || age > 30000) {
+                    this.addCompleted({
+                        ...prev,
+                        Percent: 100,
+                        Timestamp: Date.now()
+                    });
+                } else {
+                    // Keep waiting for it to appear in API or log
+                    stillInState.push(prev);
+                }
             }
         });
 
-        sessionStorage.setItem('ftp_active_tracking', JSON.stringify(activeData));
+        // Add brand new items from API that weren't in tracking yet
+        liveMap.forEach(liveItem => {
+            stillInState.push({
+                ...liveItem,
+                _seenActive: true,
+                _manual: false,
+                Timestamp: Date.now()
+            });
+        });
+
+        sessionStorage.setItem('ftp_active_tracking', JSON.stringify(stillInState));
     },
 
     clearHistory() {
