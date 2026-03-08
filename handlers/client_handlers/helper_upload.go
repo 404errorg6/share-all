@@ -7,7 +7,7 @@ import (
 	"path"
 	"time"
 
-	"github.com/404errorg6/FTP-server/ftp/config"
+	"github.com/404errorg6/FTP-server/config"
 	"github.com/jlaffaye/ftp"
 	"github.com/machinebox/progress"
 )
@@ -15,8 +15,6 @@ import (
 var uploadConn *ftp.ServerConn
 
 func uploadWithProgress(remoteFilePath, localFilePath string) {
-	//	<-uploadPass
-
 	if uploadConn == nil {
 		var err error
 		uploadConn, err = GetNewConn()

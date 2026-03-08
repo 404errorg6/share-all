@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/404errorg6/FTP-server/ftp/config"
+	"github.com/404errorg6/FTP-server/config"
 	clienthandlers "github.com/404errorg6/FTP-server/handlers/client_handlers"
 )
 

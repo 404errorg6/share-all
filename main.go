@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/404errorg6/FTP-server/ftp/config"
+	"github.com/404errorg6/FTP-server/config"
 )
 
 func main() {

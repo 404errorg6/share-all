@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/404errorg6/FTP-server/ftp/config"
+	"github.com/404errorg6/FTP-server/config"
 	"github.com/fclairamb/ftpserverlib"
 	"github.com/spf13/afero"
 )

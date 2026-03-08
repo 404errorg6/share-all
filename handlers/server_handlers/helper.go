@@ -5,7 +5,7 @@ import (
 	"math/rand/v2"
 	"os"
 
-	"github.com/404errorg6/FTP-server/ftp/config"
+	"github.com/404errorg6/FTP-server/config"
 )
 
 func getHostname() string {
