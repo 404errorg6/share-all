@@ -31,11 +31,11 @@ export const FTP_API = {
       params.append('local_path', targetPath);
       itemsArray.forEach(item => {
         params.append('remote_paths', item.path);
-        // Start proactive tracking for history
-        if (window.Components && Components.Transfers && Components.Transfers.startTracking) {
+        // Start proactive tracking for history (Files only)
+        if (!item.isFolder && window.Components && Components.Transfers && Components.Transfers.startTracking) {
           Components.Transfers.startTracking({
             Name: item.name,
-            isDownload: true
+            IsDownload: true
           });
         }
       });
@@ -44,11 +44,11 @@ export const FTP_API = {
       params.append('remote_path', targetPath);
       itemsArray.forEach(item => {
         params.append('local_paths', item.path);
-        // Start proactive tracking for history
-        if (window.Components && Components.Transfers && Components.Transfers.startTracking) {
+        // Start proactive tracking for history (Files only)
+        if (!item.isFolder && window.Components && Components.Transfers && Components.Transfers.startTracking) {
           Components.Transfers.startTracking({
             Name: item.name,
-            isDownload: false
+            IsDownload: false
           });
         }
       });
