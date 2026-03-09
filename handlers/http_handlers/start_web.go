@@ -13,6 +13,7 @@ func HandleStartWebUI(w http.ResponseWriter, req *http.Request) {
 	}
 
 	config.LogsCh <- fmt.Sprintln("Starting unsecure sharing...")
+	config.MiniServer.Conn.Handler = MiniMux()
 
 	go func() {
 		err := config.MiniServer.Conn.ListenAndServe()

@@ -23,12 +23,12 @@ func Mux() *http.ServeMux {
 	mux.HandleFunc("GET /api/logs", httphandlers.HandleLogs) //get logs
 	mux.HandleFunc("POST /api/http/web-share/start", httphandlers.HandleStartWebUI)
 	mux.HandleFunc("POST /api/http/web-share/stop", httphandlers.HandleStopWebUI)
-	mux.HandleFunc("GET /api/http/web-share/is-running", httphandlers.HandleWebStatus)
+	mux.HandleFunc("GET /api/http/web-share/status", httphandlers.HandleWebStatus)
 
 	//FTP server Handles
 	mux.HandleFunc("POST /api/ftp/server/start-ftp", serverhandlers.HandleStartFTP) //start ftp server
 	mux.HandleFunc("POST /api/ftp/server/stop-ftp", serverhandlers.HandleStopFTP)   //stop ftp server
-	mux.HandleFunc("GET /api/ftp/server/is-running", serverhandlers.HandleServerStatus)
+	mux.HandleFunc("GET /api/ftp/server/status", serverhandlers.HandleServerStatus)
 	mux.HandleFunc("GET /api/ftp/server/get-file", serverhandlers.HandleServeFile)                    //stream file for preview
 	mux.HandleFunc("GET /api/ftp/server/connected-clients", serverhandlers.HandleGetConnectedClients) //get clients connected to own server
 	mux.HandleFunc("GET /api/ftp/server/blacklist-client", serverhandlers.HandlerGetBlacklist)        //get list of blacklisted ips
