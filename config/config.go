@@ -33,6 +33,13 @@ type MyServer struct { //This server's struct
 	BlackList        []string
 }
 
+type MiniWebServer struct {
+	Host      string
+	Port      string
+	Conn      *http.Server //Initialized in handlers/http_handlers/start_web.go
+	IsRunning bool
+}
+
 type Client struct { //Struct for clients connected to this server
 	Name    string
 	Host    string
@@ -54,12 +61,8 @@ const (
 )
 
 var (
-	AssetsServer   http.Handler //will be initalized from root/init.go
-	MiniServerHost = "0.0.0.0"
-	MiniServerPort = "8080"
-	MiniServer     = &http.Server{
-		Addr: MiniServerHost + ":" + MiniServerPort,
-	}
+	AssetsServer http.Handler //will be initalized from root/init.go
+	MiniServer   MiniWebServer
 )
 
 // Backend vars
@@ -83,6 +86,14 @@ var (
 
 	DiscoveryClient = zeroconf.New()
 )
+
+func init() {
+	MiniServer.Host = DefFTPHost
+	MiniServer.Port = "8080"
+	MiniServer.Conn = &http.Server{
+		Addr: MiniServer.Host + ":" + MiniServer.Port,
+	}
+}
 
 func init() {
 	iface, err := getWifiOrCellularInterface()
