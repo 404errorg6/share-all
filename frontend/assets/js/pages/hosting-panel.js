@@ -143,43 +143,6 @@ function updateUrl() {
   }
 }
 
-/**
- * Load current server config from the backend and populate the form fields.
- */
-async function fetchConfig() {
-  try {
-    const response = await fetch('/api/ftp/server/config');
-    if (!response.ok) return;
-    const cfg = await response.json();
-
-    if (cfg.Name) {
-      document.getElementById('ftp-name').value = cfg.Name;
-    }
-    if (cfg.Port) {
-      document.getElementById('ftp-port').value = cfg.Port;
-      updateUrl();
-    }
-    if (cfg.RootDir) {
-      document.getElementById('ftp-root').value = cfg.RootDir;
-    }
-    if (cfg.User) {
-      document.getElementById('ftp-username').value = cfg.User;
-    }
-
-    const isAnonymous = cfg.AnonymousAccessAllowed !== false;
-    const anonToggle = document.getElementById('anonymous-login-toggle');
-    anonToggle.checked = isAnonymous;
-    toggleAnonymous(isAnonymous);
-
-    const writeToggle = document.getElementById('allow-writing-toggle');
-    writeToggle.checked = !!cfg.WriteAllowed;
-    // Sync toggle track visuals
-    const writeTrack = writeToggle.nextElementSibling;
-    if (writeTrack && writeTrack.classList.contains('toggle-track')) {
-      writeTrack.classList.toggle('toggle-on', writeToggle.checked);
-    }
-  } catch (e) { }
-}
 
 
 function toggleAnonymous(isAnonymous) {
@@ -270,7 +233,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   fetchServerStatus();
-  fetchConfig();
   fetchWebShareStatus();
   updateUrl();
   // Components.Logger.init() is now handled globally
@@ -345,7 +307,6 @@ window.copyUrl = copyUrl;
 window.toggleServer = toggleServer;
 window.updateUrl = updateUrl;
 window.toggleAnonymous = toggleAnonymous;
-window.fetchConfig = fetchConfig;
 window.toggleWebShare = toggleWebShare;
 window.copyWebUrl = copyWebUrl;
 window.toggleSettings = toggleSettings;
