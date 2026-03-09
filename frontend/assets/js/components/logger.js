@@ -234,44 +234,62 @@ Components.Logger = {
         this.abortController = new AbortController();
 
         try {
-            const response = await fetch('/api/logs', { signal: this.abortController.signal });
-            if (!response.ok) return;
+            console.log('Connecting to session logs...');
+            const response = await fetch('/api/logs', {
+                signal: this.abortController.signal,
+                headers: { 'Accept': 'text/event-stream' }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to connect to logs: ${response.statusText}`);
+            }
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             const container = document.getElementById('mini-log-container');
+            let partialLine = '';
 
             while (true) {
                 const { value, done } = await reader.read();
                 if (done) break;
 
                 const chunk = decoder.decode(value, { stream: true });
-                const lines = chunk.split('\n').filter(l => l.trim().length > 0);
+                const fullContent = partialLine + chunk;
+                const lines = fullContent.split('\n');
+
+                // The last element of split is either empty (if chunk ended in \n)
+                // or a partial line that should be saved for the next chunk
+                partialLine = lines.pop();
 
                 lines.forEach(line => {
+                    if (line.trim().length === 0) return;
                     this.logCount++;
                     container.appendChild(this.createEntry(line));
                     this.saveLog(line);
 
                     // Notify history/transfer service
                     if (window.Components && Components.Transfers && Components.Transfers.handleLog) {
-                        Components.Transfers.handleLog(line);
+                        try {
+                            Components.Transfers.handleLog(line);
+                        } catch (e) { }
                     }
                 });
 
-                this.updateCount();
+                if (lines.length > 0) {
+                    this.updateCount();
 
-                if (!this.isOpen && lines.length > 0) {
-                    document.getElementById('log-badge').classList.add('active');
-                }
+                    if (!this.isOpen) {
+                        document.getElementById('log-badge').classList.add('active');
+                    }
 
-                if (this.isAutoScroll && this.isOpen) {
-                    container.scrollTop = container.scrollHeight;
+                    if (this.isAutoScroll && this.isOpen) {
+                        container.scrollTop = container.scrollHeight;
+                    }
                 }
             }
         } catch (err) {
             if (err.name !== 'AbortError') {
-                console.warn('Logging offline. Retrying...', err);
+                console.warn('Logging connection dropped. Retrying in 5s...', err);
                 setTimeout(() => this.connect(), 5000);
             }
         }
