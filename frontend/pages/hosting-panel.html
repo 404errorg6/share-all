@@ -96,15 +96,19 @@
             </div>
         </header>
 
-        <main class="flex flex-col gap-1 p-2">
-            <!-- Section A: Status + URL -->
-            <!-- Status Row -->
-            <div class="flex items-center gap-4 px-4 min-h-14 justify-between bg-white/5 rounded-t-xl mt-2">
-                <div class="flex flex-col">
-                    <p class="text-white text-base font-medium leading-normal">Status</p>
-                    <p id="status-text" class="text-[#9cb0ba] text-xs font-normal">Stopped</p>
-                </div>
-                <div class="shrink-0">
+        <main class="flex flex-col gap-4 p-4">
+            <!-- FTP Server Card -->
+            <div class="bg-white/5 rounded-2xl overflow-hidden border border-white/5 p-4 transition-all duration-300">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-3">
+                        <div class="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                            <span class="material-symbols-outlined text-2xl">folder_shared</span>
+                        </div>
+                        <div>
+                            <h3 class="text-white font-bold">FTP Server</h3>
+                            <p id="status-text" class="text-[#9cb0ba] text-xs">Stopped</p>
+                        </div>
+                    </div>
                     <label class="relative inline-flex cursor-pointer">
                         <input id="status-toggle" class="peer sr-only toggle-input" type="checkbox"
                             onchange="toggleServer(this)" />
@@ -115,155 +119,145 @@
                         </span>
                     </label>
                 </div>
-            </div>
-            <!-- URL Row -->
-            <div class="flex items-center gap-4 px-4 min-h-[80px] py-2 justify-between bg-white/5">
-                <div class="flex flex-col justify-center">
-                    <p class="text-white text-base font-medium leading-normal line-clamp-1">URL</p>
-                    <p id="ftp-url" class="text-primary text-sm font-normal leading-normal line-clamp-2">
-                        ftp://127.0.0.1:2121/</p>
-                </div>
-                <div class="shrink-0">
-                    <button id="copy-url-btn" onclick="copyUrl()"
-                        class="flex size-10 items-center justify-center rounded-full hover:bg-white/10 transition-colors">
-                        <span class="material-symbols-outlined text-white text-[22px]">content_copy</span>
+
+                <div id="ftp-url-container"
+                    class="mt-4 p-3 bg-white/5 rounded-xl flex items-center justify-between transition-all duration-300 max-h-0 opacity-0 overflow-hidden">
+                    <div class="overflow-hidden">
+                        <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">FTP URL</p>
+                        <p id="ftp-url" class="text-primary text-sm font-medium truncate">ftp://127.0.0.1:2121/</p>
+                    </div>
+                    <button onclick="copyUrl()"
+                        class="size-8 flex items-center justify-center rounded-full hover:bg-white/10 text-white/70 transition-colors">
+                        <span class="material-symbols-outlined text-lg">content_copy</span>
                     </button>
                 </div>
-            </div>
 
-            <!-- Section B: Configuration -->
-            <form id="ftp-config-form" class="flex flex-col" onsubmit="return false;">
-                <h3 class="text-primary text-sm font-bold uppercase tracking-[0.1em] px-4 pb-2 pt-6">Configuration</h3>
-
-                <!-- Name -->
-                <div class="flex items-center gap-4 px-4 min-h-[72px] py-2 justify-between">
-                    <div class="flex flex-col justify-center w-full group">
-                        <label for="ftp-name"
-                            class="text-white text-base font-normal leading-normal text-xs uppercase font-bold tracking-wider text-slate-500">Server
-                            Name</label>
-                        <input id="ftp-name" name="name" type="text" placeholder="My FTP Server" required
-                            class="bg-transparent border-0 border-b border-slate-800 focus:border-primary focus:ring-0 text-[#9cb0ba] text-sm font-normal leading-normal w-full px-0 py-1 transition-colors group-hover:border-slate-700 placeholder-slate-700" />
-                    </div>
+                <!-- Advanced Configuration Toggler (Inside FTP Card) -->
+                <div class="mt-4 pt-4 border-t border-white/5">
+                    <button onclick="toggleSettings()"
+                        class="flex items-center gap-2 text-[#9cb0ba] hover:text-white transition-colors text-xs font-medium group">
+                        <span id="settings-chevron"
+                            class="material-symbols-outlined transition-transform duration-300">chevron_right</span>
+                        <span>Server Configuration</span>
+                    </button>
                 </div>
 
-                <!-- Anonymous login -->
-                <div class="flex items-center gap-4 px-4 min-h-14 justify-between">
-                    <p class="text-white text-base font-normal leading-normal flex-1">Anonymous login</p>
-                    <div class="shrink-0">
-                        <label class="relative inline-flex cursor-pointer">
-                            <input id="anonymous-login-toggle" name="anonymous" checked
-                                class="peer sr-only toggle-input" type="checkbox"
-                                onchange="toggleAnonymous(this.checked)" />
-                            <span
-                                class="block h-[31px] w-[51px] rounded-full p-0.5 bg-[#283439] peer-checked:bg-primary transition-colors toggle-track">
-                                <span class="toggle-knob"></span>
-                            </span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Username -->
-                <div id="username-container"
-                    class="flex items-center gap-4 px-4 min-h-[72px] py-2 justify-between transition-opacity duration-300 opacity-50 pointer-events-none">
-                    <div class="flex flex-col justify-center w-full group">
-                        <label for="ftp-username"
-                            class="text-white text-base font-normal leading-normal text-xs uppercase font-bold tracking-wider text-slate-500">Username</label>
-                        <input id="ftp-username" name="user" type="text" value="admin" disabled
-                            class="bg-transparent border-0 border-b border-slate-800 focus:border-primary focus:ring-0 text-[#9cb0ba] text-sm font-normal leading-normal w-full px-0 py-1 transition-colors group-hover:border-slate-700 placeholder-slate-700" />
-                    </div>
-                </div>
-
-                <!-- Password -->
-                <div id="password-container"
-                    class="flex items-center gap-4 px-4 min-h-[72px] py-2 justify-between transition-opacity duration-300 opacity-50 pointer-events-none">
-                    <div class="flex flex-col justify-center w-full group">
-                        <label for="ftp-password"
-                            class="text-white text-base font-normal leading-normal text-xs uppercase font-bold tracking-wider text-slate-500">Password</label>
-                        <input id="ftp-password" name="password" type="password" placeholder="Not set" disabled
-                            class="bg-transparent border-0 border-b border-slate-800 focus:border-primary focus:ring-0 text-[#9cb0ba] text-sm font-normal leading-normal w-full px-0 py-1 transition-colors group-hover:border-slate-700 placeholder-slate-700" />
-                    </div>
-                </div>
-
-                <!-- Port -->
-                <div class="flex items-center gap-4 px-4 min-h-[72px] py-2 justify-between">
-                    <div class="flex flex-col justify-center w-full group">
-                        <label for="ftp-port"
-                            class="text-white text-base font-normal leading-normal text-xs uppercase font-bold tracking-wider text-slate-500">Port</label>
-                        <input id="ftp-port" name="port" type="number" value="2121" oninput="updateUrl()"
-                            class="bg-transparent border-0 border-b border-slate-800 focus:border-primary focus:ring-0 text-[#9cb0ba] text-sm font-normal leading-normal w-full px-0 py-1 transition-colors group-hover:border-slate-700 placeholder-slate-700 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
-                    </div>
-                </div>
-
-                <!-- Root Folder -->
-                <div class="flex items-center gap-4 px-4 min-h-[72px] py-2 justify-between">
-                    <div class="flex flex-col justify-center w-full group relative">
-                        <label for="ftp-root"
-                            class="text-white text-base font-normal leading-normal text-xs uppercase font-bold tracking-wider text-slate-500">Root
-                            folder</label>
-                        <div class="flex items-center w-full">
-                            <input id="ftp-root" name="root_folder" type="text" placeholder="/storage/emulated/0"
-                                class="bg-transparent border-0 border-b border-slate-800 focus:border-primary focus:ring-0 text-[#9cb0ba] text-sm font-normal leading-normal w-full px-0 py-1 transition-colors group-hover:border-slate-700 placeholder-slate-700 pr-10" />
-
-                            <!-- Folder Picker Trigger -->
-                            <a href="browse-local.html?selectMode=true" type="button"
-                                class="absolute right-0 bottom-1 p-1 text-primary hover:text-white transition-colors">
-                                <span class="material-symbols-outlined text-[20px]">folder_open</span>
-                            </a>
+                <!-- Configuration Section (Inside FTP Card) -->
+                <div id="settings-panel"
+                    class="max-h-0 opacity-0 overflow-hidden transition-all duration-500 ease-in-out">
+                    <form id="ftp-config-form"
+                        class="flex flex-col gap-2 mt-4 bg-white/5 rounded-xl p-3 border border-white/5">
+                        <!-- Root Folder (Promoted) -->
+                        <div class="flex flex-col gap-1 mb-2">
+                            <label class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Root
+                                Folder</label>
+                            <div class="flex items-center gap-2">
+                                <input id="ftp-root" name="root_folder" type="text" placeholder="/storage/emulated/0"
+                                    class="bg-background-dark/50 border border-white/5 rounded-lg text-[#9cb0ba] text-xs px-3 py-2 flex-1 focus:border-primary transition-colors outline-none" />
+                                <a href="browse-local.html?selectMode=true"
+                                    class="size-9 flex items-center justify-center bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors">
+                                    <span class="material-symbols-outlined text-xl">folder_open</span>
+                                </a>
+                            </div>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Allow writing -->
-                <div class="flex items-center gap-4 px-4 min-h-14 justify-between">
-                    <p class="text-white text-base font-normal leading-normal flex-1">Allow writing</p>
-                    <div class="shrink-0">
-                        <label class="relative inline-flex cursor-pointer">
-                            <input id="allow-writing-toggle" name="allow_writing" checked
-                                class="peer sr-only toggle-input" type="checkbox" />
-                            <span
-                                class="block h-[31px] w-[51px] rounded-full p-0.5 bg-[#283439] peer-checked:bg-primary transition-colors toggle-track">
-                                <span class="toggle-knob"></span>
-                            </span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Web Share -->
-                <h3 class="text-primary text-sm font-bold uppercase tracking-[0.1em] px-4 pb-2 pt-6">Web Share</h3>
-                <div class="bg-white/5 rounded-xl overflow-hidden mb-4">
-                    <div class="flex items-center gap-4 px-4 min-h-14 justify-between border-b border-white/5">
-                        <div class="flex flex-col">
-                            <p class="text-white text-base font-medium leading-normal">Share without app</p>
-                            <p id="web-share-status" class="text-[#9cb0ba] text-xs font-normal">Disabled</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="flex flex-col gap-1">
+                                <label class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Server
+                                    Name</label>
+                                <input id="ftp-name" name="name" type="text" placeholder="My FTP Server" required
+                                    class="bg-background-dark/50 border border-white/5 rounded-lg text-[#9cb0ba] text-xs px-3 py-2 focus:border-primary transition-colors outline-none" />
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <label
+                                    class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Port</label>
+                                <input id="ftp-port" name="port" type="number" value="2121" oninput="updateUrl()"
+                                    class="bg-background-dark/50 border border-white/5 rounded-lg text-[#9cb0ba] text-xs px-3 py-2 focus:border-primary transition-colors outline-none" />
+                            </div>
                         </div>
-                        <div class="shrink-0">
-                            <label class="relative inline-flex cursor-pointer">
-                                <input id="web-share-toggle" class="peer sr-only toggle-input" type="checkbox"
-                                    onchange="toggleWebShare(this)" />
+
+                        <div class="flex items-center justify-between py-2 border-t border-white/5 mt-1">
+                            <span class="text-xs text-white/80">Anonymous login</span>
+                            <label class="relative inline-flex cursor-pointer scale-[0.8]">
+                                <input id="anonymous-login-toggle" name="anonymous" checked
+                                    class="peer sr-only toggle-input" type="checkbox"
+                                    onchange="toggleAnonymous(this.checked)" />
                                 <span
-                                    class="block h-[31px] w-[51px] rounded-full p-0.5 bg-[#283439] peer-checked:bg-primary transition-colors toggle-track"
-                                    aria-hidden="true">
+                                    class="block h-[31px] w-[51px] rounded-full p-0.5 bg-[#283439] peer-checked:bg-primary transition-colors toggle-track">
                                     <span class="toggle-knob"></span>
                                 </span>
                             </label>
                         </div>
-                    </div>
-                    <div id="web-share-url-container"
-                        class="flex items-center gap-4 px-4 min-h-[80px] py-2 justify-between transition-all duration-300 max-h-0 opacity-0 overflow-hidden">
-                        <div class="flex flex-col justify-center">
-                            <p class="text-white text-base font-medium leading-normal line-clamp-1">Access URL</p>
-                            <p id="web-share-url" class="text-primary text-sm font-normal leading-normal break-all">
-                                http://127.0.0.1:8080</p>
+
+                        <div id="auth-fields" class="transition-all duration-300">
+                            <div class="grid grid-cols-2 gap-3 pb-1">
+                                <div class="flex flex-col gap-1">
+                                    <label
+                                        class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Username</label>
+                                    <input id="ftp-username" name="user" type="text" value="admin"
+                                        class="bg-background-dark/50 border border-white/5 rounded-lg text-[#9cb0ba] text-xs px-3 py-2 outline-none" />
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label
+                                        class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Password</label>
+                                    <input id="ftp-password" name="password" type="password" placeholder="Required"
+                                        class="bg-background-dark/50 border border-white/5 rounded-lg text-[#9cb0ba] text-xs px-3 py-2 outline-none" />
+                                </div>
+                            </div>
                         </div>
-                        <div class="shrink-0">
-                            <button onclick="copyWebUrl()"
-                                class="flex size-10 items-center justify-center rounded-full hover:bg-white/10 transition-colors">
-                                <span class="material-symbols-outlined text-white text-[22px]">content_copy</span>
-                            </button>
+
+                        <div class="flex items-center justify-between py-2 border-t border-white/5">
+                            <span class="text-xs text-white/80">Allow writing</span>
+                            <label class="relative inline-flex cursor-pointer scale-[0.8]">
+                                <input id="allow-writing-toggle" name="allow_writing" checked
+                                    class="peer sr-only toggle-input" type="checkbox" />
+                                <span
+                                    class="block h-[31px] w-[51px] rounded-full p-0.5 bg-[#283439] peer-checked:bg-primary transition-colors toggle-track">
+                                    <span class="toggle-knob"></span>
+                                </span>
+                            </label>
                         </div>
-                    </div>
+                    </form>
                 </div>
-            </form>
+            </div>
+
+            <!-- Web Share Card -->
+            <div class="bg-white/5 rounded-2xl overflow-hidden border border-white/5 p-4 transition-all duration-300">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="size-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-500">
+                            <span class="material-symbols-outlined text-2xl">public</span>
+                        </div>
+                        <div>
+                            <h3 class="text-white font-bold">Web Direct Share</h3>
+                            <p id="web-share-status" class="text-[#9cb0ba] text-xs">Disabled</p>
+                        </div>
+                    </div>
+                    <label class="relative inline-flex cursor-pointer">
+                        <input id="web-share-toggle" class="peer sr-only toggle-input" type="checkbox"
+                            onchange="toggleWebShare(this)" />
+                        <span
+                            class="block h-[31px] w-[51px] rounded-full p-0.5 bg-[#283439] peer-checked:bg-primary transition-colors toggle-track"
+                            aria-hidden="true">
+                            <span class="toggle-knob"></span>
+                        </span>
+                    </label>
+                </div>
+
+                <div id="web-share-url-container"
+                    class="mt-4 p-3 bg-white/5 rounded-xl flex items-center justify-between transition-all duration-300 max-h-0 opacity-0 overflow-hidden">
+                    <div class="overflow-hidden">
+                        <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">Browser URL</p>
+                        <p id="web-share-url" class="text-primary text-sm font-medium truncate">http://127.0.0.1:8080
+                        </p>
+                    </div>
+                    <button onclick="copyWebUrl()"
+                        class="size-8 flex items-center justify-center rounded-full hover:bg-white/10 text-white/70 transition-colors">
+                        <span class="material-symbols-outlined text-lg">content_copy</span>
+                    </button>
+                </div>
+            </div>
         </main>
 
         <div class="bg-background-dark pb-2 flex justify-center sticky bottom-0">

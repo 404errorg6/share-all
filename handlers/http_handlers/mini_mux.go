@@ -1,8 +1,10 @@
 package httphandlers
 
-import "net/http"
+import (
+	"net/http"
+)
 
-func miniMux() *http.ServeMux {
+func MiniMux() *http.ServeMux {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /", serveHTML)

@@ -17,34 +17,19 @@ function copyUrl() {
 async function toggleServer(checkbox) {
   const isStarting = checkbox.checked;
   const statusText = document.getElementById('status-text');
-  const statusLabel = document.getElementById('server-status-label');
+  const urlContainer = document.getElementById('ftp-url-container');
 
   if (isStarting) {
-    // Get configuration values
     const name = document.getElementById('ftp-name').value || 'My FTP Server';
     const port = document.getElementById('ftp-port').value || '2121';
     const rootFolder = document.getElementById('ftp-root').value || '';
     const anonymous = document.getElementById('anonymous-login-toggle').checked;
     const allowWriting = document.getElementById('allow-writing-toggle').checked;
 
-    // Validate
     if (!name) {
       Components.showToast('Server Name is required', 'error');
       checkbox.checked = false;
-      updateToggleUI(false);
       return;
-    }
-
-    if (!anonymous) {
-      const username = document.getElementById('ftp-username').value || '';
-      const password = document.getElementById('ftp-password').value || '';
-
-      if (!username || !password) {
-        Components.showToast('Username and Password are required', 'error');
-        checkbox.checked = false;
-        updateToggleUI(false);
-        return;
-      }
     }
 
     statusText.textContent = 'Starting...';
@@ -70,9 +55,8 @@ async function toggleServer(checkbox) {
 
       if (response.ok) {
         statusText.textContent = 'Running';
-        statusLabel.textContent = 'Server Active';
-        statusLabel.className = 'text-xs text-green-500 font-black tracking-widest uppercase';
-        updateToggleUI(true);
+        urlContainer.classList.remove('max-h-0', 'opacity-0');
+        urlContainer.classList.add('max-h-[80px]', 'opacity-100');
         Components.showToast('Server started');
       } else {
         const err = await response.text();
@@ -82,20 +66,15 @@ async function toggleServer(checkbox) {
       Components.showToast(error.message, 'error');
       checkbox.checked = false;
       statusText.textContent = 'Stopped';
-      statusLabel.textContent = 'Server Offline';
-      statusLabel.className = 'text-xs text-red-500 font-black tracking-widest uppercase';
-      updateToggleUI(false);
     }
   } else {
     statusText.textContent = 'Stopping...';
-
     try {
       const response = await fetch('/api/ftp/server/stop-ftp', { method: 'POST' });
       if (response.ok) {
         statusText.textContent = 'Stopped';
-        statusLabel.textContent = 'Server Offline';
-        statusLabel.className = 'text-xs text-red-500 font-black tracking-widest uppercase';
-        updateToggleUI(false);
+        urlContainer.classList.add('max-h-0', 'opacity-0');
+        urlContainer.classList.remove('max-h-[80px]', 'opacity-100');
         Components.showToast('Server stopped');
       } else {
         throw new Error('Failed to stop server');
@@ -104,12 +83,8 @@ async function toggleServer(checkbox) {
       Components.showToast(error.message, 'error');
       checkbox.checked = true;
       statusText.textContent = 'Running';
-      statusLabel.textContent = 'Server Active';
-      statusLabel.className = 'text-xs text-green-500 font-black tracking-widest uppercase';
-      updateToggleUI(true);
     }
   }
-  await fetchServerStatus();
 }
 
 function updateToggleUI(isOn) {
@@ -119,21 +94,26 @@ function updateToggleUI(isOn) {
 
 async function fetchServerStatus() {
   try {
-    const response = await fetch('/api/ftp/server/is-running');
+    const response = await fetch('/api/ftp/server/running-status');
     if (response.ok) {
       const isRunningString = await response.text();
       const isRunning = (isRunningString === 'true');
 
       const toggle = document.getElementById('status-toggle');
       const text = document.getElementById('status-text');
-      const label = document.getElementById('server-status-label');
+      const urlContainer = document.getElementById('ftp-url-container');
 
       toggle.checked = isRunning;
       text.textContent = isRunning ? 'Running' : 'Stopped';
-      label.textContent = isRunning ? 'Server Active' : 'Server Offline';
-      label.className = isRunning ?
-        'text-xs text-green-500 font-black tracking-widest uppercase' :
-        'text-xs text-red-500 font-black tracking-widest uppercase';
+
+      if (isRunning) {
+        urlContainer.classList.remove('max-h-0', 'opacity-0');
+        urlContainer.classList.add('max-h-[80px]', 'opacity-100');
+      } else {
+        urlContainer.classList.add('max-h-0', 'opacity-0');
+        urlContainer.classList.remove('max-h-[80px]', 'opacity-100');
+      }
+
       updateToggleUI(isRunning);
     }
   } catch (e) { }
@@ -184,21 +164,39 @@ async function fetchConfig() {
 
 
 function toggleAnonymous(isAnonymous) {
-  const uCont = document.getElementById('username-container');
-  const pCont = document.getElementById('password-container');
+  const authFields = document.getElementById('auth-fields');
   const uInput = document.getElementById('ftp-username');
   const pInput = document.getElementById('ftp-password');
 
   if (isAnonymous) {
-    uCont.classList.add('opacity-50', 'pointer-events-none');
-    pCont.classList.add('opacity-50', 'pointer-events-none');
+    authFields.classList.add('max-h-0', 'opacity-0', 'pointer-events-none');
+    authFields.classList.remove('max-h-[200px]', 'opacity-100');
     uInput.disabled = true;
     pInput.disabled = true;
   } else {
-    uCont.classList.remove('opacity-50', 'pointer-events-none');
-    pCont.classList.remove('opacity-50', 'pointer-events-none');
+    authFields.classList.remove('max-h-0', 'opacity-0', 'pointer-events-none');
+    authFields.classList.add('max-h-[200px]', 'opacity-100');
     uInput.disabled = false;
     pInput.disabled = false;
+  }
+}
+
+/**
+ * Toggle Settings Panel visibility
+ */
+function toggleSettings() {
+  const settingsPanel = document.getElementById('settings-panel');
+  const chevron = document.getElementById('settings-chevron');
+  const isHidden = settingsPanel.classList.contains('max-h-0');
+
+  if (isHidden) {
+    settingsPanel.classList.remove('max-h-0', 'opacity-0');
+    settingsPanel.classList.add('max-h-[1000px]', 'opacity-100');
+    chevron.classList.add('rotate-90');
+  } else {
+    settingsPanel.classList.add('max-h-0', 'opacity-0');
+    settingsPanel.classList.remove('max-h-[1000px]', 'opacity-100');
+    chevron.classList.remove('rotate-90');
   }
 }
 
@@ -332,3 +330,4 @@ window.toggleAnonymous = toggleAnonymous;
 window.fetchConfig = fetchConfig;
 window.toggleWebShare = toggleWebShare;
 window.copyWebUrl = copyWebUrl;
+window.toggleSettings = toggleSettings;
