@@ -1,10 +1,25 @@
+const _cache = new Map();
+
 export const FTP_API = {
-  async fetchFiles(type, path) {
+  async fetchFiles(type, path, forceRefresh = false) {
     const api = type === 'remote' ? '/api/ftp/client/remote/ls' : '/api/ftp/client/local/ls';
     const paramName = type === 'remote' ? 'remote_path' : 'local_path';
+    const cacheKey = `${type}:${path}`;
+
+    if (!forceRefresh && _cache.has(cacheKey)) {
+      return _cache.get(cacheKey);
+    }
+
     const res = await fetch(`${api}?${paramName}=${encodeURIComponent(path)}`);
     if (!res.ok) throw new Error(await res.text());
-    return await res.json();
+
+    const data = await res.json();
+    _cache.set(cacheKey, data);
+    return data;
+  },
+
+  clearCache() {
+    _cache.clear();
   },
 
   async deleteItem(path, isRemote) {

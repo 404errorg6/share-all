@@ -50,7 +50,7 @@
     </style>
 </head>
 
-<body
+<body v-cloak
     class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased overflow-x-hidden">
     <div
         class="relative flex min-h-screen w-full flex-col max-w-6xl mx-auto shadow-2xl bg-background-light dark:bg-background-dark md:my-8 md:rounded-[2rem] overflow-hidden">
@@ -171,14 +171,6 @@
                     </div>
                     <span class="text-base font-bold">Preview</span>
                 </button>
-                <button id="btn-copy"
-                    class="flex items-center gap-4 w-full px-6 py-5 rounded-2xl hover:bg-white/5 text-white transition-all active:scale-95 group">
-                    <div
-                        class="size-10 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-white group-hover:text-slate-900 transition-all">
-                        <span class="material-symbols-outlined text-[22px]">content_copy</span>
-                    </div>
-                    <span class="text-base font-bold">Copy</span>
-                </button>
                 <button id="btn-delete"
                     class="flex items-center gap-4 w-full px-6 py-5 rounded-2xl hover:bg-danger/10 text-danger transition-all active:scale-95 group">
                     <div
@@ -218,7 +210,7 @@
     <script src="../assets/js/utils.js"></script>
     <script src="../assets/js/components.js"></script>
     <script src="../assets/js/preview.js"></script>
-    <script src="../assets/js/pages/browse-local.js"></script>
+    <script type="module" src="../assets/js/pages/browse-local.js"></script>
 </body>
 
 </html>

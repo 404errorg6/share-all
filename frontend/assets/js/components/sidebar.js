@@ -3,8 +3,7 @@
  */
 
 Components.Sidebar = {
-    inject(activePageId) {
-        const sidebarHTML = `
+    _template: `
         <div id="drawer-backdrop" onclick="Components.Sidebar.toggleMenu()"
             class="fixed inset-0 bg-black/50 z-40 hidden opacity-0 transition-opacity duration-300"></div>
 
@@ -18,7 +17,7 @@ Components.Sidebar = {
             </div>
             <div class="flex-1 overflow-y-auto py-2">
                 <a href="/pages/browse-local.html" onclick="Components.Sidebar.handleClick(event, '/pages/browse-local.html')" 
-                    class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group ${activePageId === 'browse-local' ? 'bg-primary/5 border-l-4 border-primary' : ''}">
+                    class="sidebar-link px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group border-l-4 border-transparent" data-id="browse-local">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-500">
                             <span class="material-symbols-outlined">sd_storage</span>
@@ -27,7 +26,7 @@ Components.Sidebar = {
                     </div>
                 </a>
                 <a href="/pages/hosting-panel.html" onclick="Components.Sidebar.handleClick(event, '/pages/hosting-panel.html')"
-                    class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group ${activePageId === 'hosting-panel' ? 'bg-primary/5 border-l-4 border-primary' : ''}">
+                    class="sidebar-link px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group border-l-4 border-transparent" data-id="hosting-panel">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-blue-50 dark:bg-blue-500/10 text-primary">
                             <span class="material-symbols-outlined">wifi</span>
@@ -36,7 +35,7 @@ Components.Sidebar = {
                     </div>
                 </a>
                 <a href="/pages/discover-servers.html" onclick="Components.Sidebar.handleClick(event, '/pages/discover-servers.html')"
-                    class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group ${activePageId === 'remote-connections' ? 'bg-primary/5 border-l-4 border-primary' : ''}">
+                    class="sidebar-link px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group border-l-4 border-transparent" data-id="remote-connections">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-500">
                             <span class="material-symbols-outlined">wifi_tethering</span>
@@ -45,7 +44,7 @@ Components.Sidebar = {
                     </div>
                 </a>
                 <a href="/pages/transfers.html" onclick="Components.Sidebar.handleClick(event, '/pages/transfers.html')"
-                    class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group ${activePageId === 'transfers' ? 'bg-primary/5 border-l-4 border-primary' : ''}">
+                    class="sidebar-link px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group border-l-4 border-transparent" data-id="transfers">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-teal-50 dark:bg-teal-500/10 text-teal-500">
                             <span class="material-symbols-outlined">swap_horiz</span>
@@ -54,7 +53,7 @@ Components.Sidebar = {
                     </div>
                 </a>
                 <a href="/pages/hosting-access.html" onclick="Components.Sidebar.handleClick(event, '/pages/hosting-access.html')"
-                    class="px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group ${activePageId === 'hosting-access' ? 'bg-primary/5 border-l-4 border-primary' : ''}">
+                    class="sidebar-link px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group border-l-4 border-transparent" data-id="hosting-access">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-green-50 dark:bg-green-500/10 text-green-500">
                             <span class="material-symbols-outlined">shield</span>
@@ -66,8 +65,18 @@ Components.Sidebar = {
             <div class="p-4 border-t border-slate-100 dark:border-slate-800/50">
                 <p class="text-[10px] text-center text-slate-500 opacity-50 uppercase tracking-widest font-bold">FTP Project v1.0</p>
             </div>
-        </div>`;
-        document.body.insertAdjacentHTML('beforeend', sidebarHTML);
+        </div>`,
+
+    inject(activePageId) {
+        document.body.insertAdjacentHTML('beforeend', this._template);
+
+        if (activePageId) {
+            const activeLink = document.querySelector(`.sidebar-link[data-id="${activePageId}"]`);
+            if (activeLink) {
+                activeLink.classList.remove('border-transparent');
+                activeLink.classList.add('bg-primary/5', 'border-primary');
+            }
+        }
 
         // Add gesture support
         let touchStartX = 0;

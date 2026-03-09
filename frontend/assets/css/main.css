@@ -23,6 +23,11 @@ body {
     /* IE 10+ */
 }
 
+[v-cloak] {
+    opacity: 0 !important;
+    transition: opacity 0.3s ease-in-out;
+}
+
 body::-webkit-scrollbar {
     display: none;
     /* Chrome, Safari, Opera */
