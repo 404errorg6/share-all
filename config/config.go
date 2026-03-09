@@ -91,8 +91,7 @@ func init() {
 	MiniServer.Host = DefFTPHost
 	MiniServer.Port = "8080"
 	MiniServer.Conn = &http.Server{
-		Addr:    MiniServer.Host + ":" + MiniServer.Port,
-		Handler: nil,
+		Addr: MiniServer.Host + ":" + MiniServer.Port,
 	}
 }
 

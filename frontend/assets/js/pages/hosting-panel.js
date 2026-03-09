@@ -18,6 +18,7 @@ async function toggleServer(checkbox) {
   const isStarting = checkbox.checked;
   const statusText = document.getElementById('status-text');
   const urlContainer = document.getElementById('ftp-url-container');
+  const urlText = document.getElementById('ftp-url');
 
   if (isStarting) {
     const name = document.getElementById('ftp-name').value || 'My FTP Server';
@@ -54,7 +55,18 @@ async function toggleServer(checkbox) {
       });
 
       if (response.ok) {
+        // Assume backend sends address as JSON string
+        // Since we don't have the explicit response type yet, but status yields JSON result
+        let address = '';
+        try {
+          address = await response.json();
+        } catch (e) {
+          // Fallback if it's plain text (though SendJSON is preferred)
+          address = await response.text();
+        }
+
         statusText.textContent = 'Running';
+        urlText.textContent = `ftp://${address || '127.0.0.1'}/`;
         urlContainer.classList.remove('max-h-0', 'opacity-0');
         urlContainer.classList.add('max-h-[80px]', 'opacity-100');
         Components.showToast('Server started');
@@ -94,19 +106,21 @@ function updateToggleUI(isOn) {
 
 async function fetchServerStatus() {
   try {
-    const response = await fetch('/api/ftp/server/running-status');
+    const response = await fetch('/api/ftp/server/status');
     if (response.ok) {
-      const isRunningString = await response.text();
-      const isRunning = (isRunningString === 'true');
+      const result = await response.json();
+      const isRunning = result !== false;
 
       const toggle = document.getElementById('status-toggle');
       const text = document.getElementById('status-text');
+      const urlText = document.getElementById('ftp-url');
       const urlContainer = document.getElementById('ftp-url-container');
 
       toggle.checked = isRunning;
       text.textContent = isRunning ? 'Running' : 'Stopped';
 
       if (isRunning) {
+        urlText.textContent = `ftp://${result}/`;
         urlContainer.classList.remove('max-h-0', 'opacity-0');
         urlContainer.classList.add('max-h-[80px]', 'opacity-100');
       } else {
@@ -121,7 +135,12 @@ async function fetchServerStatus() {
 
 function updateUrl() {
   const port = document.getElementById('ftp-port').value || '2121';
-  document.getElementById('ftp-url').textContent = `ftp://127.0.0.1:${port}/`;
+  const toggle = document.getElementById('status-toggle');
+
+  // Only update if server is not running to avoid overwriting the active IP address
+  if (!toggle || !toggle.checked) {
+    document.getElementById('ftp-url').textContent = `ftp://127.0.0.1:${port}/`;
+  }
 }
 
 /**
@@ -205,9 +224,10 @@ function toggleSettings() {
  */
 async function fetchWebShareStatus() {
   try {
-    const response = await fetch('/api/http/web-share/is-running');
+    const response = await fetch('/api/http/web-share/status');
     if (response.ok) {
-      const isRunning = await response.json();
+      const result = await response.json();
+      const isRunning = result !== false;
       const toggle = document.getElementById('web-share-toggle');
       const statusText = document.getElementById('web-share-status');
       const urlContainer = document.getElementById('web-share-url-container');
@@ -217,16 +237,14 @@ async function fetchWebShareStatus() {
       statusText.textContent = isRunning ? 'Sharing' : 'Disabled';
 
       if (isRunning) {
-        // If it's running, we also want the URL
-        const host = window.location.hostname;
-        urlText.textContent = `http://${host}:8080`;
+        urlText.textContent = `http://${result}`;
         urlContainer.classList.remove('max-h-0', 'opacity-0');
         urlContainer.classList.add('max-h-[80px]', 'opacity-100');
       } else {
         urlContainer.classList.add('max-h-0', 'opacity-0');
         urlContainer.classList.remove('max-h-[80px]', 'opacity-100');
       }
-      // Sync visually
+
       const track = toggle.nextElementSibling;
       if (track && track.classList.contains('toggle-track')) {
         track.classList.toggle('toggle-on', isRunning);

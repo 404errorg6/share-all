@@ -8,7 +8,7 @@ import (
 
 func HandleWebStatus(w http.ResponseWriter, req *http.Request) {
 	if config.MiniServer.IsRunning {
-		config.SendJSON(w, true)
+		config.SendJSON(w, config.MiniServer.Host+":"+config.MiniServer.Port)
 		return
 	}
 

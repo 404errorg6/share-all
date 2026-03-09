@@ -39,7 +39,7 @@ func HandleStartFTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	config.SendJSON(w, config.FTPServer.Host+":"+config.FTPServer.Port)
 }
 
 func initServer(name, user, pass, host, port, root, writeAllowed, anonymous string) error {
