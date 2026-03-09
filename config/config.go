@@ -53,14 +53,16 @@ const (
 	DOMAIN  = "local."
 )
 
-//Frontend vars
-
 var (
-	AssetsServer http.Handler //will be initalized from root/init.go
+	AssetsServer   http.Handler //will be initalized from root/init.go
+	MiniServerHost = "0.0.0.0"
+	MiniServerPort = "8080"
+	MiniServer     = &http.Server{
+		Addr: MiniServerHost + ":" + MiniServerPort,
+	}
 )
 
-//Backend vars
-
+// Backend vars
 var (
 	DefFTPServerName  = "my ftp server"
 	DefFTPPort        = "2121"
