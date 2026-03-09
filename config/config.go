@@ -69,7 +69,7 @@ var (
 var (
 	DefFTPServerName  = "my ftp server"
 	DefFTPPort        = "2121"
-	DefFTPHost        = "localhost"
+	DefFTPHost, _     = GetInterfaceIpv4Addr(WifiOrDataInterface.Name)
 	DefFTPWriteAccess = "false"
 	DefAnonymous      = "true"
 	DownloadLimit     = 1                //Won't change anything
@@ -102,13 +102,12 @@ func init() {
 		return
 	}
 
-	addr, err := GetInterfaceIpv4Addr(iface.Name)
+	_, err = GetInterfaceIpv4Addr(iface.Name)
 	if err != nil {
 		LogsCh <- err.Error()
 		return
 	}
 
-	DefFTPHost = addr
 }
 
 func (s *MyServer) BlockUser(host string) {
