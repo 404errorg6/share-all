@@ -66,16 +66,16 @@ function switchPane(pane) {
 }
 
 // --- Data Fetching ---
-async function fetchFiles(type, path) {
-    ui.loader.classList.remove('hidden');
+async function fetchFiles(type, path, silent = false, forceRefresh = false) {
+    if (!silent) ui.loader.classList.remove('hidden');
     try {
-        const data = await FTP_API.fetchFiles(type, path);
+        const data = await FTP_API.fetchFiles(type, path, forceRefresh);
         Renderer.renderList(type, data, path, handleAction);
         renderActiveBreadcrumbs(path, type);
     } catch (e) {
         handleError(e);
     } finally {
-        ui.loader.classList.add('hidden');
+        if (!silent) ui.loader.classList.add('hidden');
     }
 }
 
@@ -128,7 +128,7 @@ function toggleSelectionMode() {
 }
 
 function toggleSelection(path, name, isFolder, pane, size) {
-    Clipboard.toggleSelection({ path, name, isFolder, size }, pane, refreshCurrent);
+    Clipboard.toggleSelection({ path, name, isFolder, size }, pane, () => refreshCurrent(true));
 }
 
 function clearClipboard() {
@@ -206,7 +206,8 @@ async function performDelete(path, isRemote) {
     try {
         await FTP_API.deleteItem(path, isRemote);
         Components.showToast('Item deleted');
-        refreshCurrent();
+        FTP_API.clearCache();
+        refreshCurrent(false, true);
     } catch (e) {
         handleError(e);
     } finally {
@@ -230,11 +231,12 @@ async function deleteSelected() {
                 }
                 Components.showToast('Selected items deleted');
                 clearClipboard();
-                refreshCurrent();
+                refreshCurrent(false, true);
             } catch (e) {
                 handleError(e);
             } finally {
                 ui.loader.classList.add('hidden');
+                FTP_API.clearCache();
             }
         }
     });
@@ -279,9 +281,9 @@ async function pasteFiles() {
 }
 
 
-function refreshCurrent() {
-    if (state.activePane === 'remote') fetchFiles('remote', state.currentRemotePath);
-    else fetchFiles('local', state.currentLocalPath);
+function refreshCurrent(silent = false, forceRefresh = false) {
+    if (state.activePane === 'remote') fetchFiles('remote', state.currentRemotePath, silent, forceRefresh);
+    else fetchFiles('local', state.currentLocalPath, silent, forceRefresh);
 }
 
 function goUp(paneOverride) {
@@ -294,15 +296,15 @@ function goUp(paneOverride) {
         (parts.length === 0 ? '.' : './' + parts.join('/')) :
         (parts.length === 0 ? '.' : parts.join('/'));
 
-    if (isLocal) { state.currentLocalPath = newPath; fetchFiles('local', newPath); }
-    else { state.currentRemotePath = newPath; fetchFiles('remote', newPath); }
+    if (isLocal) { state.currentLocalPath = newPath; fetchFiles('local', newPath, false); }
+    else { state.currentRemotePath = newPath; fetchFiles('remote', newPath, false); }
 }
 
 function toggleHiddenFiles() {
     state.showHidden = !state.showHidden;
     ui.hBtn.classList.toggle('opacity-50', !state.showHidden);
     ui.hBtn.querySelector('span').innerText = state.showHidden ? 'visibility' : 'visibility_off';
-    refreshCurrent();
+    refreshCurrent(true);
 }
 
 function finishSelection() {
@@ -369,8 +371,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
     }
-    fetchFiles('remote', '.');
-    fetchFiles('local', '.');
+    fetchFiles('remote', '.', false);
+    fetchFiles('local', '.', false);
 });
 
 // --- Exports ---

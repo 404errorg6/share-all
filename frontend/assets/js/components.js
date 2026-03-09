@@ -35,4 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (Components.Transfers && typeof Components.Transfers.init === 'function') {
         Components.Transfers.init();
     }
+
+    // Remove v-cloak once components are ready
+    setTimeout(() => {
+        document.body.removeAttribute('v-cloak');
+    }, 150); // Small buffer for initial layout/renders
 });

@@ -1,6 +1,7 @@
 /**
  * Local Browser Page Logic
  */
+import { FTP_API } from '../ftp-api.js';
 
 const listContainer = document.getElementById('file-list-container');
 const emptyState = document.getElementById('empty-state');
@@ -22,18 +23,16 @@ let showHiddenFiles = false;
 let selectionMode = false;
 let selection = []; // Array of { path, name, isFolder }
 
-async function loadDirectory(path) {
+async function loadDirectory(path, silent = false, forceRefresh = false) {
   currentPath = path;
-  loader.classList.remove('hidden');
+  if (!silent) loader.classList.remove('hidden');
   try {
-    const response = await fetch(`/api/ftp/client/local/ls?local_path=${encodeURIComponent(path)}`);
-    if (!response.ok) throw new Error('Failed to load path');
-    const entries = await response.json();
+    const entries = await FTP_API.fetchFiles('local', path, forceRefresh);
     renderEntries(entries, path);
   } catch (err) {
     Components.showToast(err.message, 'error');
   } finally {
-    loader.classList.add('hidden');
+    if (!silent) loader.classList.add('hidden');
   }
 }
 
@@ -137,7 +136,7 @@ function toggleSelectionMode() {
   sBtn.classList.toggle('text-slate-400', !selectionMode);
   sBtn.querySelector('span').innerText = selectionMode ? 'done_all' : 'rule';
   updateSelectionBar();
-  loadDirectory(currentPath);
+  loadDirectory(currentPath, true);
 }
 
 function toggleSelection(path, name, isFolder) {
@@ -145,13 +144,13 @@ function toggleSelection(path, name, isFolder) {
   if (index > -1) selection.splice(index, 1);
   else selection.push({ path, name, isFolder });
   updateSelectionBar();
-  loadDirectory(currentPath);
+  loadDirectory(currentPath, true);
 }
 
 function clearSelection() {
   selection = [];
   updateSelectionBar();
-  loadDirectory(currentPath);
+  loadDirectory(currentPath, true);
 }
 
 function updateSelectionBar() {
@@ -215,7 +214,8 @@ async function performDelete(path) {
     });
     if (!res.ok) throw new Error(await res.text());
     Components.showToast('Item deleted');
-    loadDirectory(currentPath);
+    FTP_API.clearCache();
+    loadDirectory(currentPath, false, true);
   } catch (e) {
     Components.showToast(e.message, 'error');
   } finally {
@@ -244,7 +244,8 @@ async function deleteSelected() {
         }
         Components.showToast('Selected items deleted');
         clearSelection();
-        loadDirectory(currentPath);
+        FTP_API.clearCache();
+        loadDirectory(currentPath, false, true);
       } catch (e) {
         Components.showToast(e.message, 'error');
       } finally {
@@ -256,7 +257,7 @@ async function deleteSelected() {
 
 // Global Events
 document.getElementById('browse-btn').onclick = () => loadDirectory('.');
-document.getElementById('refresh-btn').onclick = () => loadDirectory(currentPath);
+document.getElementById('refresh-btn').onclick = () => loadDirectory(currentPath, false, true);
 
 hBtn.onclick = () => {
   showHiddenFiles = !showHiddenFiles;
