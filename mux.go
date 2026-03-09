@@ -21,7 +21,8 @@ func Mux() *http.ServeMux {
 		config.AssetsServer.ServeHTTP(w, r)
 	})
 	mux.HandleFunc("GET /api/logs", httphandlers.HandleLogs) //get logs
-	mux.HandleFunc("POST /api/http/start-web-ui", httphandlers.HandleStartWebUI)
+	mux.HandleFunc("POST /api/http/web-share/start", httphandlers.HandleStartWebUI)
+	mux.HandleFunc("POST /api/http/web-share/stop", httphandlers.HandleStopWebUI)
 
 	//FTP server Handles
 	mux.HandleFunc("POST /api/ftp/server/start-ftp", serverhandlers.HandleStartFTP) //start ftp server

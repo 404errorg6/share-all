@@ -224,9 +224,75 @@ document.addEventListener('DOMContentLoaded', () => {
     // Components.Logger.init() is now handled globally
 });
 
+/**
+ * Toggle Web Share (Share without app)
+ */
+async function toggleWebShare(checkbox) {
+    const isStarting = checkbox.checked;
+    const statusText = document.getElementById('web-share-status');
+    const urlContainer = document.getElementById('web-share-url-container');
+    const urlText = document.getElementById('web-share-url');
+
+    if (isStarting) {
+        statusText.textContent = 'Starting...';
+        try {
+            const response = await fetch('/api/http/web-share/start', { method: 'POST' });
+            if (response.ok) {
+                const address = await response.json();
+                statusText.textContent = 'Sharing';
+                urlText.textContent = `http://${address}`;
+
+                // Show URL container
+                urlContainer.classList.remove('max-h-0', 'opacity-0');
+                urlContainer.classList.add('max-h-[80px]', 'opacity-100');
+
+                Components.showToast('Web share started');
+            } else {
+                throw new Error('Failed to start web share');
+            }
+        } catch (error) {
+            Components.showToast(error.message, 'error');
+            checkbox.checked = false;
+            statusText.textContent = 'Disabled';
+        }
+    } else {
+        statusText.textContent = 'Stopping...';
+        try {
+            const response = await fetch('/api/http/web-share/stop', { method: 'POST' });
+            if (response.ok) {
+                statusText.textContent = 'Disabled';
+
+                // Hide URL container
+                urlContainer.classList.add('max-h-0', 'opacity-0');
+                urlContainer.classList.remove('max-h-[80px]', 'opacity-100');
+
+                Components.showToast('Web share stopped');
+            } else {
+                throw new Error('Failed to stop web share');
+            }
+        } catch (error) {
+            Components.showToast(error.message, 'error');
+            checkbox.checked = true;
+            statusText.textContent = 'Sharing';
+        }
+    }
+}
+
+/**
+ * Copy Web Share URL
+ */
+function copyWebUrl() {
+    const url = document.getElementById('web-share-url').innerText;
+    navigator.clipboard.writeText(url).then(() => {
+        Components.showToast('Web URL copied');
+    });
+}
+
 // Expose functions to window because buttons use onclick
 window.copyUrl = copyUrl;
 window.toggleServer = toggleServer;
 window.updateUrl = updateUrl;
 window.toggleAnonymous = toggleAnonymous;
 window.fetchConfig = fetchConfig;
+window.toggleWebShare = toggleWebShare;
+window.copyWebUrl = copyWebUrl;

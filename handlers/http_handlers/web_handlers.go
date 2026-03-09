@@ -2,7 +2,6 @@ package httphandlers
 
 import (
 	"embed"
-	"fmt"
 	"net/http"
 
 	"github.com/404errorg6/FTP-server/config"
@@ -11,34 +10,6 @@ import (
 
 //go:embed share.*
 var shareFS embed.FS
-
-func HandleStartWebUI(w http.ResponseWriter, req *http.Request) {
-	server := &http.Server{
-		Addr:    "0.0.0.0:8080",
-		Handler: miniMux(),
-	}
-
-	config.LogsCh <- fmt.Sprintln("Starting unsecure sharing...")
-
-	go func() {
-		err := server.ListenAndServe()
-		if err != nil {
-			config.LogsCh <- err.Error()
-		}
-	}()
-}
-
-func miniMux() *http.ServeMux {
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("GET /", serveHTML)
-	mux.HandleFunc("GET /assets/", serveAssets)
-
-	mux.HandleFunc("GET /api/ls", handleLS)
-	mux.HandleFunc("GET /file", serveFile)
-
-	return mux
-}
 
 func handleLS(w http.ResponseWriter, req *http.Request) {
 	path := req.URL.Query().Get("path")
@@ -49,7 +20,8 @@ func handleLS(w http.ResponseWriter, req *http.Request) {
 
 	err := req.ParseForm()
 	if err != nil {
-		config.LogsCh <- err.Error()
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	req.Form.Add("local_path", path)
