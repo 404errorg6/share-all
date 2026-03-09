@@ -19,6 +19,6 @@ func HandleStartWebUI(w http.ResponseWriter, req *http.Request) {
 	}()
 
 	config.MiniServer.IsRunning = true
-	accessibleAddr := fmt.Sprintf("%v:%v", config.DefFTPHost, config.MiniServer.Port)
+	accessibleAddr := fmt.Sprintf("%v:%v", config.MiniServer.Host, config.MiniServer.Port)
 	config.SendJSON(w, accessibleAddr)
 }

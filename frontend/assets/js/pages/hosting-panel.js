@@ -202,6 +202,41 @@ function toggleAnonymous(isAnonymous) {
   }
 }
 
+/**
+ * Fetch Web Share Running Status
+ */
+async function fetchWebShareStatus() {
+  try {
+    const response = await fetch('/api/http/web-share/is-running');
+    if (response.ok) {
+      const isRunning = await response.json();
+      const toggle = document.getElementById('web-share-toggle');
+      const statusText = document.getElementById('web-share-status');
+      const urlContainer = document.getElementById('web-share-url-container');
+      const urlText = document.getElementById('web-share-url');
+
+      toggle.checked = isRunning;
+      statusText.textContent = isRunning ? 'Sharing' : 'Disabled';
+
+      if (isRunning) {
+        // If it's running, we also want the URL
+        const host = window.location.hostname;
+        urlText.textContent = `http://${host}:8080`;
+        urlContainer.classList.remove('max-h-0', 'opacity-0');
+        urlContainer.classList.add('max-h-[80px]', 'opacity-100');
+      } else {
+        urlContainer.classList.add('max-h-0', 'opacity-0');
+        urlContainer.classList.remove('max-h-[80px]', 'opacity-100');
+      }
+      // Sync visually
+      const track = toggle.nextElementSibling;
+      if (track && track.classList.contains('toggle-track')) {
+        track.classList.toggle('toggle-on', isRunning);
+      }
+    }
+  } catch (e) { }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const selectedFolder = localStorage.getItem('selectedFolderPath');
   if (selectedFolder) {
@@ -220,6 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   fetchServerStatus();
   fetchConfig();
+  fetchWebShareStatus();
   updateUrl();
   // Components.Logger.init() is now handled globally
 });

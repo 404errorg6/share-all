@@ -11,15 +11,6 @@ import (
 //go:embed share.*
 var shareFS embed.FS
 
-func handleStatus(w http.ResponseWriter, req *http.Request) {
-	if config.MiniServer.IsRunning {
-		config.SendJSON(w, "running")
-		return
-	}
-
-	config.SendJSON(w, "not-running")
-}
-
 func handleLS(w http.ResponseWriter, req *http.Request) {
 	path := req.URL.Query().Get("path")
 	if path == "" {
