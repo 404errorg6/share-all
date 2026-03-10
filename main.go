@@ -8,25 +8,19 @@ import (
 	"github.com/404errorg6/FTP-server/config"
 )
 
+var (
+	httpHost = "localhost"
+	httpPort = "8085"
+)
+
 func main() {
-	fmt.Printf("Starting http server on %v:%v...\n", config.HTTPHost, config.HTTPPort)
-	mux := Mux()
+	fmt.Printf("Starting http server on %v:%v...\n", httpHost, httpPort)
 
 	svr := &http.Server{
-		Addr:    config.HTTPHost + ":" + config.HTTPPort,
-		Handler: mux,
+		Addr:    httpHost + ":" + httpPort,
+		Handler: Mux(),
 	}
 
-	go testLogs()
 	config.LogsCh <- "server ready to start"
 	log.Fatal(svr.ListenAndServe())
-}
-
-func testLogs() {
-	i := 1
-	for i <= config.LogsTestingCount {
-		m := fmt.Sprintf("Logs testing %v...", i)
-		config.LogsCh <- m
-		i++
-	}
 }

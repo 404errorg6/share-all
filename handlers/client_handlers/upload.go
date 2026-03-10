@@ -8,21 +8,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/404errorg6/FTP-server/ftp/client"
 	"github.com/404errorg6/FTP-server/config"
+	"github.com/404errorg6/FTP-server/ftp/client"
 	"github.com/jlaffaye/ftp"
 )
-
-// TODO: Breaking on concurrency
-var (
-	uploadLimitCh = make(chan bool, config.UploadLimit)
-)
-
-func init() {
-	for range config.UploadLimit {
-		uploadLimitCh <- true
-	}
-}
 
 func HandleUpload(w http.ResponseWriter, req *http.Request) {
 	err := req.ParseForm()
@@ -139,9 +128,6 @@ func uploadDir(remoteDirPath, localDirPath string, c *ftp.ServerConn) error {
 }
 
 func uploadFile(remoteDirPath, localFilePath string, c *ftp.ServerConn) error {
-	<-uploadLimitCh
-	defer func() { uploadLimitCh <- true }()
-
 	fileName := filepath.Base(localFilePath)
 	remoteFilePath := path.Join(remoteDirPath, fileName)
 

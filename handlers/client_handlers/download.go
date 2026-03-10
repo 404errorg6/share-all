@@ -12,16 +12,6 @@ import (
 	"github.com/jlaffaye/ftp"
 )
 
-var (
-	downloadLimitCh = make(chan bool, config.DownloadLimit)
-)
-
-func init() {
-	for range config.DownloadLimit {
-		downloadLimitCh <- true
-	}
-}
-
 func HandleDownload(w http.ResponseWriter, req *http.Request) {
 	err := req.ParseForm()
 	if err != nil {
@@ -72,7 +62,6 @@ func smartDownload(localDirPath, remotePath string, c *ftp.ServerConn) error { /
 		return downloadDir(localDirPath, remotePath, c)
 	}
 
-	fmt.Printf("Detected file: %s. Starting file download...\n", remotePath)
 	return downloadFile(localDirPath, remotePath, c)
 }
 
@@ -123,9 +112,6 @@ func downloadDir(localDirPath, remoteDirPath string, c *ftp.ServerConn) error {
 }
 
 func downloadFile(localDirPath, remoteFilePath string, c *ftp.ServerConn) error { //Downloads remote file at remoteFilePath to local storage in localDirPath
-	<-downloadLimitCh
-	defer func() { downloadLimitCh <- true }()
-
 	fileName := path.Base(remoteFilePath)
 	localFilePath := filepath.Join(localDirPath, fileName)
 

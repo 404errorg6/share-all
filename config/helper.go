@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"math/rand/v2"
 	"net"
 	"net/netip"
 	"os"
@@ -11,6 +12,21 @@ import (
 )
 
 // TODO: Refactor this shit after kotlin integration
+
+func getHostname() string {
+	var defName string
+	name, err := os.Hostname() //Try to get hostname
+
+	if err != nil { //Fallback to DefFTPServerName+Random number
+		randInt := rand.IntN(9999)
+
+		randomizedName := fmt.Sprintf("%v[%v]", defName, randInt)
+		return randomizedName
+	}
+
+	return name
+}
+
 func getWifiOrCellularInterface() (net.Interface, error) {
 	var nilIface net.Interface
 	ifs, err := net.Interfaces()

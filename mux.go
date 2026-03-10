@@ -33,7 +33,7 @@ func Mux() *http.ServeMux {
 	mux.HandleFunc("GET /api/ftp/server/connected-clients", serverhandlers.HandleGetConnectedClients) //get clients connected to own server
 	mux.HandleFunc("GET /api/ftp/server/blacklist-client", serverhandlers.HandlerGetBlacklist)        //get list of blacklisted ips
 	mux.HandleFunc("POST /api/ftp/server/blacklist-client", serverhandlers.BlockClient)               //block a new ip
-	mux.HandleFunc("POST /api/ftp/server/whitelist-client", serverhandlers.WhitelistClient)           //whitelist a blocked transfers
+	mux.HandleFunc("POST /api/ftp/server/whitelist-client", serverhandlers.UnblockClient)             //whitelist a blocked transfers
 
 	//FTP client Handles
 	mux.HandleFunc("POST /api/ftp/client/connect-to-server", clienthandlers.HandleConnectToServer) //connect to server

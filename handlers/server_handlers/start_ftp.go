@@ -13,7 +13,8 @@ import (
 func HandleStartFTP(w http.ResponseWriter, req *http.Request) {
 	err := req.ParseForm()
 	if err != nil {
-		http.Error(w, "Form not provided", http.StatusBadRequest)
+		er := fmt.Errorf("Error parsing form: %v", err)
+		http.Error(w, er.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -54,8 +55,8 @@ func initServer(name, user, pass, host, port, root, writeAllowed, anonymous stri
 		return fmt.Errorf("name is required")
 	}
 
-	if strings.EqualFold(name, config.DefFTPServerName) {
-		name = getHostname()
+	if strings.EqualFold(name, config.COMMONFTPNAME) {
+		name = config.DefFTPServerName
 	}
 
 	if host == "" {

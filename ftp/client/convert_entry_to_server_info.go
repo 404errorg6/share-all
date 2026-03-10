@@ -11,8 +11,8 @@ import (
 )
 
 // TODO: Refactor this shit after kotlin integration
-func ConvertEntryToServerInfo(entry zeroconf.Event) (config.ServerInfo, error) {
-	svrInfo := config.ServerInfo{}
+func ConvertEntryToServerInfo(entry zeroconf.Event) (config.ServerDiscoveryInfo, error) {
+	svrInfo := config.ServerDiscoveryInfo{}
 
 	ip, err := getUsableIP(entry.Addrs)
 	if err != nil {

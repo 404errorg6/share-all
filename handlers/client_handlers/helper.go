@@ -46,8 +46,6 @@ func startTracking(name string, size int64, isDownload bool, progressCh <-chan p
 		fmt.Printf("\n")
 	}
 
-	//TODO: Logs not being sent properly
 	transferMap.Delete(name)
 	config.LogsCh <- fmt.Sprintf("%v completed!", name)
-	fmt.Println("Completed!")
 }
