@@ -9,23 +9,23 @@ import (
 
 func HandleGetConnectedClients(w http.ResponseWriter, req *http.Request) {
 	//Constrained structure so unnecessary data doesn't leak out
-	type constrainedConnClient struct {
+	type constrainedClient struct {
 		Name    string
 		Host    string
 		Port    string
 		Network string
 	}
-	constrainedConClients := []constrainedConnClient{}
+	constrainedConnClients := []constrainedClient{}
 
 	clients := server.GetConnectedHosts() //Get full connected clients
 	for _, c := range clients {
-		constrainedConClient := constrainedConnClient{}
+		constrainedConClient := constrainedClient{}
 		constrainedConClient.Name = c.Name
 		constrainedConClient.Host = c.Host
 		constrainedConClient.Port = c.Port
 		constrainedConClient.Network = c.Context.RemoteAddr().Network()
-		constrainedConClients = append(constrainedConClients, constrainedConClient)
+		constrainedConnClients = append(constrainedConnClients, constrainedConClient)
 	}
 
-	config.SendJSON(w, constrainedConClients)
+	config.SendJSON(w, constrainedConnClients)
 }

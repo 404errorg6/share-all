@@ -26,10 +26,8 @@ func HandleListRemoteDir(w http.ResponseWriter, req *http.Request) {
 
 	//Check if not folder
 	if entry.Type != ftp.EntryTypeFolder {
-		fmt.Printf("Type error: %v is type: %v\n", remotePath, entry.Type.String())
 		err := fmt.Errorf("Error: \"%v\" is not a directory", remotePath)
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		config.LogsCh <- err.Error()
 		return
 	}
 
@@ -37,7 +35,6 @@ func HandleListRemoteDir(w http.ResponseWriter, req *http.Request) {
 	dir, err := c.List(remotePath)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		config.LogsCh <- err.Error()
 		return
 	}
 

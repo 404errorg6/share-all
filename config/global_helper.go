@@ -3,7 +3,6 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"mime"
 	"net"
 	"net/http"
 	"net/netip"
@@ -111,6 +110,7 @@ func LocalFolderExists(localPath string) bool {
 	return info.IsDir()
 }
 
+/*
 func GetContentType(fileName string) string {
 	ext := filepath.Ext(fileName)
 	contentType := mime.TypeByExtension(ext)
@@ -120,3 +120,4 @@ func GetContentType(fileName string) string {
 
 	return contentType
 }
+*/

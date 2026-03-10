@@ -17,14 +17,14 @@ func BlockClient(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func WhitelistClient(w http.ResponseWriter, req *http.Request) {
+func UnblockClient(w http.ResponseWriter, req *http.Request) {
 	host := req.FormValue("host")
 	if host == "" {
 		http.Error(w, "host is required", http.StatusBadRequest)
 		return
 	}
 
-	config.FTPServer.BlackList = config.FTPServer.UnblockUser(host)
+	config.FTPServer.UnblockUser(host)
 	w.WriteHeader(http.StatusNoContent)
 }
 

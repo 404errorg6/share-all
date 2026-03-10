@@ -10,14 +10,14 @@ import (
 	ftpserver "github.com/fclairamb/ftpserverlib"
 )
 
-type FSObject struct { //Struct used for ls apis(/api/ftp/client/local/ls and /api/ftp/client/remote/ls)
+type FSObject struct { //Struct used for sending to frontend to show entries
 	Name         string
 	IsFolder     bool
 	LastModified time.Time
 	Size         int
 }
 
-type MyServer struct { //This server's struct
+type MyServer struct { //FTP server's struct
 	Name                   string
 	User                   string
 	Password               string
@@ -33,14 +33,14 @@ type MyServer struct { //This server's struct
 	BlackList        []string
 }
 
-type MiniWebServer struct {
+type MiniWebServer struct { //WEb-share server's struct
 	Host      string
 	Port      string
 	Conn      *http.Server //Initialized in handlers/http_handlers/start_web.go
 	IsRunning bool
 }
 
-type Client struct { //Struct for clients connected to this server
+type Client struct { //Struct for client connected to FTP server
 	Name    string
 	Host    string
 	Port    string
@@ -48,7 +48,7 @@ type Client struct { //Struct for clients connected to this server
 	Context ftpserver.ClientContext
 }
 
-type ServerInfo struct { //Data sent in service discovery
+type ServerDiscoveryInfo struct { //Data sent in service discovery
 	Name             string
 	IP               string
 	Port             string
@@ -56,8 +56,9 @@ type ServerInfo struct { //Data sent in service discovery
 }
 
 const (
-	SERVICE = "_ftp._tcp"
-	DOMAIN  = "local."
+	SERVICE       = "_ftp._tcp"
+	DOMAIN        = "local."
+	COMMONFTPNAME = "my ftp server" //Default name sent from frontend
 )
 
 var (
@@ -65,9 +66,8 @@ var (
 	MiniServer   MiniWebServer
 )
 
-// Backend vars
 var (
-	DefFTPServerName  = "my ftp server"
+	DefFTPServerName  = getHostname()
 	DefFTPPort        = "2121"
 	DefFTPHost, _     = GetInterfaceIpv4Addr(WifiOrDataInterface.Name)
 	DefFTPWriteAccess = "false"
@@ -76,10 +76,7 @@ var (
 	UploadLimit       = 1                //Won't change anything
 	MaxTimeout        = time.Second * 10 //Max timeout while trying to connect to server
 
-	HTTPPort               = "8085"
-	HTTPHost               = "127.0.0.1"
-	LogsTestingCount       = 0
-	LogsCh                 = make(chan string, 100) //Channel that sends logs
+	LogsCh                 = make(chan string, 100) //Channel that sends logs to frontend
 	DefLocalDir            = getDefRootDir()
 	WifiOrDataInterface, _ = getWifiOrCellularInterface()
 	FTPServer              = MyServer{}
@@ -99,7 +96,7 @@ func init() {
 	iface, err := getWifiOrCellularInterface()
 	if err != nil {
 		LogsCh <- err.Error()
-		return
+		panic(err)
 	}
 
 	_, err = GetInterfaceIpv4Addr(iface.Name)
@@ -131,7 +128,7 @@ func (s *MyServer) BlockUser(host string) {
 	})
 }
 
-func (s *MyServer) UnblockUser(host string) []string {
+func (s *MyServer) UnblockUser(host string) {
 	newBL := []string{}
 
 	for _, s := range s.BlackList {
@@ -140,5 +137,6 @@ func (s *MyServer) UnblockUser(host string) []string {
 		}
 		newBL = append(newBL, s)
 	}
-	return newBL
+
+	s.BlackList = newBL
 }
