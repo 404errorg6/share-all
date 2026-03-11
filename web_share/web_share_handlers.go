@@ -1,4 +1,4 @@
-package httphandlers
+package webshare
 
 import (
 	"embed"

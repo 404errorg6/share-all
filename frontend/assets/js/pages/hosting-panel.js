@@ -2,13 +2,19 @@ Components.injectSidebar('hosting-panel');
 Components.injectModal();
 
 /**
- * Copy URL to clipboard
+ * Update the header "Server Online/Offline" label based on whether
+ * either FTP or Web Direct Share is currently running.
  */
-function copyUrl() {
-  const url = document.getElementById('ftp-url').innerText;
-  navigator.clipboard.writeText(url).then(() => {
-    Components.showToast('URL copied to clipboard');
-  });
+function updateServerOnlineLabel() {
+  const ftpRunning = document.getElementById('status-toggle')?.checked ?? false;
+  const webRunning = document.getElementById('web-share-toggle')?.checked ?? false;
+  const label = document.getElementById('server-status-label');
+  if (!label) return;
+  const isOnline = ftpRunning || webRunning;
+  label.textContent = isOnline ? 'Server Online' : 'Server Offline';
+  label.className = isOnline
+    ? 'text-xs text-green-400 font-black tracking-widest uppercase'
+    : 'text-xs text-red-500 font-black tracking-widest uppercase';
 }
 
 /**
@@ -66,9 +72,10 @@ async function toggleServer(checkbox) {
         }
 
         statusText.textContent = 'Running';
-        urlText.textContent = `ftp://${address || '127.0.0.1'}/`;
+        urlText.textContent = `Running on ${address || '127.0.0.1'}`;
         urlContainer.classList.remove('max-h-0', 'opacity-0');
         urlContainer.classList.add('max-h-[80px]', 'opacity-100');
+        updateServerOnlineLabel();
         Components.showToast('Server started');
       } else {
         const err = await response.text();
@@ -78,6 +85,7 @@ async function toggleServer(checkbox) {
       Components.showToast(error.message, 'error');
       checkbox.checked = false;
       statusText.textContent = 'Stopped';
+      updateServerOnlineLabel();
     }
   } else {
     statusText.textContent = 'Stopping...';
@@ -87,6 +95,7 @@ async function toggleServer(checkbox) {
         statusText.textContent = 'Stopped';
         urlContainer.classList.add('max-h-0', 'opacity-0');
         urlContainer.classList.remove('max-h-[80px]', 'opacity-100');
+        updateServerOnlineLabel();
         Components.showToast('Server stopped');
       } else {
         throw new Error('Failed to stop server');
@@ -95,6 +104,7 @@ async function toggleServer(checkbox) {
       Components.showToast(error.message, 'error');
       checkbox.checked = true;
       statusText.textContent = 'Running';
+      updateServerOnlineLabel();
     }
   }
 }
@@ -120,7 +130,7 @@ async function fetchServerStatus() {
       text.textContent = isRunning ? 'Running' : 'Stopped';
 
       if (isRunning) {
-        urlText.textContent = `ftp://${result}/`;
+        urlText.textContent = `Running on ${result}`;
         urlContainer.classList.remove('max-h-0', 'opacity-0');
         urlContainer.classList.add('max-h-[80px]', 'opacity-100');
       } else {
@@ -129,6 +139,7 @@ async function fetchServerStatus() {
       }
 
       updateToggleUI(isRunning);
+      updateServerOnlineLabel();
     }
   } catch (e) { }
 }
@@ -212,6 +223,7 @@ async function fetchWebShareStatus() {
       if (track && track.classList.contains('toggle-track')) {
         track.classList.toggle('toggle-on', isRunning);
       }
+      updateServerOnlineLabel();
     }
   } catch (e) { }
 }
@@ -260,6 +272,7 @@ async function toggleWebShare(checkbox) {
         urlContainer.classList.remove('max-h-0', 'opacity-0');
         urlContainer.classList.add('max-h-[80px]', 'opacity-100');
 
+        updateServerOnlineLabel();
         Components.showToast('Web share started');
       } else {
         throw new Error('Failed to start web share');
@@ -268,6 +281,7 @@ async function toggleWebShare(checkbox) {
       Components.showToast(error.message, 'error');
       checkbox.checked = false;
       statusText.textContent = 'Disabled';
+      updateServerOnlineLabel();
     }
   } else {
     statusText.textContent = 'Stopping...';
@@ -280,6 +294,7 @@ async function toggleWebShare(checkbox) {
         urlContainer.classList.add('max-h-0', 'opacity-0');
         urlContainer.classList.remove('max-h-[80px]', 'opacity-100');
 
+        updateServerOnlineLabel();
         Components.showToast('Web share stopped');
       } else {
         throw new Error('Failed to stop web share');
@@ -288,6 +303,7 @@ async function toggleWebShare(checkbox) {
       Components.showToast(error.message, 'error');
       checkbox.checked = true;
       statusText.textContent = 'Sharing';
+      updateServerOnlineLabel();
     }
   }
 }
@@ -303,7 +319,6 @@ function copyWebUrl() {
 }
 
 // Expose functions to window because buttons use onclick
-window.copyUrl = copyUrl;
 window.toggleServer = toggleServer;
 window.updateUrl = updateUrl;
 window.toggleAnonymous = toggleAnonymous;
