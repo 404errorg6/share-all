@@ -5,9 +5,15 @@ import (
 	"net/http"
 
 	"github.com/404errorg6/FTP-server/config"
+	webshare "github.com/404errorg6/FTP-server/web_share"
 )
 
+func init() {
+	config.MiniServer.Conn.Handler = webshare.MiniMux()
+}
+
 func HandleStartWebUI(w http.ResponseWriter, req *http.Request) {
+
 	if config.MiniServer.IsRunning {
 		goto EXIT
 	}

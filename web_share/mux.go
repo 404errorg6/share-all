@@ -1,14 +1,8 @@
-package httphandlers
+package webshare
 
 import (
 	"net/http"
-
-	"github.com/404errorg6/FTP-server/config"
 )
-
-func init() {
-	config.MiniServer.Conn.Handler = MiniMux()
-}
 
 func MiniMux() *http.ServeMux {
 	mux := http.NewServeMux()
