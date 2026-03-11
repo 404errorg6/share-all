@@ -277,9 +277,9 @@ class TransferManager {
         const infoEl = el.querySelector('.info-text');
         if (infoEl) {
             infoEl.innerHTML = `
-                <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[10px]">speed</span>${metrics.speed}</span>
-                <span class="mx-1 opacity-30">|</span>
-                <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[10px]">timer</span>${metrics.eta}</span>
+                <span class="flex items-center gap-1 whitespace-nowrap"><span class="material-symbols-outlined text-[10px]">speed</span>${metrics.speed}</span>
+                <span class="opacity-30">|</span>
+                <span class="flex items-center gap-1 whitespace-nowrap"><span class="material-symbols-outlined text-[10px]">timer</span>${metrics.eta}</span>
             `;
         }
     }
@@ -306,14 +306,14 @@ class TransferManager {
         } else {
             statusRow = `
                 <div class="flex flex-col gap-2 mt-1">
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-bold uppercase tracking-wide ${opTypeColor} px-2 py-0.5 rounded-md flex items-center gap-1">
+                    <div class="flex items-center flex-wrap gap-2">
+                        <span class="text-[10px] font-bold uppercase tracking-wide ${opTypeColor} px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
                             <span class="material-symbols-outlined text-[12px]">${opIcon}</span> ${opTypeLabel}
                         </span>
-                        <div class="info-text flex items-center text-[10px] font-bold uppercase tracking-wide text-slate-500 bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-md">
-                            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[10px]">speed</span>${metrics.speed}</span>
-                            <span class="mx-1 opacity-30">|</span>
-                            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[10px]">timer</span>${metrics.eta}</span>
+                        <div class="info-text flex items-center flex-wrap gap-x-1 text-[10px] font-bold uppercase tracking-wide text-slate-500 bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-md min-w-0 overflow-hidden">
+                            <span class="flex items-center gap-1 whitespace-nowrap"><span class="material-symbols-outlined text-[10px]">speed</span>${metrics.speed}</span>
+                            <span class="opacity-30">|</span>
+                            <span class="flex items-center gap-1 whitespace-nowrap"><span class="material-symbols-outlined text-[10px]">timer</span>${metrics.eta}</span>
                         </div>
                     </div>
                 </div>
