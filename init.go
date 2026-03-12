@@ -9,7 +9,7 @@ import (
 	"github.com/404errorg6/FTP-server/config"
 )
 
-//go:embed  frontend/*
+//go:embed  frontend
 var frontend embed.FS
 
 func init() {

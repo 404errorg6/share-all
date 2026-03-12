@@ -1,0 +1,144 @@
+package clienthandlers
+
+import (
+	"fmt"
+	"net/http"
+	"path"
+	"path/filepath"
+	"strings"
+
+	"changeme/internal/config"
+	"changeme/internal/ftp/client"
+
+	"github.com/jlaffaye/ftp"
+)
+
+var (
+	downloadLimitCh = make(chan bool, config.DownloadLimit)
+)
+
+func init() {
+	for range config.DownloadLimit {
+		downloadLimitCh <- true
+	}
+}
+
+func HandleDownload(w http.ResponseWriter, req *http.Request) {
+	err := req.ParseForm()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	localPath := req.FormValue("local_path")
+	remotePaths := req.Form["remote_paths"]
+
+	c, err := client.GetClient()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+
+	if remotePaths == nil || localPath == "" {
+		http.Error(w, "remote_path/local_path are required", http.StatusBadRequest)
+		return
+	}
+
+	for _, remotePath := range remotePaths {
+		err = smartDownload(localPath, remotePath, c)
+		if err != nil {
+			if strings.Contains(err.Error(), "226") { //Treat 226 closing connection as a success instead of error
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
+
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func smartDownload(localDirPath, remotePath string, c *ftp.ServerConn) error { //Choose whether to download dir or file
+	// 1. Resolve the remote path once at the start
+	localDirPath = config.ResolveLocalPath(localDirPath)
+	remotePath, remoteEntry, err := config.ResolveRemotePath(c, remotePath)
+	if err != nil {
+		return err
+	}
+
+	// 2. Decide what to do based on entry type
+	if remoteEntry.Type == ftp.EntryTypeFolder {
+		return downloadDir(localDirPath, remotePath, c)
+	}
+
+	fmt.Printf("Detected file: %s. Starting file download...\n", remotePath)
+	return downloadFile(localDirPath, remotePath, c)
+}
+
+func downloadDir(localDirPath, remoteDirPath string, c *ftp.ServerConn) error {
+	dirName := path.Base(remoteDirPath)
+	updatedLocalPath := filepath.Join(localDirPath, dirName)
+
+	remoteEntry, err := c.GetEntry(remoteDirPath)
+	if err != nil {
+		return err
+	}
+
+	if remoteEntry.Type != ftp.EntryTypeFolder {
+		return fmt.Errorf("\"%v\" is a file, not a remote directory", remoteDirPath)
+	}
+
+	remoteDir, err := c.List(remoteDirPath)
+	if err != nil {
+		return err
+	}
+
+	for _, e := range remoteDir {
+
+		if e.Name == "." || e.Name == ".." {
+			continue
+		}
+
+		fmt.Printf("Downloading: %v\n", e.Name)
+
+		if e.Type == ftp.EntryTypeFile { //Download files
+			remoteFilePath := path.Join(remoteDirPath, e.Name)
+			err := downloadFile(updatedLocalPath, remoteFilePath, c)
+			if err != nil {
+				return err
+			}
+		}
+
+		if e.Type == ftp.EntryTypeFolder { //Download folders
+			newRemotePath := path.Join(remoteDirPath, e.Name)
+			err := downloadDir(updatedLocalPath, newRemotePath, c)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func downloadFile(localDirPath, remoteFilePath string, c *ftp.ServerConn) error { //Downloads remote file at remoteFilePath to local storage in localDirPath
+	<-downloadLimitCh
+	defer func() { downloadLimitCh <- true }()
+
+	fileName := path.Base(remoteFilePath)
+	localFilePath := filepath.Join(localDirPath, fileName)
+
+	remoteEntry, err := c.GetEntry(remoteFilePath)
+	if err != nil {
+		return err
+	}
+
+	if remoteEntry.Type == ftp.EntryTypeFolder {
+		return fmt.Errorf("\"%v\" is a directory, not a remote file", remoteFilePath)
+	}
+
+	downloadWithProgressBar(localFilePath, remoteFilePath)
+	return nil
+}

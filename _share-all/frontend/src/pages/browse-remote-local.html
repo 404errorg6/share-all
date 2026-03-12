@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Dual Browser - FTP Manager</title>
+    <script src="../assets/vendor/tailwind-cdn.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#50c2f7",
+                        "background-dark": "#101c22",
+                        "surface-dark": "#1b2327",
+                    }
+                }
+            }
+        };
+    </script>
+    <link rel="stylesheet" href="../assets/css/fonts.css">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <style>
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-background-dark font-display text-slate-100 antialiased overflow-x-hidden">
+    <div
+        class="relative flex min-h-screen w-full flex-col max-w-7xl mx-auto shadow-2xl bg-background-dark md:my-8 md:rounded-[2rem] overflow-hidden lg:h-[90dvh]">
+        <!-- Header -->
+        <header class="sticky top-0 z-20 bg-background-dark border-b border-slate-800">
+            <div class="flex items-center p-4 pb-0 justify-between">
+                <div class="flex items-center gap-3">
+                    <button onclick="Components.toggleMenu()"
+                        class="text-primary flex size-10 items-center justify-center rounded-full hover:bg-slate-800 transition-colors">
+                        <span class="material-symbols-outlined text-3xl">menu</span>
+                    </button>
+                    <div class="flex flex-col">
+                        <h2 id="server-name" class="text-white text-lg font-bold">Remote Server</h2>
+                        <p id="server-info" class="text-[#9cb0ba] text-xs">Connecting...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Context Tabs -->
+            <div class="flex border-b border-[#3b4c54] px-4 mt-4">
+                <button id="tab-remote" onclick="switchPane('remote')"
+                    class="relative flex flex-col items-center justify-center pb-3 flex-1 transition-colors">
+                    <p class="text-primary text-sm font-bold uppercase">Remote</p>
+                    <div id="remote-indicator" class="absolute bottom-0 w-full h-[3px] bg-primary"></div>
+                </button>
+                <button id="tab-local" onclick="switchPane('local')"
+                    class="relative flex flex-col items-center justify-center pb-3 flex-1 text-slate-400 transition-colors">
+                    <p class="text-sm font-bold uppercase">Local</p>
+                    <div id="local-indicator" class="absolute bottom-0 w-full h-[3px] bg-primary hidden"></div>
+                </button>
+            </div>
+
+            <!-- Global Toolbar -->
+            <div class="flex items-center gap-2 bg-slate-900/30 px-4 py-2 border-b border-slate-800">
+                <button onclick="refreshCurrent()"
+                    class="flex items-center justify-center size-9 rounded-lg hover:bg-slate-700 transition-colors"
+                    title="Refresh">
+                    <span class="material-symbols-outlined text-[20px]">refresh</span>
+                </button>
+                <button id="toggle-hidden-btn" onclick="toggleHiddenFiles()"
+                    class="flex items-center justify-center size-9 rounded-lg hover:bg-slate-700 transition-colors opacity-50"
+                    title="Toggle Hidden">
+                    <span class="material-symbols-outlined text-[20px]">visibility_off</span>
+                </button>
+                <div class="flex-1"></div>
+                <button id="toggle-select-mode" onclick="toggleSelectionMode()"
+                    class="flex items-center justify-center gap-1.5 px-3 h-9 rounded-lg hover:bg-slate-700 transition-all border border-white/5 text-slate-400"
+                    title="Selection Mode">
+                    <span class="material-symbols-outlined text-[18px]">rule</span>
+                    <span class="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Select</span>
+                </button>
+                <button onclick="goToDiscovery()"
+                    class="flex items-center justify-center gap-1.5 px-3 h-9 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-all border border-primary/20"
+                    title="Discover Others">
+                    <span class="material-symbols-outlined text-[18px]">radar</span>
+                    <span class="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Discover
+                        Others</span>
+                </button>
+                <div id="pane-selection-indicator"
+                    class="bg-primary/10 text-primary px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+                    Remote View</div>
+            </div>
+
+            <!-- Dynamic Breadcrumbs -->
+            <div class="flex items-center gap-2 bg-slate-900/50 px-4 py-3 border-b border-white/5">
+                <button onclick="goUp()"
+                    class="flex items-center justify-center size-9 rounded-lg hover:bg-slate-700 transition-colors shrink-0">
+                    <span class="material-symbols-outlined text-[20px]">arrow_upward</span>
+                </button>
+                <div id="breadcrumb-path"
+                    class="flex items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-hide flex-1"></div>
+            </div>
+        </header>
+
+        <main class="flex-1 flex flex-col pb-24 relative min-h-0 lg:pb-0">
+            <!-- Remote Pane -->
+            <div id="remote-pane" class="flex-1 flex flex-col overflow-y-auto">
+                <div class="hidden items-center gap-2 px-4 py-2 bg-white/5 border-b border-white/5">
+                    <button onclick="goUp('remote')"
+                        class="flex items-center justify-center size-6 rounded hover:bg-white/10 text-slate-400 hover:text-white transition-colors">
+                        <span class="material-symbols-outlined text-[16px]">arrow_upward</span>
+                    </button>
+                    <div id="remote-breadcrumbs"
+                        class="flex-1 flex items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-hide"></div>
+                    <span id="remote-count" class="text-[10px] text-slate-500 font-bold shrink-0"></span>
+                </div>
+                <div id="remote-list" class="flex flex-col min-h-[100px]" onclick="switchPane('remote')"></div>
+                <div id="remote-empty"
+                    class="hidden flex flex-col items-center justify-center py-20 text-slate-400 text-center">
+                    <span class="material-symbols-outlined text-6xl mb-4 opacity-20">cloud_off</span>
+                    <p class="font-bold text-xl text-slate-300">No Files Found</p>
+                </div>
+            </div>
+
+            <!-- Local Pane -->
+            <div id="local-pane" class="hidden flex-1 flex flex-col overflow-y-auto">
+                <div class="hidden items-center gap-2 px-4 py-2 bg-white/5 border-b border-white/5">
+                    <button onclick="goUp('local')"
+                        class="flex items-center justify-center size-6 rounded hover:bg-white/10 text-slate-400 hover:text-white transition-colors">
+                        <span class="material-symbols-outlined text-[16px]">arrow_upward</span>
+                    </button>
+                    <div id="local-breadcrumbs"
+                        class="flex-1 flex items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-hide"></div>
+                    <span id="local-count" class="text-[10px] text-slate-500 font-bold shrink-0"></span>
+                </div>
+                <div id="local-list" class="flex flex-col min-h-[100px]" onclick="switchPane('local')"></div>
+                <div id="local-empty"
+                    class="hidden flex flex-col items-center justify-center py-20 text-slate-400 text-center">
+                    <span class="material-symbols-outlined text-6xl mb-4 opacity-20">folder_off</span>
+                    <p class="font-bold text-xl text-slate-300">Local Folder Empty</p>
+                </div>
+            </div>
+
+            <!-- Loading Indicator Overlay -->
+            <div id="sync-overlay"
+                class="absolute inset-0 bg-background-dark/80 backdrop-blur-sm z-30 flex items-center justify-center hidden">
+                <div class="flex flex-col items-center gap-4">
+                    <div class="animate-spin size-10 border-4 border-primary border-t-transparent rounded-full"></div>
+                    <p class="text-xs font-black uppercase tracking-[0.2em] text-primary">Syncing Files...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="options-modal"
+        class="fixed inset-0 z-40 hidden flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+        <div id="options-modal-content"
+            class="modal-container relative w-full max-w-[340px] glass-panel rounded-[2rem] overflow-hidden shadow-2xl">
+            <div class="p-8 border-b border-white/5 bg-white/5">
+                <p id="options-filename" class="text-lg font-bold truncate text-white"></p>
+                <p id="options-type" class="text-[10px] text-slate-500 uppercase tracking-[0.2em] font-black mt-1">
+                    Actions</p>
+            </div>
+            <div class="p-4 flex flex-col gap-2">
+                <button id="btn-preview"
+                    class="flex items-center gap-4 w-full px-6 py-5 rounded-2xl hover:bg-primary/10 text-primary transition-all active:scale-95 group">
+                    <div
+                        class="size-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+                        <span class="material-symbols-outlined text-[22px]">visibility</span>
+                    </div>
+                    <span class="text-base font-bold">Preview</span>
+                </button>
+                <button id="btn-copy"
+                    class="flex items-center gap-4 w-full px-6 py-5 rounded-2xl hover:bg-white/5 text-white transition-all active:scale-95 group">
+                    <div
+                        class="size-10 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-white group-hover:text-slate-900 transition-all">
+                        <span class="material-symbols-outlined text-[22px]">content_copy</span>
+                    </div>
+                    <span class="text-base font-bold">Copy</span>
+                </button>
+                <button id="btn-delete"
+                    class="flex items-center gap-4 w-full px-6 py-5 rounded-2xl hover:bg-danger/10 text-danger transition-all active:scale-95 group">
+                    <div
+                        class="size-10 rounded-xl bg-danger/10 flex items-center justify-center group-hover:bg-danger group-hover:text-white transition-all">
+                        <span class="material-symbols-outlined text-[22px]">delete</span>
+                    </div>
+                    <span class="text-base font-bold">Delete Item</span>
+                </button>
+            </div>
+            <button onclick="closeOptionsModal()"
+                class="w-full py-6 text-xs font-black uppercase tracking-[0.2em] text-slate-500 hover:text-white border-t border-white/5 transition-colors">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div id="preview-modal" class="fixed inset-0 z-50 hidden flex flex-col bg-background-dark transition-all">
+        <header
+            class="flex items-center justify-between p-4 border-b border-white/5 bg-background-dark/95 backdrop-blur-md">
+            <div class="flex items-center gap-3 overflow-hidden">
+                <button onclick="Preview.close()"
+                    class="size-10 flex items-center justify-center rounded-full hover:bg-white/10 text-slate-200">
+                    <span class="material-symbols-outlined text-2xl">arrow_back</span>
+                </button>
+                <div class="flex flex-col overflow-hidden">
+                    <p id="preview-filename" class="text-sm font-bold text-white truncate"></p>
+                    <div class="flex flex-col overflow-hidden text-right">
+                        <p class="text-[10px] text-primary font-black uppercase tracking-widest">Instant Preview</p>
+                        <p class="text-[8px] text-slate-500 font-bold uppercase tracking-widest">Read-only</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <div class="flex-1 overflow-auto bg-black/40 flex items-center justify-center relative">
+            <div id="preview-container" class="w-full h-full p-4 flex items-center justify-center overflow-auto">
+                <!-- Content goes here -->
+            </div>
+        </div>
+    </div>
+
+    <div id="paste-bar"
+        class="fixed bottom-24 lg:bottom-8 left-1/2 -translate-x-1/2 z-30 hidden w-[calc(100%-48px)] max-w-sm transition-all duration-300">
+        <div class="bg-primary shadow-2xl shadow-primary/30 rounded-2xl p-4 flex items-center justify-between">
+            <div class="flex items-center gap-3 overflow-hidden">
+                <div class="size-9 bg-white/20 rounded-lg flex items-center justify-center text-white">
+                    <span class="material-symbols-outlined text-xl">content_paste</span>
+                </div>
+                <div class="flex flex-col overflow-hidden">
+                    <p id="paste-message" class="text-[10px] font-black uppercase tracking-widest text-white/70">Ready
+                        to Paste</p>
+                    <p id="paste-info" class="text-xs font-bold text-white truncate"></p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="clearClipboard()" class="p-2 text-white/70 hover:text-white">
+                    <span class="material-symbols-outlined text-xl">close</span>
+                </button>
+                <button id="btn-delete-selected" onclick="deleteSelected()"
+                    class="hidden px-5 py-2 bg-danger text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg active:scale-95 transition-all">Delete
+                    All</button>
+                <button id="btn-finish-selection" onclick="finishSelection()"
+                    class="hidden px-5 py-2 bg-white text-primary rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg active:scale-95 transition-all">Copy</button>
+                <button id="btn-paste-action" onclick="pasteFiles()"
+                    class="px-5 py-2 bg-white text-primary rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg active:scale-95 transition-all">Paste
+                    All</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core Scripts -->
+    <script src="../assets/js/utils.js"></script>
+    <script src="../assets/js/components.js"></script>
+    <script src="../assets/js/preview.js"></script>
+
+    <script type="module" src="../assets/js/pages/browse-remote-local.js"></script>
+
+</body>
+
+</html>
