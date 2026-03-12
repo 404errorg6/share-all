@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Server Manager - FTP Manager</title>
+    <script src="../assets/vendor/tailwind-cdn.min.js"></script>
+    <link rel="stylesheet" href="../assets/css/fonts.css">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: { "primary": "#50c2f7", "background-dark": "#101c22", "surface-dark": "#1b2327" },
+                    fontFamily: { "display": ["Inter"] },
+                },
+            },
+        }
+    </script>
+</head>
+
+<body
+    class="bg-background-dark font-display text-slate-100 p-6 flex items-center justify-center min-h-screen selection:bg-primary/30">
+    <!-- Background Accents -->
+    <div class="fixed top-[-10%] left-[-10%] size-96 bg-primary/20 rounded-full blur-[120px] pointer-events-none"></div>
+    <div
+        class="fixed bottom-[-10%] right-[-10%] size-96 bg-purple-500/10 rounded-full blur-[120px] pointer-events-none">
+    </div>
+
+    <div
+        class="w-full max-w-sm bg-surface-dark border border-white/10 rounded-[3rem] overflow-hidden shadow-2xl relative z-10 animate-fade-in shadow-primary/5">
+        <header class="flex flex-col items-center pt-10 pb-8 bg-white/5 border-b border-white/5">
+            <div
+                class="size-20 rounded-[2rem] bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white mb-6 shadow-xl shadow-primary/20 ring-4 ring-white/5">
+                <span id="header-icon" class="material-symbols-outlined text-4xl">add_link</span>
+            </div>
+            <h1 id="page-title" class="text-2xl font-black text-white tracking-tight">New Connection</h1>
+            <p id="page-subtitle" class="text-slate-500 text-[10px] mt-1 uppercase font-black tracking-[0.2em]">
+                Configure Remote Server</p>
+        </header>
+
+        <form id="server-form" class="p-8 space-y-6">
+            <!-- Name Input -->
+            <div class="space-y-2">
+                <label class="text-[10px] uppercase font-black text-slate-500 flex items-center gap-2 px-1">
+                    <span class="material-symbols-outlined text-[16px] text-primary">label</span> Display Name
+                </label>
+                <input type="text" id="name" required placeholder="Production Server"
+                    class="w-full bg-black/20 border-white/5 rounded-2xl px-6 py-4 text-sm focus:ring-primary focus:border-primary placeholder:text-slate-700 transition-all focus:bg-black/40">
+            </div>
+
+            <!-- Host & Port Grid -->
+            <div class="grid grid-cols-12 gap-4">
+                <div class="col-span-8 space-y-2">
+                    <label class="text-[10px] uppercase font-black text-slate-500 px-1">Host Address</label>
+                    <input type="text" id="host" required placeholder="127.0.0.1"
+                        class="w-full bg-black/20 border-white/5 rounded-2xl px-6 py-4 text-sm focus:ring-primary focus:border-primary placeholder:text-slate-700 transition-all focus:bg-black/40">
+                </div>
+                <div class="col-span-4 space-y-2">
+                    <label class="text-[10px] uppercase font-black text-slate-500 px-1">Port</label>
+                    <input type="number" id="port" value="21"
+                        class="w-full bg-black/20 border-white/5 rounded-2xl px-4 py-4 text-sm focus:ring-primary focus:border-primary text-center transition-all focus:bg-black/40">
+                </div>
+            </div>
+
+            <!-- Anonymous Toggle -->
+            <div
+                class="p-5 bg-white/5 rounded-3xl border border-white/5 flex items-center justify-between transition-all hover:bg-white/10 group">
+                <div class="flex flex-col">
+                    <span class="text-xs font-bold text-white group-hover:text-primary transition-colors">Anonymous
+                        Access</span>
+                    <span class="text-[9px] text-slate-500 font-black uppercase tracking-widest mt-0.5">Guest
+                        Login</span>
+                </div>
+                <button type="button" id="toggle-anon"
+                    class="relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none ring-2 ring-white/10">
+                    <span id="toggle-knob"
+                        class="inline-block size-5 transform rounded-full bg-white transition-transform duration-200"></span>
+                </button>
+            </div>
+
+            <!-- Credentials Section -->
+            <div id="auth-fields" class="space-y-4 transition-all duration-300">
+                <div class="space-y-2">
+                    <label class="text-[10px] uppercase font-black text-slate-500 px-1">Username</label>
+                    <input type="text" id="user" placeholder="admin"
+                        class="w-full bg-black/20 border-white/5 rounded-2xl px-6 py-4 text-sm focus:ring-primary focus:border-primary transition-all focus:bg-black/40">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[10px] uppercase font-black text-slate-500 px-1">Password</label>
+                    <input type="password" id="password" placeholder="••••••••"
+                        class="w-full bg-black/20 border-white/5 rounded-2xl px-6 py-4 text-sm focus:ring-primary focus:border-primary transition-all focus:bg-black/40">
+                </div>
+            </div>
+
+            <!-- Submit Area -->
+            <div class="flex flex-col gap-3 pt-4">
+                <button type="submit"
+                    class="w-full h-16 rounded-2xl bg-primary text-white font-black text-lg shadow-2xl shadow-primary/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined">save</span>
+                    SAVE CONNECTION
+                </button>
+                <button type="button" onclick="window.history.back()"
+                    class="w-full py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-white transition-colors">
+                    Go Back
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Core Scripts -->
+    <script src="../assets/js/components.js"></script>
+    <script>
+        const form = document.getElementById('server-form');
+        const toggleAnon = document.getElementById('toggle-anon');
+        const toggleKnob = document.getElementById('toggle-knob');
+        const authFields = document.getElementById('auth-fields');
+        const hIcon = document.getElementById('header-icon');
+
+        let isAnon = false;
+        let editId = new URLSearchParams(window.location.search).get('id');
+
+        // Initial Logic
+        if (editId) {
+            document.getElementById('page-title').innerText = 'Edit Server';
+            document.getElementById('page-subtitle').innerText = 'Update Saved Details';
+            hIcon.innerText = 'settings';
+
+            const servers = JSON.parse(localStorage.getItem('ftp_servers') || '[]');
+            const server = servers.find(s => s.id == editId);
+            if (server) {
+                document.getElementById('name').value = server.name;
+                document.getElementById('host').value = server.host;
+                document.getElementById('port').value = server.port;
+                document.getElementById('user').value = server.user === 'anonymous' ? '' : server.user;
+                document.getElementById('password').value = server.password === 'anonymous' ? '' : server.password;
+                isAnon = server.isAnon;
+            }
+        }
+
+        /**
+         * Update Toggle UI
+         */
+        function updateAnonUI() {
+            if (isAnon) {
+                toggleAnon.classList.remove('bg-slate-700');
+                toggleAnon.classList.add('bg-primary');
+                toggleKnob.classList.add('translate-x-6');
+                toggleKnob.classList.remove('translate-x-1');
+                authFields.classList.add('opacity-0', 'pointer-events-none', 'h-0', 'invisible');
+                document.getElementById('user').required = false;
+                document.getElementById('password').required = false;
+            } else {
+                toggleAnon.classList.add('bg-slate-700');
+                toggleAnon.classList.remove('bg-primary');
+                toggleKnob.classList.remove('translate-x-6');
+                toggleKnob.classList.add('translate-x-1');
+                authFields.classList.remove('opacity-0', 'pointer-events-none', 'h-0', 'invisible');
+                document.getElementById('user').required = true;
+                document.getElementById('password').required = true;
+            }
+        }
+
+        toggleAnon.onclick = () => { isAnon = !isAnon; updateAnonUI(); };
+
+        form.onsubmit = (e) => {
+            e.preventDefault();
+            const servers = JSON.parse(localStorage.getItem('ftp_servers') || '[]');
+
+            const entry = {
+                id: editId ? Number(editId) : Date.now(),
+                name: document.getElementById('name').value,
+                host: document.getElementById('host').value,
+                port: document.getElementById('port').value,
+                user: isAnon ? 'anonymous' : document.getElementById('user').value,
+                password: isAnon ? 'anonymous' : document.getElementById('password').value,
+                isAnon: isAnon
+            };
+
+            if (editId) {
+                const idx = servers.findIndex(s => s.id == editId);
+                if (idx !== -1) servers[idx] = entry;
+            } else {
+                servers.push(entry);
+            }
+
+            localStorage.setItem('ftp_servers', JSON.stringify(servers));
+            window.location.href = '../pages/discover-servers.html';
+        };
+
+        // Initialize UI
+        updateAnonUI();
+    </script>
+
+    <style>
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</body>
+
+</html>
