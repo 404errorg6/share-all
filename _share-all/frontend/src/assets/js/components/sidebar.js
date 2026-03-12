@@ -16,7 +16,7 @@ Components.Sidebar = {
                 </button>
             </div>
             <div class="flex-1 overflow-y-auto py-2">
-                <a href="/pages/browse-local.html" onclick="Components.Sidebar.handleClick(event, '/pages/browse-local.html')" 
+                <a href="/" onclick="Components.Sidebar.handleClick(event, '/')" 
                     class="sidebar-link px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group border-l-4 border-transparent" data-id="browse-local">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-500">
@@ -25,7 +25,7 @@ Components.Sidebar = {
                         <span class="text-sm font-semibold">Local Storage</span>
                     </div>
                 </a>
-                <a href="/pages/hosting-panel.html" onclick="Components.Sidebar.handleClick(event, '/pages/hosting-panel.html')"
+                <a href="/src/pages/hosting-panel.html" onclick="Components.Sidebar.handleClick(event, '/src/pages/hosting-panel.html')"
                     class="sidebar-link px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group border-l-4 border-transparent" data-id="hosting-panel">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-blue-50 dark:bg-blue-500/10 text-primary">
@@ -34,7 +34,7 @@ Components.Sidebar = {
                         <span class="text-sm font-semibold">Hosting Panel</span>
                     </div>
                 </a>
-                <a href="/pages/discover-servers.html" onclick="Components.Sidebar.handleClick(event, '/pages/discover-servers.html')"
+                <a href="/src/pages/discover-servers.html" onclick="Components.Sidebar.handleClick(event, '/src/pages/discover-servers.html')"
                     class="sidebar-link px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group border-l-4 border-transparent" data-id="remote-connections">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-500">
@@ -43,7 +43,7 @@ Components.Sidebar = {
                         <span class="text-sm font-semibold">Discover Servers</span>
                     </div>
                 </a>
-                <a href="/pages/transfers.html" onclick="Components.Sidebar.handleClick(event, '/pages/transfers.html')"
+                <a href="/src/pages/transfers.html" onclick="Components.Sidebar.handleClick(event, '/src/pages/transfers.html')"
                     class="sidebar-link px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group border-l-4 border-transparent" data-id="transfers">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-teal-50 dark:bg-teal-500/10 text-teal-500">
@@ -52,7 +52,7 @@ Components.Sidebar = {
                         <span class="text-sm font-semibold">Transfers</span>
                     </div>
                 </a>
-                <a href="/pages/hosting-access.html" onclick="Components.Sidebar.handleClick(event, '/pages/hosting-access.html')"
+                <a href="/src/pages/hosting-access.html" onclick="Components.Sidebar.handleClick(event, '/src/pages/hosting-access.html')"
                     class="sidebar-link px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group border-l-4 border-transparent" data-id="hosting-access">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-green-50 dark:bg-green-500/10 text-green-500">
