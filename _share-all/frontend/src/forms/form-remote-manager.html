@@ -5,9 +5,9 @@
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>Server Manager - FTP Manager</title>
-    <script src="../assets/vendor/tailwind-cdn.min.js"></script>
-    <link rel="stylesheet" href="../assets/css/fonts.css">
-    <link rel="stylesheet" href="../assets/css/main.css">
+    <script src="/src/assets/vendor/tailwind-cdn.min.js"></script>
+    <link rel="stylesheet" href="/src/assets/css/fonts.css">
+    <link rel="stylesheet" href="/src/assets/css/main.css">
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -111,7 +111,7 @@
     </div>
 
     <!-- Core Scripts -->
-    <script src="../assets/js/components.js"></script>
+    <script src="/src/assets/js/components.js"></script>
     <script>
         const form = document.getElementById('server-form');
         const toggleAnon = document.getElementById('toggle-anon');
@@ -187,7 +187,7 @@
             }
 
             localStorage.setItem('ftp_servers', JSON.stringify(servers));
-            window.location.href = '../pages/discover-servers.html';
+            window.location.href = '/src/pages/discover-servers.html';
         };
 
         // Initialize UI
