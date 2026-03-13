@@ -8,6 +8,7 @@ import (
 
 	"github.com/betamos/zeroconf"
 	ftpserver "github.com/fclairamb/ftpserverlib"
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 type FSObject struct { //Struct used for sending to frontend to show entries
@@ -48,7 +49,7 @@ type Client struct { //Struct for client connected to FTP server
 	Context ftpserver.ClientContext
 }
 
-type ServerDiscoveryInfo struct { //Data sent in service discovery
+type DiscoveredServerInfo struct { //Data sent in service discovery
 	Name             string
 	IP               string
 	Port             string
@@ -59,6 +60,10 @@ const (
 	SERVICE       = "_ftp._tcp"
 	DOMAIN        = "local."
 	COMMONFTPNAME = "my ftp server" //Default name sent from frontend
+)
+
+var (
+	App *application.App
 )
 
 var (

@@ -17,7 +17,34 @@ Components.Logger = {
         this.isInitialized = true;
         this.injectUI();
         this.loadFromStorage();
-        this.connect();
+        
+        // Use Wails3 events if available, otherwise fallback to polling/streaming
+        if (window.wails && window.wails.Events) {
+            this.connectWails();
+        } else {
+            this.connect();
+        }
+    },
+
+    connectWails() {
+        console.log('Logger: Using Wails3 Event System');
+        window.wails.Events.On('system-log', (msg) => {
+            this.logCount++;
+            const container = document.getElementById('mini-log-container');
+            if (container) {
+                container.appendChild(this.createEntry(msg));
+                this.saveLog(msg);
+                this.updateCount();
+                
+                if (!this.isOpen) {
+                    document.getElementById('log-badge').classList.add('active');
+                }
+
+                if (this.isAutoScroll && this.isOpen) {
+                    container.scrollTop = container.scrollHeight;
+                }
+            }
+        });
     },
 
     injectUI() {
@@ -262,10 +289,17 @@ Components.Logger = {
                 partialLine = lines.pop();
 
                 lines.forEach(line => {
-                    if (line.trim().length === 0) return;
+                    const trimmed = line.trim();
+                    if (trimmed.length === 0) return;
+                    
+                    // Clean up any SSE prefixes if present (e.g. "data: ")
+                    let cleanLine = trimmed;
+                    if (cleanLine.startsWith('data: ')) cleanLine = cleanLine.substring(6);
+                    if (cleanLine.startsWith('[LOGS]: ')) cleanLine = cleanLine.substring(8);
+                    
                     this.logCount++;
-                    container.appendChild(this.createEntry(line));
-                    this.saveLog(line);
+                    container.appendChild(this.createEntry(cleanLine));
+                    this.saveLog(cleanLine);
 
                     // Notify history/transfer service
                     if (window.Components && Components.Transfers && Components.Transfers.handleLog) {

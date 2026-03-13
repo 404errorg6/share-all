@@ -83,6 +83,21 @@ const RemoteConnections = {
         }, 10000);
 
         try {
+            // Check if we can use Wails3's direct discovery event
+            if (window.wails && window.wails.Events) {
+                console.log('RemoteConnections: Using Wails3 Discovery Events');
+                // No need for a fetch loop if the backend is already emitting events
+                // Let's assume the backend will emit 'discovered-server' events
+                window.wails.Events.On('discovered-server', (server) => {
+                    const serverId = `${server.Name || ''}-${server.IP}:${server.Port}`;
+                    this.discoveryState.classList.add('hidden');
+                    this.renderDiscoveredServer(serverId, server);
+                });
+                
+                // Still notify backend to start discovery if needed
+                // await window.wails.Call('StartDiscovery');
+            }
+
             const response = await fetch('/api/ftp/discover', { signal });
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
@@ -100,17 +115,16 @@ const RemoteConnections = {
                 while (true) {
                     let startIdx = buffer.indexOf('{');
                     if (startIdx === -1) {
-                        buffer = '';
+                        buffer = ''; // No start of object found, clear buffer to avoid noise growth
                         break;
                     }
-                    if (startIdx > 0) buffer = buffer.substring(startIdx);
 
                     let depth = 0;
                     let endIdx = -1;
                     let inString = false;
                     let escaped = false;
 
-                    for (let i = 0; i < buffer.length; i++) {
+                    for (let i = startIdx; i < buffer.length; i++) { // START FROM startIdx
                         const char = buffer[i];
                         if (escaped) { escaped = false; continue; }
                         if (char === '\\') { escaped = true; continue; }
@@ -128,10 +142,9 @@ const RemoteConnections = {
                     }
 
                     if (endIdx !== -1) {
-                        const jsonStr = buffer.substring(0, endIdx + 1);
+                        const jsonStr = buffer.substring(startIdx, endIdx + 1); // TAKE FROM startIdx
                         try {
                             const server = JSON.parse(jsonStr);
-                            // Identity: Combination of Name, IP, and Port to distinguish "another one"
                             const serverId = `${server.Name || ''}-${server.IP}:${server.Port}`;
 
                             this.discoveryState.classList.add('hidden');

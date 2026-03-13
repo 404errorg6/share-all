@@ -10,6 +10,7 @@ import (
 	"github.com/betamos/zeroconf"
 )
 
+// TODO: Remove this
 func HandlerDiscoverServers(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")

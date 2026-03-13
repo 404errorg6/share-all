@@ -2,6 +2,7 @@ package main
 
 import (
 	"changeme/internal/config"
+	services "changeme/internal/sevices"
 	"embed"
 	_ "embed"
 	"io/fs"
@@ -17,7 +18,7 @@ var assets embed.FS
 //go:embed  frontend
 var frontend embed.FS
 
-func init() {
+func init() { //Initialize assets
 	contents, err := fs.Sub(frontend, "frontend") //cd into frontend
 	if err != nil {
 		log.Fatalf("Error cding into frontend: %v", err)
@@ -26,21 +27,35 @@ func init() {
 	config.AssetsServer = http.FileServer(http.FS(contents))
 }
 
+// Send logs
+func init() {
+	go func() {
+		for log := range config.LogsCh {
+			config.App.Event.Emit("logs", log)
+		}
+	}()
+}
+
 func main() {
 
-	app := application.New(application.Options{
-		Name:        "_share-all",
+	config.App = application.New(application.Options{
+		Name:        "share-all",
 		Description: "A sharing app to share anything with any device",
 		Assets: application.AssetOptions{
 			//			Handler: application.AssetFileServerFS(assets),
 			Handler: Mux(),
 		},
+
+		Services: []application.Service{application.NewService(
+			&services.Discovery{},
+		)},
+
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
 		},
 	})
 
-	app.Window.NewWithOptions(application.WebviewWindowOptions{
+	config.App.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:      "Window 1",
 		StartState: application.WindowStateFullscreen,
 		Mac: application.MacWindow{
@@ -52,7 +67,7 @@ func main() {
 		URL:              "/",
 	})
 
-	err := app.Run()
+	err := config.App.Run()
 
 	if err != nil {
 		log.Fatal(err)
