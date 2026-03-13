@@ -20,54 +20,58 @@ const Logger = {
     },
 
     connectWails(retries = 0) {
-        const Events = (window.wails && window.wails.Events) || (window.runtime && window.runtime.Events);
-        console.log('Logger: Wails Events ready?', Boolean(Events));
+    // In V3, it's typically just window.wails.Events
+    // Let's log the object to see what Wails actually injected
+    if (retries === 0) console.log('Logger: Initializing connection to Wails...');
 
-        if (!Events || !Events.On) {
-            if (retries < 10) {
-                setTimeout(() => this.connectWails(retries + 1), 250);
-                return;
-            }
-            console.error('Logger: Wails Events API never became available');
+    const wailsGlobal = window.wails;
+    const Events = wailsGlobal?.Events;
+
+    if (!Events || !Events.On) {
+        if (retries < 20) { // Give it 5 seconds total (20 * 250ms)
+            setTimeout(() => this.connectWails(retries + 1), 250);
             return;
         }
+        
+        // Final failure - let's see why
+        console.error('Logger: Wails Events API never became available.');
+        console.log('Diagnostic - window.wails content:', wailsGlobal);
+        return;
+    }
 
-        try {
-            Events.On('logs', (event) => {
-                // Handle both event.data and direct data
-                const msg = (event && typeof event === 'object' && 'data' in event) ? event.data : event;
-                console.log('Logger: Event received:', msg);
+    console.log('Logger: Connected to Wails Events!');
+
+    try {
+        // V3 specific: data is usually passed directly as the argument
+        Events.On('logs', (data) => {
+            console.log('Logger: Received data:', data);
+            
+            // In V3, the data is usually exactly what you sent from Go
+            const msg = data; 
+            
+            if (!msg) return;
+            
+            this.logCount++;
+            const container = document.getElementById('mini-log-container');
+            if (container) {
+                container.appendChild(this.createEntry(msg));
+                this.saveLog(msg);
+                this.updateCount();
                 
-                if (!msg) return; // Ignore empty messages
-                
-                this.logCount++;
-                const container = document.getElementById('mini-log-container');
-                if (container) {
-                    container.appendChild(this.createEntry(msg));
-                    this.saveLog(msg);
-                    this.updateCount();
-                    
-                    if (!this.isOpen) {
-                        const badge = document.getElementById('log-badge');
-                        if (badge) badge.classList.add('active');
-                    }
-
-                    if (this.isAutoScroll && this.isOpen) {
-                        container.scrollTop = container.scrollHeight;
-                    }
-
-                    // Notify history/transfer service
-                    if (window.Components && Components.Transfers && Components.Transfers.handleLog) {
-                        try {
-                            Components.Transfers.handleLog(msg);
-                        } catch (e) { }
-                    }
+                if (!this.isOpen) {
+                    const badge = document.getElementById('log-badge');
+                    if (badge) badge.classList.add('active');
                 }
-            });
-        } catch (err) {
-            console.error('Logger: Failed to subscribe to logs:', err);
-        }
-    },
+
+                if (this.isAutoScroll && this.isOpen) {
+                    container.scrollTop = container.scrollHeight;
+                }
+            }
+        });
+    } catch (err) {
+        console.error('Logger: Failed to subscribe:', err);
+    }
+},
 
     injectUI() {
         if (document.getElementById('floating-log-trigger')) return;

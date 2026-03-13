@@ -20,8 +20,12 @@ window.Components = {
     if (!currentScript) return;
 
     const basePath = currentScript.src.replace('components.js', 'components/');
+    
     scripts.forEach(file => {
-        document.write(`<script src="${basePath}${file}"></script>`);
+        const script = document.createElement('script');
+        script.src = `${basePath}${file}`;
+        script.async = false; // Keep order
+        document.head.appendChild(script);
     });
 })();
 
