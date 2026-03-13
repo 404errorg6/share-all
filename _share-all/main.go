@@ -2,6 +2,7 @@ package main
 
 import (
 	"changeme/internal/config"
+	"changeme/internal/services"
 	"embed"
 	_ "embed"
 	"io/fs"
@@ -39,6 +40,9 @@ func main() {
 		Assets: application.AssetOptions{
 			//			Handler: application.AssetFileServerFS(assets),
 			Handler: Mux(),
+		},
+		Services: []application.Service{
+			application.NewService(&services.Discovery{}),
 		},
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,

@@ -24,7 +24,7 @@ func (d *Discovery) StartDiscovering(ctx context.Context) {
 				return
 			}
 
-			app.Event.Emit("discover-servers", svrInfo)
+			app.Event.Emit("client:discover-servers", svrInfo)
 		},
 		zeroconf.NewType(config.SERVICE),
 	).Open()

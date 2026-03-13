@@ -1,7 +1,6 @@
 /**
  * Remote Connections Page Logic
  */
-
 const RemoteConnections = {
     discoveryList: null,
     discoveryState: null,
@@ -46,6 +45,31 @@ const RemoteConnections = {
 
     discoveryAbortController: null,
     discoveredCards: new Map(),
+    discoveryEventUnsubscribe: null,
+
+    // Runtime wrappers to avoid static imports when running outside Vite dev server
+    _Events() {
+        if (window.wails && window.wails.Events) return window.wails.Events;
+        // fallback shim with no-op On
+        return { On: (name, cb) => { console.warn('Wails Events not available:', name); return () => {}; } };
+    },
+
+    async _StartDiscovering() {
+        // Prefer Services API
+        if (window.wails && window.wails.Services && window.wails.Services.Discovery) {
+            try {
+                const svc = new window.wails.Services.Discovery();
+                return svc.StartDiscovering();
+            } catch (e) {
+                return Promise.reject(e);
+            }
+        }
+        // Fallback to Call.ByID if available (use method id from generated bindings)
+        if (window.wails && window.wails.Call && typeof window.wails.Call.ByID === 'function') {
+            return window.wails.Call.ByID(253510713);
+        }
+        return Promise.reject(new Error('Wails runtime not available'));
+    },
 
     async discoverServers() {
         if (this.discoveryAbortController) {
@@ -55,6 +79,10 @@ const RemoteConnections = {
         if (this.discoveryTimeout) {
             clearTimeout(this.discoveryTimeout);
             this.discoveryTimeout = null;
+        }
+        if (this.discoveryEventUnsubscribe) {
+            this.discoveryEventUnsubscribe();
+            this.discoveryEventUnsubscribe = null;
         }
 
         // Clear existing results to ensure fresh discovery
@@ -83,68 +111,28 @@ const RemoteConnections = {
         }, 10000);
 
         try {
-            const response = await fetch('/api/ftp/discover', { signal });
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            // Set up Wails3 event listener for discovered servers
+            this.discoveryEventUnsubscribe = this._Events().On('client:discover-servers', (event) => {
+                const server = event && event.data ? event.data : event;
+                // Identity: Combination of Name, IP, and Port to distinguish "another one"
+                const serverId = `${server.Name || ''}-${server.IP}:${server.Port}`;
 
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = '';
+                this.discoveryState.classList.add('hidden');
+                this.renderDiscoveredServer(serverId, server);
+            });
 
-            while (true) {
-                const { value, done } = await reader.read();
-                if (done) break;
-
-                buffer += decoder.decode(value, { stream: true });
-
-                // Try to parse JSON objects from buffer (bare structs)
-                while (true) {
-                    let startIdx = buffer.indexOf('{');
-                    if (startIdx === -1) {
-                        buffer = '';
-                        break;
-                    }
-                    if (startIdx > 0) buffer = buffer.substring(startIdx);
-
-                    let depth = 0;
-                    let endIdx = -1;
-                    let inString = false;
-                    let escaped = false;
-
-                    for (let i = 0; i < buffer.length; i++) {
-                        const char = buffer[i];
-                        if (escaped) { escaped = false; continue; }
-                        if (char === '\\') { escaped = true; continue; }
-                        if (char === '"') { inString = !inString; continue; }
-                        if (!inString) {
-                            if (char === '{') depth++;
-                            else if (char === '}') {
-                                depth--;
-                                if (depth === 0) {
-                                    endIdx = i;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    if (endIdx !== -1) {
-                        const jsonStr = buffer.substring(0, endIdx + 1);
-                        try {
-                            const server = JSON.parse(jsonStr);
-                            // Identity: Combination of Name, IP, and Port to distinguish "another one"
-                            const serverId = `${server.Name || ''}-${server.IP}:${server.Port}`;
-
-                            this.discoveryState.classList.add('hidden');
-                            this.renderDiscoveredServer(serverId, server);
-                        } catch (err) {
-                            console.error('Discovery parse error:', err, jsonStr);
-                        }
-                        buffer = buffer.substring(endIdx + 1);
-                    } else {
-                        break;
-                    }
+            // Call the Discovery.StartDiscovering Wails3 service method
+            const discoveryPromise = this._StartDiscovering();
+            
+            // Handle abort signal to cancel the discovery
+            signal.addEventListener('abort', () => {
+                if (discoveryPromise && typeof discoveryPromise.cancel === 'function') {
+                    discoveryPromise.cancel();
                 }
-            }
+            });
+
+            await discoveryPromise;
+
         } catch (err) {
             if (err.name === 'AbortError') {
                 console.info('Discovery scan completed (time limit reached).');
@@ -165,6 +153,10 @@ const RemoteConnections = {
                 this.discoveryState.classList.remove('hidden');
             }
             if (this.rescanBtn) this.rescanBtn.classList.remove('hidden');
+            if (this.discoveryEventUnsubscribe) {
+                this.discoveryEventUnsubscribe();
+                this.discoveryEventUnsubscribe = null;
+            }
             this.discoveryAbortController = null;
         }
     },
@@ -292,4 +284,7 @@ const RemoteConnections = {
 };
 
 document.addEventListener('DOMContentLoaded', () => RemoteConnections.init());
+
+// Export to global scope so inline onclick handlers can access it
+window.RemoteConnections = RemoteConnections;
 

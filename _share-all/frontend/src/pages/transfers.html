@@ -140,16 +140,27 @@
         </main>
     </div>
 
-    <!-- Scripts -->
-    <script src="/src/assets/js/utils.js"></script>
-    <script src="/src/assets/js/components.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            Components.injectSidebar('transfers');
-            Components.injectModal();
-        });
-    </script>
+    <!-- Scripts - All as modules for Vite to process imports correctly -->
+    <script type="module" src="/src/assets/js/utils.js"></script>
+    <script type="module" src="/src/assets/js/components.js"></script>
     <script type="module" src="/src/assets/js/pages/transfers.js"></script>
+    <script type="module">
+        // Wait for components to be fully loaded and ready
+        async function initializePageComponents() {
+            try {
+                if (window.Components && window.Components.ready) await window.Components.ready;
+                if (window.Components && typeof window.Components.injectSidebar === 'function') {
+                    window.Components.injectSidebar('transfers');
+                    window.Components.injectModal();
+                } else if (window.Components && window.Components.Sidebar && typeof window.Components.Sidebar.inject === 'function') {
+                    window.Components.Sidebar.inject('transfers');
+                }
+            } catch (err) {
+                console.error('Failed to initialize components:', err);
+            }
+        }
+        initializePageComponents().catch(err => console.error('Failed to initialize:', err));
+    </script>
 </body>
 
 </html>
