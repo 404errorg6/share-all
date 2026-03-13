@@ -6,4 +6,17 @@
 // @ts-ignore: Unused imports
 import { Create as $Create } from "@wailsio/runtime";
 
-Object.freeze($Create.Events);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
+import * as config$0 from "../../../../../changeme/internal/config/models.js";
+
+function configure() {
+    Object.freeze(Object.assign($Create.Events, {
+        "client:discover-servers": $$createType0,
+    }));
+}
+
+// Private type creation functions
+const $$createType0 = config$0.ServerDiscoveryInfo.createFrom;
+
+configure();

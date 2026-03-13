@@ -26,6 +26,11 @@ func init() {
 	config.AssetsServer = http.FileServer(http.FS(contents))
 }
 
+// Register events
+func init() {
+	application.RegisterEvent[config.ServerDiscoveryInfo]("client:discover-servers")
+}
+
 func main() {
 
 	app := application.New(application.Options{
