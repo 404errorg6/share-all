@@ -5,6 +5,7 @@ import (
 	services "changeme/internal/sevices"
 	"embed"
 	_ "embed"
+	"fmt"
 	"io/fs"
 	"log"
 	"net/http"
@@ -31,6 +32,8 @@ func init() { //Initialize assets
 func startLogs() {
 	go func() {
 		for log := range config.LogsCh {
+			log = fmt.Sprintf("[LOGS]: %v\n", log)
+			fmt.Println(log)
 			config.App.Event.Emit("logs", log)
 		}
 	}()
@@ -46,9 +49,8 @@ func main() {
 			Handler: Mux(),
 		},
 
-		Services: []application.Service{application.NewService(
-			&services.Discovery{},
-		)},
+		Services: []application.Service{
+			application.NewService(&services.Discovery{})},
 
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,

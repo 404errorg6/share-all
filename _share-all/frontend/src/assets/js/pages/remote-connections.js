@@ -87,8 +87,8 @@ const RemoteConnections = {
         }, 10000);
 
         // Wails3 / IO Runtime check
-        const w = window.wails || window.runtime;
-        if (!w || !w.Events) {
+        const Events = (window.wails && window.wails.Events) || (window.runtime && window.runtime.Events);
+        if (!Events || !Events.On) {
             console.error('RemoteConnections: Wails runtime not ready for discovery');
             return;
         }
@@ -101,30 +101,39 @@ const RemoteConnections = {
         }
 
         // Listen for discovery events
-        this.unlistenDiscovery = w.Events.On('discovered-servers', (event) => {
+        this.unlistenDiscovery = Events.On('discovered-servers', (event) => {
             const server = (event && typeof event === 'object' && 'data' in event) ? event.data : event;
             if (!server || (!server.IP && !server.Name)) return;
 
-            console.log('RemoteConnections: Discovered server', server);
+            console.log('RemoteConnections: Event received', server);
             const serverId = `${server.Name || ''}-${server.IP}:${server.Port}`;
             this.discoveryState.classList.add('hidden');
             this.renderDiscoveredServer(serverId, server);
         });
 
+        // Debug: ensure Call exists
+        const runtime = (window.wails && window.wails.Call) ? window.wails : (window.runtime && window.runtime.Call) ? window.runtime : null;
+        console.log('RemoteConnections: runtime.Call available?', Boolean(runtime && runtime.Call));
+        if (!runtime) {
+            console.error('RemoteConnections: Wails runtime.Call not available');
+            Components.showToast('Wails runtime not ready', 'error');
+            return;
+        }
+
         // Start discovery via Wails service
         // We try both with and without the package name (sevices) if first one fails
         const runDiscovery = async () => {
             try {
-                await w.Call('Discovery.StopDiscovering');
+                await runtime.Call('Discovery.StopDiscovering');
             } catch(e) {}
 
             try {
                 console.log('RemoteConnections: Calling Discovery.StartDiscovering');
-                await w.Call('Discovery.StartDiscovering');
+                await runtime.Call('Discovery.StartDiscovering');
             } catch (err) {
                 console.warn('RemoteConnections: Discovery.StartDiscovering failed, trying sevices.Discovery...', err);
                 try {
-                    await w.Call('sevices.Discovery.StartDiscovering');
+                    await runtime.Call('sevices.Discovery.StartDiscovering');
                 } catch (err2) {
                     console.error('RemoteConnections: All discovery service calls failed', err2);
                     Components.showToast('Discovery Service Error', 'error');

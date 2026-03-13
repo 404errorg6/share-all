@@ -1,7 +1,5 @@
-import { Events } from '@wailsio/runtime';
-
 /**
- * Logger Component Logic - ES Module Version
+ * Logger Component Logic
  */
 
 const Logger = {
@@ -21,11 +19,27 @@ const Logger = {
         this.connectWails();
     },
 
-    connectWails() {
-        console.log('Logger: Using Wails3 Event System via @wailsio/runtime');
+    connectWails(retries = 0) {
+        const Events = (window.wails && window.wails.Events) || (window.runtime && window.runtime.Events);
+        console.log('Logger: Wails Events ready?', Boolean(Events));
+
+        if (!Events || !Events.On) {
+            if (retries < 10) {
+                setTimeout(() => this.connectWails(retries + 1), 250);
+                return;
+            }
+            console.error('Logger: Wails Events API never became available');
+            return;
+        }
+
         try {
             Events.On('logs', (event) => {
-                const msg = event.data;
+                // Handle both event.data and direct data
+                const msg = (event && typeof event === 'object' && 'data' in event) ? event.data : event;
+                console.log('Logger: Event received:', msg);
+                
+                if (!msg) return; // Ignore empty messages
+                
                 this.logCount++;
                 const container = document.getElementById('mini-log-container');
                 if (container) {
@@ -269,5 +283,3 @@ const Logger = {
 // Export to global namespace for existing code compatibility
 window.Components = window.Components || {};
 window.Components.Logger = Logger;
-
-export default Logger;
