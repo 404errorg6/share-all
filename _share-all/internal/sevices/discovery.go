@@ -17,21 +17,15 @@ var (
 func (ftp *Discovery) StartDiscovering() error {
 	discovery, err := zeroconf.New().Browse(
 		func(entry zeroconf.Event) {
-			select {
-			case <-stopDiscover:
+			config.LogsCh <- fmt.Sprintln(entry.Op, entry.Name)
+
+			svrInfo, err := client.ConvertEntryToServerInfo(entry)
+			if err != nil {
+				config.LogsCh <- err.Error()
 				return
-			default:
-
-				config.LogsCh <- fmt.Sprintln(entry.Op, entry.Name)
-
-				svrInfo, err := client.ConvertEntryToServerInfo(entry)
-				if err != nil {
-					config.LogsCh <- err.Error()
-					return
-				}
-
-				config.App.Event.Emit("discovered-servers", svrInfo)
 			}
+
+			config.App.Event.Emit("discovered-servers", svrInfo)
 		},
 		zeroconf.NewType(config.SERVICE),
 	).Open()
@@ -40,7 +34,7 @@ func (ftp *Discovery) StartDiscovering() error {
 		return err
 	}
 	defer discovery.Close()
-
+	<-stopDiscover
 	return nil
 }
 

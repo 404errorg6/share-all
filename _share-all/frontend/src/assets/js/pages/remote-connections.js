@@ -8,6 +8,7 @@ const RemoteConnections = {
     loginModal: null,
     rescanBtn: null,
     discoveryTimeout: null,
+    unlistenDiscovery: null,
 
     init() {
         console.log('RemoteConnections: init triggered');
@@ -72,103 +73,8 @@ const RemoteConnections = {
         // Hide re-scan button
         if (this.rescanBtn) this.rescanBtn.classList.add('hidden');
 
-        this.discoveryAbortController = new AbortController();
-        const signal = this.discoveryAbortController.signal;
-
-        // Set hard 10s limit for discovery
+        // Set hard 10s limit for discovery state reset
         this.discoveryTimeout = setTimeout(() => {
-            if (this.discoveryAbortController) {
-                this.discoveryAbortController.abort();
-            }
-        }, 10000);
-
-        try {
-            // Check if we can use Wails3's direct discovery event
-            if (window.wails && window.wails.Events) {
-                console.log('RemoteConnections: Using Wails3 Discovery Events');
-                // No need for a fetch loop if the backend is already emitting events
-                // Let's assume the backend will emit 'discovered-server' events
-                window.wails.Events.On('discovered-server', (server) => {
-                    const serverId = `${server.Name || ''}-${server.IP}:${server.Port}`;
-                    this.discoveryState.classList.add('hidden');
-                    this.renderDiscoveredServer(serverId, server);
-                });
-                
-                // Still notify backend to start discovery if needed
-                // await window.wails.Call('StartDiscovery');
-            }
-
-            const response = await fetch('/api/ftp/discover', { signal });
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = '';
-
-            while (true) {
-                const { value, done } = await reader.read();
-                if (done) break;
-
-                buffer += decoder.decode(value, { stream: true });
-
-                // Try to parse JSON objects from buffer (bare structs)
-                while (true) {
-                    let startIdx = buffer.indexOf('{');
-                    if (startIdx === -1) {
-                        buffer = ''; // No start of object found, clear buffer to avoid noise growth
-                        break;
-                    }
-
-                    let depth = 0;
-                    let endIdx = -1;
-                    let inString = false;
-                    let escaped = false;
-
-                    for (let i = startIdx; i < buffer.length; i++) { // START FROM startIdx
-                        const char = buffer[i];
-                        if (escaped) { escaped = false; continue; }
-                        if (char === '\\') { escaped = true; continue; }
-                        if (char === '"') { inString = !inString; continue; }
-                        if (!inString) {
-                            if (char === '{') depth++;
-                            else if (char === '}') {
-                                depth--;
-                                if (depth === 0) {
-                                    endIdx = i;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    if (endIdx !== -1) {
-                        const jsonStr = buffer.substring(startIdx, endIdx + 1); // TAKE FROM startIdx
-                        try {
-                            const server = JSON.parse(jsonStr);
-                            const serverId = `${server.Name || ''}-${server.IP}:${server.Port}`;
-
-                            this.discoveryState.classList.add('hidden');
-                            this.renderDiscoveredServer(serverId, server);
-                        } catch (err) {
-                            console.error('Discovery parse error:', err, jsonStr);
-                        }
-                        buffer = buffer.substring(endIdx + 1);
-                    } else {
-                        break;
-                    }
-                }
-            }
-        } catch (err) {
-            if (err.name === 'AbortError') {
-                console.info('Discovery scan completed (time limit reached).');
-            } else {
-                console.error('Discovery error:', err);
-            }
-        } finally {
-            if (this.discoveryTimeout) {
-                clearTimeout(this.discoveryTimeout);
-                this.discoveryTimeout = null;
-            }
             if (this.discoveredCards.size === 0) {
                 this.discoveryState.innerHTML = `
                     <span class="material-symbols-outlined text-4xl text-slate-500 mb-3 opacity-20">search_off</span>
@@ -178,8 +84,55 @@ const RemoteConnections = {
                 this.discoveryState.classList.remove('hidden');
             }
             if (this.rescanBtn) this.rescanBtn.classList.remove('hidden');
-            this.discoveryAbortController = null;
+        }, 10000);
+
+        // Wails3 / IO Runtime check
+        const w = window.wails || window.runtime;
+        if (!w || !w.Events) {
+            console.error('RemoteConnections: Wails runtime not ready for discovery');
+            return;
         }
+
+        console.log('RemoteConnections: Starting Wails3 Discovery');
+        
+        // Unlisten previous if exists
+        if (this.unlistenDiscovery) {
+            this.unlistenDiscovery();
+        }
+
+        // Listen for discovery events
+        this.unlistenDiscovery = w.Events.On('discovered-servers', (event) => {
+            const server = (event && typeof event === 'object' && 'data' in event) ? event.data : event;
+            if (!server || (!server.IP && !server.Name)) return;
+
+            console.log('RemoteConnections: Discovered server', server);
+            const serverId = `${server.Name || ''}-${server.IP}:${server.Port}`;
+            this.discoveryState.classList.add('hidden');
+            this.renderDiscoveredServer(serverId, server);
+        });
+
+        // Start discovery via Wails service
+        // We try both with and without the package name (sevices) if first one fails
+        const runDiscovery = async () => {
+            try {
+                await w.Call('Discovery.StopDiscovering');
+            } catch(e) {}
+
+            try {
+                console.log('RemoteConnections: Calling Discovery.StartDiscovering');
+                await w.Call('Discovery.StartDiscovering');
+            } catch (err) {
+                console.warn('RemoteConnections: Discovery.StartDiscovering failed, trying sevices.Discovery...', err);
+                try {
+                    await w.Call('sevices.Discovery.StartDiscovering');
+                } catch (err2) {
+                    console.error('RemoteConnections: All discovery service calls failed', err2);
+                    Components.showToast('Discovery Service Error', 'error');
+                }
+            }
+        };
+
+        runDiscovery();
     },
 
     renderDiscoveredServer(serverId, server, fromCache = false) {
@@ -221,6 +174,12 @@ const RemoteConnections = {
     handleDiscoveredServerClick(server) {
         const name = server.Name || server.IP;
         localStorage.removeItem('current_server_id'); // Ensure we use discovered info
+
+        // Stop discovery if using Wails
+        if (window.wails && window.wails.Call) {
+            window.wails.Call('Discovery.StopDiscovering').catch(() => {});
+        }
+
         if (server.AnonymousAllowed) {
             this.connectWithCredentials(server.IP, server.Port, 'anonymous', 'anonymous', true, name);
         } else {

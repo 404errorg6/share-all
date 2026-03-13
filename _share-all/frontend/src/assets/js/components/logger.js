@@ -1,13 +1,14 @@
+import { Events } from '@wailsio/runtime';
+
 /**
- * Logger Component Logic
+ * Logger Component Logic - ES Module Version
  */
 
-Components.Logger = {
+const Logger = {
     isInitialized: false,
     isOpen: false,
     isAutoScroll: true,
     logCount: 0,
-    abortController: null,
     MAX_LOGS: 1000,
     PRUNE_COUNT: 200,
     STORAGE_KEY: 'ftp_session_logs',
@@ -17,34 +18,41 @@ Components.Logger = {
         this.isInitialized = true;
         this.injectUI();
         this.loadFromStorage();
-        
-        // Use Wails3 events if available, otherwise fallback to polling/streaming
-        if (window.wails && window.wails.Events) {
-            this.connectWails();
-        } else {
-            this.connect();
-        }
+        this.connectWails();
     },
 
     connectWails() {
-        console.log('Logger: Using Wails3 Event System');
-        window.wails.Events.On('system-log', (msg) => {
-            this.logCount++;
-            const container = document.getElementById('mini-log-container');
-            if (container) {
-                container.appendChild(this.createEntry(msg));
-                this.saveLog(msg);
-                this.updateCount();
-                
-                if (!this.isOpen) {
-                    document.getElementById('log-badge').classList.add('active');
-                }
+        console.log('Logger: Using Wails3 Event System via @wailsio/runtime');
+        try {
+            Events.On('logs', (event) => {
+                const msg = event.data;
+                this.logCount++;
+                const container = document.getElementById('mini-log-container');
+                if (container) {
+                    container.appendChild(this.createEntry(msg));
+                    this.saveLog(msg);
+                    this.updateCount();
+                    
+                    if (!this.isOpen) {
+                        const badge = document.getElementById('log-badge');
+                        if (badge) badge.classList.add('active');
+                    }
 
-                if (this.isAutoScroll && this.isOpen) {
-                    container.scrollTop = container.scrollHeight;
+                    if (this.isAutoScroll && this.isOpen) {
+                        container.scrollTop = container.scrollHeight;
+                    }
+
+                    // Notify history/transfer service
+                    if (window.Components && Components.Transfers && Components.Transfers.handleLog) {
+                        try {
+                            Components.Transfers.handleLog(msg);
+                        } catch (e) { }
+                    }
                 }
-            }
-        });
+            });
+        } catch (err) {
+            console.error('Logger: Failed to subscribe to logs:', err);
+        }
     },
 
     injectUI() {
@@ -174,9 +182,9 @@ Components.Logger = {
 
         if (this.isOpen) {
             win.classList.add('open');
-            badge.classList.remove('active');
+            if (badge) badge.classList.remove('active');
             const container = document.getElementById('mini-log-container');
-            if (this.isAutoScroll) container.scrollTop = container.scrollHeight;
+            if (this.isAutoScroll && container) container.scrollTop = container.scrollHeight;
         } else {
             win.classList.remove('open');
         }
@@ -192,7 +200,7 @@ Components.Logger = {
             btn.classList.remove('text-slate-500');
             icon.innerText = 'vertical_align_bottom';
             const container = document.getElementById('mini-log-container');
-            container.scrollTop = container.scrollHeight;
+            if (container) container.scrollTop = container.scrollHeight;
         } else {
             btn.classList.remove('text-primary');
             btn.classList.add('text-slate-500');
@@ -202,7 +210,7 @@ Components.Logger = {
 
     clear() {
         const container = document.getElementById('mini-log-container');
-        container.innerHTML = '<div class="text-slate-500 italic opacity-40">History cleared...</div>';
+        if (container) container.innerHTML = '<div class="text-slate-500 italic opacity-40">History cleared...</div>';
         this.logCount = 0;
         sessionStorage.removeItem(this.STORAGE_KEY);
         this.updateCount();
@@ -245,6 +253,7 @@ Components.Logger = {
     },
 
     createEntry(line) {
+        if (typeof line !== 'string') line = JSON.stringify(line);
         const entry = document.createElement('div');
         let colorClass = 'text-slate-300';
         if (line.includes('[ERROR]') || line.toLowerCase().includes('failed')) colorClass = 'text-red-400';
@@ -254,78 +263,11 @@ Components.Logger = {
         entry.className = `${colorClass} py-0.5 border-b border-white/5 break-all opacity-90`;
         entry.innerText = line;
         return entry;
-    },
-
-    async connect() {
-        if (this.abortController) this.abortController.abort();
-        this.abortController = new AbortController();
-
-        try {
-            console.log('Connecting to session logs...');
-            const response = await fetch('/api/logs', {
-                signal: this.abortController.signal,
-                headers: { 'Accept': 'text/event-stream' }
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to connect to logs: ${response.statusText}`);
-            }
-
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            const container = document.getElementById('mini-log-container');
-            let partialLine = '';
-
-            while (true) {
-                const { value, done } = await reader.read();
-                if (done) break;
-
-                const chunk = decoder.decode(value, { stream: true });
-                const fullContent = partialLine + chunk;
-                const lines = fullContent.split('\n');
-
-                // The last element of split is either empty (if chunk ended in \n)
-                // or a partial line that should be saved for the next chunk
-                partialLine = lines.pop();
-
-                lines.forEach(line => {
-                    const trimmed = line.trim();
-                    if (trimmed.length === 0) return;
-                    
-                    // Clean up any SSE prefixes if present (e.g. "data: ")
-                    let cleanLine = trimmed;
-                    if (cleanLine.startsWith('data: ')) cleanLine = cleanLine.substring(6);
-                    if (cleanLine.startsWith('[LOGS]: ')) cleanLine = cleanLine.substring(8);
-                    
-                    this.logCount++;
-                    container.appendChild(this.createEntry(cleanLine));
-                    this.saveLog(cleanLine);
-
-                    // Notify history/transfer service
-                    if (window.Components && Components.Transfers && Components.Transfers.handleLog) {
-                        try {
-                            Components.Transfers.handleLog(line);
-                        } catch (e) { }
-                    }
-                });
-
-                if (lines.length > 0) {
-                    this.updateCount();
-
-                    if (!this.isOpen) {
-                        document.getElementById('log-badge').classList.add('active');
-                    }
-
-                    if (this.isAutoScroll && this.isOpen) {
-                        container.scrollTop = container.scrollHeight;
-                    }
-                }
-            }
-        } catch (err) {
-            if (err.name !== 'AbortError') {
-                console.warn('Logging connection dropped. Retrying in 5s...', err);
-                setTimeout(() => this.connect(), 5000);
-            }
-        }
     }
 };
+
+// Export to global namespace for existing code compatibility
+window.Components = window.Components || {};
+window.Components.Logger = Logger;
+
+export default Logger;

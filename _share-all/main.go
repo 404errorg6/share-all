@@ -28,7 +28,7 @@ func init() { //Initialize assets
 }
 
 // Send logs
-func init() {
+func startLogs() {
 	go func() {
 		for log := range config.LogsCh {
 			config.App.Event.Emit("logs", log)
@@ -54,6 +54,8 @@ func main() {
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
 		},
 	})
+
+	startLogs()
 
 	config.App.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:      "Window 1",
