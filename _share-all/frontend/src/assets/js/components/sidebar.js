@@ -91,6 +91,11 @@ Components.Sidebar = {
     isMenuOpen: false,
 
     toggleMenu(force) {
+        // Ensure sidebar DOM is injected before attempting to toggle
+        if (!document.getElementById('drawer-backdrop') || !document.getElementById('drawer-sidebar')) {
+            this.inject();
+        }
+
         this.isMenuOpen = force !== undefined ? force : !this.isMenuOpen;
         const backdrop = document.getElementById('drawer-backdrop');
         const sidebar = document.getElementById('drawer-sidebar');

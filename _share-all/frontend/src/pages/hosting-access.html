@@ -65,13 +65,36 @@
         </main>
     </div>
 
-    <!-- Core Scripts -->
-    <script src="/src/assets/js/utils.js"></script>
-    <script src="/src/assets/js/components.js"></script>
-    <script>
-        Components.injectSidebar('hosting-access');
-        Components.injectModal();
-
+    <!-- Core Scripts - All as modules for Vite to process imports correctly -->
+    <script type="module" src="/src/assets/js/utils.js"></script>
+    <script type="module" src="/src/assets/js/components.js"></script>
+    <script type="module">
+        // Wait for components to be fully loaded and ready
+        async function initializePageComponents() {
+            try {
+                if (window.Components && window.Components.ready) await window.Components.ready;
+                if (window.Components && typeof window.Components.injectSidebar === 'function') {
+                    window.Components.injectSidebar('hosting-access');
+                    window.Components.injectModal();
+                } else if (window.Components && window.Components.Sidebar && typeof window.Components.Sidebar.inject === 'function') {
+                    window.Components.Sidebar.inject('hosting-access');
+                }
+            } catch (err) {
+                console.error('Failed to initialize components:', err);
+            }
+        }
+        initializePageComponents().catch(err => console.error('Failed to initialize:', err));
+    </script>
+    <script type="module">
+        // Import hosting-access logic
+        import('/src/assets/js/pages/hosting-access.js').then(module => {
+            if (module.initHostingAccess) {
+                module.initHostingAccess();
+            }
+        });
+    </script>
+    <script type="module">
+        // Hosting access page logic - moved to module context
         const clientsList = document.getElementById('clients-list');
         const blacklistList = document.getElementById('blacklist-list');
         const activeBadge = document.getElementById('active-count');
@@ -133,8 +156,8 @@
             });
         }
 
-        function confirmBlock(host) {
-            Components.openGuiModal({
+        window.confirmBlock = function(host) {
+            window.Components.openGuiModal({
                 title: 'Block Client IP?',
                 message: `This will disconnect ${host} and prevent any further access until manually removed.`,
                 icon: 'gavel',
@@ -143,20 +166,20 @@
                 onPrimary: async () => {
                     const params = new URLSearchParams({ host });
                     const res = await fetch('/api/ftp/server/blacklist-client', { method: 'POST', body: params });
-                    if (res.ok) { Components.showToast(`IP ${host} blocked`); fetchSecurityState(); }
+                    if (res.ok) { window.Components.showToast(`IP ${host} blocked`); fetchSecurityState(); }
                 }
             });
-        }
+        };
 
-        async function unblockIP(host) {
+        window.unblockIP = async function(host) {
             const params = new URLSearchParams({ host });
             const res = await fetch('/api/ftp/server/whitelist-client', { method: 'POST', body: params });
-            if (res.ok) { Components.showToast('Access restored'); fetchSecurityState(); }
-        }
+            if (res.ok) { window.Components.showToast('Access restored'); fetchSecurityState(); }
+        };
 
         setInterval(fetchSecurityState, 5000);
         fetchSecurityState();
-    </script>
+    
 </body>
 
 </html>

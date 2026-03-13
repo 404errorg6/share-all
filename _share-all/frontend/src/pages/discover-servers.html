@@ -123,13 +123,31 @@
         </div>
     </div>
 
-    <!-- Core Scripts -->
-    <script src="/src/assets/js/utils.js"></script>
-    <script src="/src/assets/js/components.js"></script>
-    <script src="/src/assets/js/pages/remote-connections.js"></script>
-    <script>
-        Components.injectSidebar('remote-connections');
-        Components.injectModal();
+    <!-- Core Scripts - All as modules for Vite to process imports correctly -->
+    <script type="module" src="/src/assets/js/utils.js"></script>
+    <script type="module" src="/src/assets/js/components.js"></script>
+    <script type="module" src="/src/assets/js/pages/remote-connections.js"></script>
+    <script type="module">
+        // Wait for components to be fully loaded and ready
+        async function initializePageComponents() {
+            try {
+                if (window.Components && window.Components.ready) await window.Components.ready;
+                if (window.Components && typeof window.Components.injectSidebar === 'function') {
+                    window.Components.injectSidebar('remote-connections');
+                    window.Components.injectModal();
+                } else if (window.Components && window.Components.Sidebar && typeof window.Components.Sidebar.inject === 'function') {
+                    // fallback if aliases aren't set
+                    window.Components.Sidebar.inject('remote-connections');
+                    if (window.Components.Sidebar && typeof window.Components.Sidebar.injectModal === 'function') window.Components.Sidebar.injectModal();
+                } else {
+                    console.error('Components failed to load');
+                }
+            } catch (err) {
+                console.error('Failed to initialize components:', err);
+            }
+        }
+
+        initializePageComponents().catch(err => console.error('Failed to initialize:', err));
     </script>
 </body>
 

@@ -268,12 +268,19 @@
         </div>
     </div>
 
-    <!-- Core Scripts -->
-    <script src="/src/assets/js/utils.js"></script>
-    <script src="/src/assets/js/components.js"></script>
-    <script src="/src/assets/js/preview.js"></script>
+    <!-- Core Scripts - moduleized for Vite -->
+    <script type="module" src="/src/assets/js/utils.js"></script>
+    <script type="module" src="/src/assets/js/components.js"></script>
+    <script type="module" src="/src/assets/js/preview.js"></script>
 
-    <script type="module" src="/src/assets/js/pages/browse-remote-local.js"></script>
+    <script type="module">
+        if (window.Components && window.Components.ready) await window.Components.ready;
+        if (window.Components && typeof window.Components.injectSidebar === 'function') {
+            window.Components.injectSidebar('remote-connections');
+            window.Components.injectModal();
+        }
+        import('/src/assets/js/pages/browse-remote-local.js');
+    </script>
 
 </body>
 
