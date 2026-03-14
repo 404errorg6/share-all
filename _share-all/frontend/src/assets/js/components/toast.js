@@ -2,7 +2,7 @@
  * Toast Component Logic
  */
 
-Components.Toast = {
+globalThis.Components.Toast = {
     show(message, type = 'success') {
         const displayMessage = type === 'error' ? this.mapError(message) : message;
         const container = this._getContainer();
@@ -145,5 +145,5 @@ Components.Toast = {
 };
 
 // Aliases for compatibility
-Components.showToast = (msg, type) => Components.Toast.show(msg, type);
-Components.mapError = (msg) => Components.Toast.mapError(msg);
+globalThis.Components.showToast = (msg, type) => globalThis.Components.Toast.show(msg, type);
+globalThis.Components.mapError = (msg) => globalThis.Components.Toast.mapError(msg);

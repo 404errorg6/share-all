@@ -64,4 +64,6 @@ const Utils = {
     }
 };
 
-window.Utils = Utils;
+// Expose for legacy global access and as an ES module export
+globalThis.Utils = Utils;
+export default Utils;

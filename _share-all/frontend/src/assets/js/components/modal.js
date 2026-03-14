@@ -2,7 +2,7 @@
  * Modal Component Logic
  */
 
-Components.Modal = {
+globalThis.Components.Modal = {
     inject() {
         const modalHTML = `
         <div id="gui-modal" class="fixed inset-0 z-[100] flex items-center justify-center p-6 hidden">
@@ -84,6 +84,6 @@ Components.Modal = {
 };
 
 // Aliases for compatibility
-Components.injectModal = () => Components.Modal.inject();
-Components.openGuiModal = (opts) => Components.Modal.open(opts);
-Components.closeGuiModal = () => Components.Modal.close();
+globalThis.Components.injectModal = () => globalThis.Components.Modal.inject();
+globalThis.Components.openGuiModal = (opts) => globalThis.Components.Modal.open(opts);
+globalThis.Components.closeGuiModal = () => globalThis.Components.Modal.close();

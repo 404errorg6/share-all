@@ -2,7 +2,7 @@
  * Transfer Service Logic
  */
 
-Components.Transfers = {
+globalThis.Components.Transfers = {
     STORAGE_KEY: 'ftp_transfer_history',
     LIMIT: 1000,
     isPolling: false,

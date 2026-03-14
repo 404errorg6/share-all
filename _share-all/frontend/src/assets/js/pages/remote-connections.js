@@ -1,7 +1,7 @@
 /**
  * Remote Connections Page Logic
  */
-import { Events } from '@wailsio/runtime';
+import { Events } from '@wailsio/runtime'
 import { StartDiscovering } from '../../../../bindings/changeme/internal/services/discovery.js';
 const RemoteConnections = {
     discoveryList: null,

@@ -2,7 +2,7 @@
  * Logger Component Logic
  */
 
-Components.Logger = {
+globalThis.Components.Logger = {
     isInitialized: false,
     isOpen: false,
     isAutoScroll: true,
@@ -268,9 +268,9 @@ Components.Logger = {
                     this.saveLog(line);
 
                     // Notify history/transfer service
-                    if (window.Components && Components.Transfers && Components.Transfers.handleLog) {
+                    if (globalThis.Components && globalThis.Components.Transfers && globalThis.Components.Transfers.handleLog) {
                         try {
-                            Components.Transfers.handleLog(line);
+                            globalThis.Components.Transfers.handleLog(line);
                         } catch (e) { }
                     }
                 });
