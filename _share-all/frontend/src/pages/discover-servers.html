@@ -5,8 +5,8 @@
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>Discover Servers - FTP Manager</title>
-    <script src="/src/assets/vendor/tailwind-cdn.min.js"></script>
-    <script>
+    <script type="module" src="/src/assets/vendor/tailwind-cdn.min.js"></script>
+    <script type="module">
         tailwind.config = {
             darkMode: "class",
             theme: {
@@ -124,6 +124,9 @@
     </div>
 
     <!-- Core Scripts - All as modules for Vite to process imports correctly -->
+     
+    <script src="/wails/ipc.js"></script>
+    <script src="/wails/runtime.js"></script>
     <script type="module" src="/src/assets/js/utils.js"></script>
     <script type="module" src="/src/assets/js/components.js"></script>
     <script type="module" src="/src/assets/js/pages/remote-connections.js"></script>

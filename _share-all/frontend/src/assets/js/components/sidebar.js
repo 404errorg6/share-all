@@ -2,7 +2,7 @@
  * Sidebar Component Logic
  */
 
-Components.Sidebar = {
+globalThis.Components.Sidebar = {
     _template: `
         <div id="drawer-backdrop" onclick="Components.Sidebar.toggleMenu()"
             class="fixed inset-0 bg-black/50 z-40 hidden opacity-0 transition-opacity duration-300"></div>
@@ -127,6 +127,6 @@ Components.Sidebar = {
 };
 
 // Aliases for compatibility
-Components.injectSidebar = (id) => Components.Sidebar.inject(id);
-Components.toggleMenu = (force) => Components.Sidebar.toggleMenu(force);
-Components.handleSidebarClick = (e, url) => Components.Sidebar.handleClick(e, url);
+globalThis.Components.injectSidebar = (id) => globalThis.Components.Sidebar.inject(id);
+globalThis.Components.toggleMenu = (force) => globalThis.Components.Sidebar.toggleMenu(force);
+globalThis.Components.handleSidebarClick = (e, url) => globalThis.Components.Sidebar.handleClick(e, url);
