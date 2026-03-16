@@ -245,6 +245,7 @@ export function init() {
             renderActiveBreadcrumbs(state.currentLocalPath, 'local');
         }
         Clipboard.updateBar();
+        Clipboard.syncModeUI();
     }
 
     // --- Data Fetching ---
@@ -448,6 +449,34 @@ export function init() {
     }
 
     clearClipboardBtn.onclick = () => Clipboard.clear(() => refreshCurrent());
+    
+    deleteSelectedBtn.onclick = () => {
+        if (state.clipboard.length === 0) return;
+        const count = state.clipboard.length;
+        globalThis.Components?.openGuiModal({
+            title: `Delete ${count} Items?`,
+            message: `Are you sure you want to delete these ${count} local items?`,
+            icon: 'delete_sweep',
+            type: 'danger',
+            primaryText: 'Delete All',
+            onPrimary: async () => {
+                if (syncOverlay) syncOverlay.classList.remove('hidden');
+                try {
+                    for (const item of state.clipboard) {
+                        await FTP_API.deleteItem(item.path, false);
+                    }
+                    Clipboard.clear();
+                    refreshCurrent(false, true);
+                } catch (e) { handleError(e); }
+                finally { if (syncOverlay) syncOverlay.classList.add('hidden'); }
+            }
+        });
+    };
+
+    finishSelectionBtn.onclick = () => {
+        Clipboard.toggleMode(() => refreshCurrent());
+    };
+
     pasteActionBtn.onclick = () => {
         if (state.clipboard.length === 0) return;
         const isRemoteToLocal = state.clipboard[0].pane === 'remote';
@@ -505,4 +534,7 @@ export function init() {
     if (globalThis.Components?.Sidebar?.highlight) {
         globalThis.Components.Sidebar.highlight('discover-servers');
     }
+
+    // Sync UI indicators and paste bar with current state
+    switchPane(state.activePane);
 }

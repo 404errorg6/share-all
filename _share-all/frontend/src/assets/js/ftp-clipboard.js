@@ -7,12 +7,18 @@ import { FTP_API } from './ftp-api.js';
 export const Clipboard = {
     toggleMode(refreshFn) {
         state.selectionMode = !state.selectionMode;
+        this.syncModeUI();
+        this.updateBar();
+        if (refreshFn) refreshFn();
+    },
+
+    syncModeUI() {
+        if (!ui.sBtn) return;
         ui.sBtn.classList.toggle('bg-primary', state.selectionMode);
         ui.sBtn.classList.toggle('text-white', state.selectionMode);
         ui.sBtn.classList.toggle('text-slate-400', !state.selectionMode);
-        ui.sBtn.querySelector('span').innerText = state.selectionMode ? 'done_all' : 'rule';
-        this.updateBar();
-        refreshFn();
+        const icon = ui.sBtn.querySelector('span');
+        if (icon) icon.innerText = state.selectionMode ? 'done_all' : 'rule';
     },
 
     toggleSelection(item, pane, refreshFn) {
@@ -61,7 +67,8 @@ export const Clipboard = {
                 if (btnFinish) btnFinish.classList.add('hidden');
                 if (selectedPane !== state.activePane) {
                     btnPaste.classList.remove('hidden');
-                    msg.innerText = `Ready to ${selectedPane === 'remote' ? 'Copy' : 'Upload'}`;
+                    btnPaste.innerText = state.clipboard.length > 1 ? 'Paste All' : 'Paste';
+                    msg.innerText = `Ready to ${selectedPane === 'remote' ? 'Download' : 'Upload'}`;
                 } else {
                     btnPaste.classList.add('hidden');
                     msg.innerText = "Items in Clipboard";

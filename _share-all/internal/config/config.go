@@ -55,6 +55,15 @@ type ServerDiscoveryInfo struct { //Data sent in service discovery
 	AnonymousAllowed bool
 }
 
+type TransferInfo struct {
+	Name       string
+	TotalSize  int64
+	Percent    float64
+	Written    int64
+	IsDownload bool
+	IsComplete bool
+}
+
 const (
 	SERVICE       = "_ftp._tcp"
 	DOMAIN        = "local."

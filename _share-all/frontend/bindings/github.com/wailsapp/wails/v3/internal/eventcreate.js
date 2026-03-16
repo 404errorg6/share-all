@@ -13,10 +13,12 @@ import * as config$0 from "../../../../../changeme/internal/config/models.js";
 function configure() {
     Object.freeze(Object.assign($Create.Events, {
         "client:discover-servers": $$createType0,
+        "transfers": $$createType1,
     }));
 }
 
 // Private type creation functions
 const $$createType0 = config$0.ServerDiscoveryInfo.createFrom;
+const $$createType1 = config$0.TransferInfo.createFrom;
 
 configure();

@@ -12,3 +12,10 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 export function StartDiscovering() {
     return $Call.ByID(253510713);
 }
+
+/**
+ * @returns {$CancellablePromise<void>}
+ */
+export function StopDiscovery() {
+    return $Call.ByID(2759629518);
+}

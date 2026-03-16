@@ -54,3 +54,59 @@ export class ServerDiscoveryInfo {
         return new ServerDiscoveryInfo(/** @type {Partial<ServerDiscoveryInfo>} */($$parsedSource));
     }
 }
+
+export class TransferInfo {
+    /**
+     * Creates a new TransferInfo instance.
+     * @param {Partial<TransferInfo>} [$$source = {}] - The source object to create the TransferInfo.
+     */
+    constructor($$source = {}) {
+        if (!("Name" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["Name"] = "";
+        }
+        if (!("TotalSize" in $$source)) {
+            /**
+             * @member
+             * @type {number}
+             */
+            this["TotalSize"] = 0;
+        }
+        if (!("Percent" in $$source)) {
+            /**
+             * @member
+             * @type {number}
+             */
+            this["Percent"] = 0;
+        }
+        if (!("Written" in $$source)) {
+            /**
+             * @member
+             * @type {number}
+             */
+            this["Written"] = 0;
+        }
+        if (!("IsDownload" in $$source)) {
+            /**
+             * @member
+             * @type {boolean}
+             */
+            this["IsDownload"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new TransferInfo instance from a string or object.
+     * @param {any} [$$source = {}]
+     * @returns {TransferInfo}
+     */
+    static createFrom($$source = {}) {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new TransferInfo(/** @type {Partial<TransferInfo>} */($$parsedSource));
+    }
+}

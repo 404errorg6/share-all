@@ -1,16 +1,19 @@
-/**
- * Transfer Service Logic
- */
+import { Events } from '@wailsio/runtime';
 
 globalThis.Components.Transfers = {
     STORAGE_KEY: 'ftp_transfer_history',
     LIMIT: 1000,
-    isPolling: false,
+    isSubscribed: false,
 
     init() {
-        if (this.isPolling) return;
-        this.isPolling = true;
-        this.startBackgroundPolling();
+        if (this.isSubscribed) return;
+        this.isSubscribed = true;
+        
+        // Listen for real-time transfer updates via Wails events
+        Events.On('transfers', (event) => {
+            const data = event && event.data ? event.data : event;
+            this.handleTransferEvent(data);
+        });
     },
 
     getHistory() {
@@ -50,21 +53,40 @@ globalThis.Components.Transfers = {
         window.dispatchEvent(new CustomEvent('transfer-completed', { detail: item }));
     },
 
-    startBackgroundPolling() {
-        const poll = async () => {
-            try {
-                const response = await fetch('/api/ftp/transfers');
-                if (response.ok) {
-                    const data = await response.json();
-                    this.processActiveTransfers(data || []);
-                }
-            } catch (e) { }
+    handleTransferEvent(item) {
+        if (!item || !item.Name) return;
 
-            setTimeout(() => poll(), 500);
+        let lastState = this.getTracking();
+
+        if (item.IsComplete) {
+            this.addCompleted({
+                ...item,
+                Timestamp: Date.now()
+            });
+            // Immediately remove from tracking since it's confirmed finished
+            const updated = lastState.filter(s => s.Name !== item.Name);
+            sessionStorage.setItem('ftp_active_tracking', JSON.stringify(updated));
+            return;
+        }
+
+        const index = lastState.findIndex(s => s.Name === item.Name);
+
+        // Data from Wails event matches config.TransferInfo
+        const updatedItem = {
+            ...item,
+            Timestamp: Date.now(),
+            _seenActive: true
         };
 
-        poll();
+        if (index > -1) {
+            lastState[index] = { ...lastState[index], ...updatedItem };
+        } else {
+            lastState.push(updatedItem);
+        }
+
+        sessionStorage.setItem('ftp_active_tracking', JSON.stringify(lastState));
     },
+
 
     extractFileName(line) {
         if (!line) return null;
@@ -154,55 +176,6 @@ globalThis.Components.Transfers = {
         sessionStorage.setItem('ftp_active_tracking', JSON.stringify(lastState));
     },
 
-    processActiveTransfers(activeData) {
-        if (!activeData || activeData === "null") activeData = [];
-        const lastState = this.getTracking();
-        const liveMap = new Map(activeData.map(d => [d.Name, d]));
-
-        const stillInState = [];
-
-        lastState.forEach(prev => {
-            const liveItem = liveMap.get(prev.Name);
-
-            if (liveItem) {
-                // Merge live metrics (Percent, Written, TotalSize) into Tracking
-                const updated = {
-                    ...prev,
-                    ...liveItem,
-                    _seenActive: true
-                };
-                stillInState.push(updated);
-
-                // Remove from liveMap so we don't add it as "brand new" later
-                liveMap.delete(prev.Name);
-            } else {
-                // Trigger completion if it disappeared from active list
-                const age = Date.now() - (prev.Timestamp || 0);
-                if (prev._seenActive || age > 30000) {
-                    this.addCompleted({
-                        ...prev,
-                        Percent: 100,
-                        Timestamp: Date.now()
-                    });
-                } else {
-                    // Keep waiting for it to appear in API or log
-                    stillInState.push(prev);
-                }
-            }
-        });
-
-        // Add brand new items from API that weren't in tracking yet
-        liveMap.forEach(liveItem => {
-            stillInState.push({
-                ...liveItem,
-                _seenActive: true,
-                _manual: false,
-                Timestamp: Date.now()
-            });
-        });
-
-        sessionStorage.setItem('ftp_active_tracking', JSON.stringify(stillInState));
-    },
 
     clearHistory() {
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify([]));
