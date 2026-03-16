@@ -26,19 +26,32 @@ const routes = {
     '/browse-remote-local': {
         name: 'browse-remote-local',
         path: 'browse-remote-local'
+    },
+    '/discover-local': {
+        name: 'browse-local',
+        path: 'browse-local'
     }
 };
 
 const appContent = document.getElementById('app-content');
 
+let currentCleanup = null;
+
 async function handleRoute() {
+    if (currentCleanup && typeof currentCleanup === 'function') {
+        currentCleanup();
+        currentCleanup = null;
+    }
+    
     let hash = window.location.hash || '#/';
     let routePath = hash.substring(1); // Remove #
     
-    // Normalize root
-    if (routePath === '') routePath = '/';
-
-    const route = routes[routePath] || routes['/'];
+    // Normalize path to always start with /
+    if (!routePath.startsWith('/')) routePath = '/' + routePath;
+    
+    // Ignore query params for route matching
+    const baseRoutePath = routePath.split('?')[0];
+    const route = routes[baseRoutePath] || routes['/'];
     
     try {
         // Dynamic import of the page module
@@ -55,7 +68,7 @@ async function handleRoute() {
 
         // Initialize page logic
         if (typeof module.init === 'function') {
-            module.init();
+            currentCleanup = module.init();
         }
 
         // Update sidebar highlight
