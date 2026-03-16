@@ -5,6 +5,8 @@ import (
 	"changeme/internal/services"
 	"embed"
 	_ "embed"
+	"io/fs"
+
 	//	"io/fs"
 	"log"
 	"net/http"
@@ -15,16 +17,13 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
-//go:embed  frontend
-var frontend embed.FS
-
 func init() {
-	//	contents, err := fs.Sub(frontend, "frontend") //cd into frontend
-	//	if err != nil {
-	//		log.Fatalf("Error cding into frontend: %v", err)
-	//	}
+	contents, err := fs.Sub(assets, "frontend/dist") //cd into frontend
+	if err != nil {
+		log.Fatalf("Error cding into frontend: %v", err)
+	}
 
-	config.AssetsServer = http.FileServer(http.FS(assets))
+	config.AssetsServer = http.FileServer(http.FS(contents))
 }
 
 // Register events
