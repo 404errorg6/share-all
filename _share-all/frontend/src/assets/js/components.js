@@ -30,6 +30,10 @@ function loadComponentModules() {
             globalThis.Components.Sidebar.inject();
         }
 
+        if (globalThis.Components.Modal && typeof globalThis.Components.Modal.inject === 'function') {
+            globalThis.Components.Modal.inject();
+        }
+
         if (globalThis.Components.Logger && typeof globalThis.Components.Logger.init === 'function') {
             globalThis.Components.Logger.init();
         }

@@ -104,7 +104,7 @@ globalThis.Components.Logger = {
 
         const html = `
         ${styles}
-        <button id="floating-log-trigger" onclick="Components.Logger.toggle()" title="System Logs">
+        <button id="floating-log-trigger" onclick="globalThis.Components.Logger.toggle()" title="System Logs">
             <span class="material-symbols-outlined" style="font-size: 32px;">terminal</span>
             <span id="log-badge"></span>
         </button>
@@ -116,10 +116,10 @@ globalThis.Components.Logger = {
                     <span style="font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.5);">Session Monitor</span>
                 </div>
                 <div style="display: flex; gap: 4px;">
-                    <button onclick="Components.Logger.clear()" style="width: 36px; height: 36px; border-radius: 12px; border: none; background: transparent; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='#64748b'">
+                    <button id="clear-log-btn" onclick="globalThis.Components.Logger.clear()" style="width: 36px; height: 36px; border-radius: 12px; border: none; background: transparent; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
                         <span class="material-symbols-outlined" style="font-size: 20px;">delete_sweep</span>
                     </button>
-                    <button onclick="Components.Logger.toggle()" style="width: 36px; height: 36px; border-radius: 12px; border: none; background: transparent; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='#64748b'">
+                    <button id="close-log-btn" onclick="globalThis.Components.Logger.toggle()" style="width: 36px; height: 36px; border-radius: 12px; border: none; background: transparent; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
                         <span class="material-symbols-outlined" style="font-size: 20px;">close</span>
                     </button>
                 </div>
@@ -131,7 +131,7 @@ globalThis.Components.Logger = {
 
             <div style="padding: 18px 24px; border-top: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02); display: flex; align-items: center; justify-content: space-between;">
                 <span id="mini-log-count" style="font-size: 9px; font-weight: 900; color: #475569; text-transform: uppercase; letter-spacing: 1px;">0 Lines</span>
-                <button id="mini-scroll-lock" onclick="Components.Logger.toggleScrollLock()" style="background: none; border: none; color: #38bdf8; cursor: pointer; display: flex; align-items: center;">
+                <button id="mini-scroll-lock" onclick="globalThis.Components.Logger.toggleScrollLock()" style="background: none; border: none; color: #38bdf8; cursor: pointer; display: flex; align-items: center;">
                     <span class="material-symbols-outlined" style="font-size: 20px;">vertical_align_bottom</span>
                 </button>
             </div>
