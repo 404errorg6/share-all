@@ -34,9 +34,9 @@ export const template = `
                     <label class="relative inline-flex cursor-pointer">
                         <input id="status-toggle" class="peer sr-only toggle-input" type="checkbox" />
                         <span
-                            class="block h-[31px] w-[51px] rounded-full p-0.5 bg-[#283439] peer-checked:bg-primary transition-colors toggle-track"
+                            class="block h-[31px] w-[51px] rounded-full p-0.5 bg-[#283439] transition-all toggle-track"
                             aria-hidden="true">
-                            <span class="toggle-knob transition-transform duration-200"></span>
+                            <span class="toggle-knob"></span>
                         </span>
                     </label>
                 </div>
@@ -99,8 +99,8 @@ export const template = `
                                 <input id="anonymous-login-toggle" name="anonymous" checked
                                     class="peer sr-only toggle-input" type="checkbox" />
                                 <span
-                                    class="block h-[31px] w-[51px] rounded-full p-0.5 bg-[#283439] peer-checked:bg-primary transition-colors toggle-track">
-                                    <span class="toggle-knob transition-transform duration-200"></span>
+                                    class="block h-[31px] w-[51px] rounded-full p-0.5 bg-[#283439] transition-all toggle-track">
+                                    <span class="toggle-knob"></span>
                                 </span>
                             </label>
                         </div>
@@ -128,8 +128,8 @@ export const template = `
                                 <input id="allow-writing-toggle" name="allow_writing" checked
                                     class="peer sr-only toggle-input" type="checkbox" />
                                 <span
-                                    class="block h-[31px] w-[51px] rounded-full p-0.5 bg-[#283439] peer-checked:bg-primary transition-colors toggle-track">
-                                    <span class="toggle-knob transition-transform duration-200"></span>
+                                    class="block h-[31px] w-[51px] rounded-full p-0.5 bg-[#283439] transition-all toggle-track">
+                                    <span class="toggle-knob"></span>
                                 </span>
                             </label>
                         </div>
@@ -153,9 +153,9 @@ export const template = `
                     <label class="relative inline-flex cursor-pointer">
                         <input id="web-share-toggle" class="peer sr-only toggle-input" type="checkbox" />
                         <span
-                            class="block h-[31px] w-[51px] rounded-full p-0.5 bg-[#283439] peer-checked:bg-primary transition-colors toggle-track"
+                            class="block h-[31px] w-[51px] rounded-full p-0.5 bg-[#283439] transition-all toggle-track"
                             aria-hidden="true">
-                            <span class="toggle-knob transition-transform duration-200"></span>
+                            <span class="toggle-knob"></span>
                         </span>
                     </label>
                 </div>
@@ -282,13 +282,9 @@ export function init() {
     }
 
     function updateToggleUI(input, isOn) {
-        const track = input.closest('label').querySelector('.toggle-track');
-        if (track) {
-            track.classList.toggle('bg-primary', isOn);
-            track.classList.toggle('bg-[#283439]', !isOn);
-            const knob = track.querySelector('.toggle-knob');
-            if (knob) knob.style.transform = isOn ? 'translateX(20px)' : 'translateX(0)';
-        }
+        // Now handled by CSS via :checked state on .toggle-input
+        // This function remains for potential future needs but is mostly redundant now
+        if (input) input.checked = isOn;
     }
 
     async function fetchServerStatus() {
