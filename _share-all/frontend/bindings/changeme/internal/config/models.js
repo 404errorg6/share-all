@@ -96,6 +96,13 @@ export class TransferInfo {
              */
             this["IsDownload"] = false;
         }
+        if (!("IsComplete" in $$source)) {
+            /**
+             * @member
+             * @type {boolean}
+             */
+            this["IsComplete"] = false;
+        }
 
         Object.assign(this, $$source);
     }
