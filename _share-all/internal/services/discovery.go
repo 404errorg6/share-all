@@ -49,7 +49,7 @@ func (d *Discovery) StartDiscovering(ctx context.Context) {
 	case <-stopDiscovery:
 	case <-ctx.Done():
 	}
-	fmt.Println("Exited discovery")
+	config.LogsCh <- "Exited discovery"
 }
 
 func (d *Discovery) StopDiscovery() {

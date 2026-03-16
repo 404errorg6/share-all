@@ -7,6 +7,7 @@ import (
 	_ "embed"
 	"fmt"
 	"io/fs"
+	"time"
 
 	//	"io/fs"
 	"log"
@@ -65,6 +66,7 @@ func main() {
 
 	//Logs events
 	go func() {
+		time.Sleep(2 * time.Second) //Wait for frontend start before sending logs
 		for log := range config.LogsCh {
 			log = fmt.Sprintf("[LOGS]: %v\n", log)
 			fmt.Print(log)
@@ -72,6 +74,7 @@ func main() {
 		}
 	}()
 
+	config.LogsCh <- "app ready to start"
 	err := app.Run()
 
 	if err != nil {

@@ -45,13 +45,11 @@ func startTracking(name string, size int64, isDownload bool, progressCh <-chan p
 		app.Event.Emit("transfers:ongoing", info)
 		transferMap.Store(name, info)
 
-		fmt.Printf("Downloaded: %.2f%%\nEstimated: %v\nWritten: %v\n", p.Percent(), p.Estimated(), p.N())
-		fmt.Println("--------------------------------------------------")
 		fmt.Printf("\n")
 	}
 
 	info.IsComplete = true
 	app.Event.Emit("transfers:completed", info)
 	transferMap.Delete(name)
-	config.LogsCh <- fmt.Sprintf("%v completed!", name)
+	config.LogsCh <- fmt.Sprintf("Completed \"%v\"!", name)
 }

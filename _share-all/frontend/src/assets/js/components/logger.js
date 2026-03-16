@@ -1,13 +1,10 @@
-/**
- * Logger Component Logic
- */
+import { Events } from '@wailsio/runtime';
 
 globalThis.Components.Logger = {
     isInitialized: false,
     isOpen: false,
     isAutoScroll: true,
     logCount: 0,
-    abortController: null,
     MAX_LOGS: 1000,
     PRUNE_COUNT: 200,
     STORAGE_KEY: 'ftp_session_logs',
@@ -17,7 +14,7 @@ globalThis.Components.Logger = {
         this.isInitialized = true;
         this.injectUI();
         this.loadFromStorage();
-        this.connect();
+        this.subscribe();
     },
 
     injectUI() {
@@ -126,7 +123,7 @@ globalThis.Components.Logger = {
             </div>
             
             <div id="mini-log-container" style="flex: 1; overflow-y: auto; padding: 24px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px; line-height: 1.6; background: rgba(0,0,0,0.2);">
-                <div style="color: #64748b; font-style: italic; opacity: 0.5;">Syncing history...</div>
+                <div style="color: #64748b; font-style: italic; opacity: 0.5;">No logs yet...</div>
             </div>
 
             <div style="padding: 18px 24px; border-top: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02); display: flex; align-items: center; justify-content: space-between;">
@@ -165,7 +162,7 @@ globalThis.Components.Logger = {
             btn.classList.remove('text-slate-500');
             icon.innerText = 'vertical_align_bottom';
             const container = document.getElementById('mini-log-container');
-            container.scrollTop = container.scrollHeight;
+            if (container) container.scrollTop = container.scrollHeight;
         } else {
             btn.classList.remove('text-primary');
             btn.classList.add('text-slate-500');
@@ -175,7 +172,7 @@ globalThis.Components.Logger = {
 
     clear() {
         const container = document.getElementById('mini-log-container');
-        container.innerHTML = '<div class="text-slate-500 italic opacity-40">History cleared...</div>';
+        if (container) container.innerHTML = '<div class="text-slate-500 italic opacity-40">History cleared...</div>';
         this.logCount = 0;
         sessionStorage.removeItem(this.STORAGE_KEY);
         this.updateCount();
@@ -229,69 +226,42 @@ globalThis.Components.Logger = {
         return entry;
     },
 
-    async connect() {
-        if (this.abortController) this.abortController.abort();
-        this.abortController = new AbortController();
+    subscribe() {
+        console.log('Subscribing to session logs via Events...');
+        Events.On('Logs', (event) => {
+            const line = event && event.data ? event.data : event;
+            if (typeof line !== 'string' || line.trim().length === 0) return;
 
-        try {
-            console.log('Connecting to session logs...');
-            const response = await fetch('/api/logs', {
-                signal: this.abortController.signal,
-                headers: { 'Accept': 'text/event-stream' }
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to connect to logs: ${response.statusText}`);
-            }
-
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
             const container = document.getElementById('mini-log-container');
-            let partialLine = '';
+            if (!container) return;
 
-            while (true) {
-                const { value, done } = await reader.read();
-                if (done) break;
-
-                const chunk = decoder.decode(value, { stream: true });
-                const fullContent = partialLine + chunk;
-                const lines = fullContent.split('\n');
-
-                // The last element of split is either empty (if chunk ended in \n)
-                // or a partial line that should be saved for the next chunk
-                partialLine = lines.pop();
-
-                lines.forEach(line => {
-                    if (line.trim().length === 0) return;
-                    this.logCount++;
-                    container.appendChild(this.createEntry(line));
-                    this.saveLog(line);
-
-                    // Notify history/transfer service
-                    if (globalThis.Components && globalThis.Components.Transfers && globalThis.Components.Transfers.handleLog) {
-                        try {
-                            globalThis.Components.Transfers.handleLog(line);
-                        } catch (e) { }
-                    }
-                });
-
-                if (lines.length > 0) {
-                    this.updateCount();
-
-                    if (!this.isOpen) {
-                        document.getElementById('log-badge').classList.add('active');
-                    }
-
-                    if (this.isAutoScroll && this.isOpen) {
-                        container.scrollTop = container.scrollHeight;
-                    }
-                }
+            // Remove the "No logs yet..." placeholder if it exists
+            if (this.logCount === 0) {
+                container.innerHTML = '';
             }
-        } catch (err) {
-            if (err.name !== 'AbortError') {
-                console.warn('Logging connection dropped. Retrying in 5s...', err);
-                setTimeout(() => this.connect(), 5000);
+
+            this.logCount++;
+            container.appendChild(this.createEntry(line));
+            this.saveLog(line);
+
+            // Notify history/transfer service
+            if (globalThis.Components && globalThis.Components.Transfers && globalThis.Components.Transfers.handleLog) {
+                try {
+                    globalThis.Components.Transfers.handleLog(line);
+                } catch (e) { }
             }
-        }
+
+            this.updateCount();
+
+            if (!this.isOpen) {
+                const badge = document.getElementById('log-badge');
+                if (badge) badge.classList.add('active');
+            }
+
+            if (this.isAutoScroll && this.isOpen) {
+                container.scrollTop = container.scrollHeight;
+            }
+        });
     }
 };
+
