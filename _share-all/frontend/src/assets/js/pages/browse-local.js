@@ -131,27 +131,6 @@ export const template = `
                 class="w-full py-6 text-xs font-black uppercase tracking-[0.2em] text-slate-500 hover:text-white border-t border-white/5 transition-colors">Cancel</button>
         </div>
     </div>
-
-    <!-- Preview Modal -->
-    <div id="preview-modal"
-        class="fixed inset-0 z-50 hidden flex flex-col bg-slate-50 dark:bg-background-dark transition-all">
-        <header
-            class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-white/5 bg-white/95 dark:bg-background-dark/95 backdrop-blur-md">
-            <div class="flex items-center gap-3 overflow-hidden">
-                <button id="close-preview-btn"
-                    class="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-200">
-                    <span class="material-symbols-outlined text-2xl">arrow_back</span>
-                </button>
-                <div class="flex flex-col overflow-hidden">
-                    <p id="preview-filename" class="text-sm font-bold dark:text-white truncate"></p>
-                    <p class="text-[10px] text-primary font-black uppercase tracking-widest">Local Preview</p>
-                </div>
-            </div>
-        </header>
-        <div class="flex-1 overflow-auto bg-slate-200 dark:bg-black/40 flex items-center justify-center relative">
-            <div id="preview-container" class="w-full h-full p-4 flex items-center justify-center overflow-auto"></div>
-        </div>
-    </div>
 `;
 
 let currentPath = '.';

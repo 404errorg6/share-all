@@ -247,6 +247,7 @@ export function init() {
         Clipboard.updateBar();
         Clipboard.syncModeUI();
     }
+    window.switchPane = switchPane;
 
     // --- Data Fetching ---
     async function fetchFiles(type, path, silent = false, forceRefresh = false) {
@@ -315,11 +316,13 @@ export function init() {
     function toggleSelection(path, name, isFolder, pane, size) {
         Clipboard.toggleSelection({ path, name, isFolder, size }, pane, () => refreshCurrent(true));
     }
+    window.toggleSelection = toggleSelection;
 
     function refreshCurrent(silent = false, forceRefresh = false) {
         if (state.activePane === 'remote') fetchFiles('remote', state.currentRemotePath, silent, forceRefresh);
         else fetchFiles('local', state.currentLocalPath, silent, forceRefresh);
     }
+    window.refreshCurrent = refreshCurrent;
 
     // --- File Actions ---
     function openRemoteOptions(entry, path) {

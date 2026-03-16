@@ -5,6 +5,7 @@ import (
 	"changeme/internal/services"
 	"embed"
 	_ "embed"
+	"fmt"
 	"io/fs"
 
 	//	"io/fs"
@@ -61,6 +62,15 @@ func main() {
 		BackgroundColour: application.NewRGB(27, 38, 54),
 		URL:              "/",
 	})
+
+	//Logs events
+	go func() {
+		for log := range config.LogsCh {
+			log = fmt.Sprintf("[LOGS]: %v\n", log)
+			fmt.Print(log)
+			app.Event.Emit("Logs", log)
+		}
+	}()
 
 	err := app.Run()
 

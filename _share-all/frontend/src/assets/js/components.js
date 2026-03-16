@@ -17,7 +17,7 @@ globalThis.Components = {
 
 // Dynamic loader for component modules using ES imports (module-safe)
 function loadComponentModules() {
-    const components = ['sidebar', 'modal', 'toast', 'logger', 'transfers'];
+    const components = ['sidebar', 'modal', 'toast', 'logger', 'transfers', 'preview'];
     // Import modules for side-effects (they assign into globalThis.Components)
     return Promise.all(components.map(c => import(`./components/${c}.js`).catch(err => ({ err, name: c }))))
         .then(results => {
@@ -32,6 +32,10 @@ function loadComponentModules() {
 
         if (globalThis.Components.Modal && typeof globalThis.Components.Modal.inject === 'function') {
             globalThis.Components.Modal.inject();
+        }
+
+        if (globalThis.Components.Preview && typeof globalThis.Components.Preview.inject === 'function') {
+            globalThis.Components.Preview.inject();
         }
 
         if (globalThis.Components.Logger && typeof globalThis.Components.Logger.init === 'function') {
