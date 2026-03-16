@@ -13,6 +13,7 @@ declare module "@wailsio/runtime" {
     namespace Events {
         interface CustomEvents {
             "client:discover-servers": config$0.ServerDiscoveryInfo;
+            "transfers": config$0.TransferInfo;
         }
     }
 }

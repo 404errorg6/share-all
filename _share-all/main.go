@@ -29,6 +29,7 @@ func init() {
 // Register events
 func init() {
 	application.RegisterEvent[config.ServerDiscoveryInfo]("client:discover-servers")
+	application.RegisterEvent[config.TransferInfo]("transfers")
 }
 
 func main() {

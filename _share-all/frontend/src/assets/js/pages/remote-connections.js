@@ -1,4 +1,4 @@
-import { StartDiscovering } from '../../../../bindings/changeme/internal/services/discovery.js';
+import { StartDiscovering, StopDiscovery } from '../../../../bindings/changeme/internal/services/discovery.js';
 import { Events } from '@wailsio/runtime';
 
 /**
@@ -115,6 +115,26 @@ export function init() {
     const discoveredCards = new Map();
     let pendingServer = null;
 
+    function stopDiscovery() {
+        if (discoveryAbortController) {
+            discoveryAbortController.abort();
+            discoveryAbortController = null;
+        }
+        if (discoveryTimeout) {
+            clearTimeout(discoveryTimeout);
+            discoveryTimeout = null;
+        }
+        if (discoveryEventUnsubscribe) {
+            discoveryEventUnsubscribe();
+            discoveryEventUnsubscribe = null;
+        }
+        try {
+            StopDiscovery();
+        } catch (e) {
+            console.warn('Failed to call StopDiscovery:', e);
+        }
+    }
+
     async function _StartDiscovering() {
         try {
             return StartDiscovering();
@@ -124,9 +144,7 @@ export function init() {
     }
 
     async function discoverServers() {
-        if (discoveryAbortController) discoveryAbortController.abort();
-        if (discoveryTimeout) clearTimeout(discoveryTimeout);
-        if (discoveryEventUnsubscribe) discoveryEventUnsubscribe();
+        stopDiscovery();
 
         discoveryList.innerHTML = '';
         discoveredCards.clear();
@@ -143,8 +161,8 @@ export function init() {
         const signal = discoveryAbortController.signal;
 
         discoveryTimeout = setTimeout(() => {
-            if (discoveryAbortController) discoveryAbortController.abort();
-        }, 10000);
+            stopDiscovery();
+        }, 15000);
 
         try {
             discoveryEventUnsubscribe = Events.On('client:discover-servers', (event) => {
@@ -256,6 +274,7 @@ export function init() {
 
             const text = await response.text();
             if (response.ok || text.includes('already connected')) {
+                stopDiscovery(); // Stop scanning once connected
                 if (globalThis.Components?.showToast) globalThis.Components.showToast('Connected successfully', 'success');
                 if (name) {
                     localStorage.setItem('current_remote_name', name);
@@ -315,5 +334,10 @@ export function init() {
     }
 
     checkStatus();
+
+    // Return cleanup function for the router
+    return () => {
+        stopDiscovery();
+    };
 }
 
