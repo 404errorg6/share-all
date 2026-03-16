@@ -18,7 +18,7 @@ func HandleStartWebUI(w http.ResponseWriter, req *http.Request) {
 		goto EXIT
 	}
 
-	config.LogsCh <- fmt.Sprintln("Starting web-share sharing...")
+	config.LogsCh <- fmt.Sprintln("Starting web-share...")
 
 	go func() {
 		err := config.MiniServer.Conn.ListenAndServe()
