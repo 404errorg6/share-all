@@ -18,11 +18,9 @@ globalThis.Components = {
 // Dynamic loader for component modules using ES imports (module-safe)
 function loadComponentModules() {
     const components = ['sidebar', 'modal', 'toast', 'logger', 'transfers'];
-    const basePath = '/src/assets/js/components';
-
     // Import modules for side-effects (they assign into globalThis.Components)
-        return Promise.all(components.map(c => import(`${basePath}/${c}.js`).catch(err => ({ err, name: c }))))
-            .then(results => {
+    return Promise.all(components.map(c => import(`./components/${c}.js`).catch(err => ({ err, name: c }))))
+        .then(results => {
             const failed = results.filter(r => r && r.err);
             if (failed.length) {
                 console.warn('Some component modules failed to load:', failed.map(f => f.name));

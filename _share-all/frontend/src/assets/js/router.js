@@ -5,27 +5,27 @@
 const routes = {
     '/': {
         name: 'browse-local',
-        path: 'browse-local.js'
+        path: 'browse-local'
     },
     '/hosting': {
         name: 'hosting-panel',
-        path: 'hosting-panel.js'
+        path: 'hosting-panel'
     },
     '/discover': {
         name: 'discover-servers',
-        path: 'remote-connections.js'
+        path: 'remote-connections'
     },
     '/transfers': {
         name: 'transfers',
-        path: 'transfers.js'
+        path: 'transfers'
     },
     '/access': {
         name: 'hosting-access',
-        path: 'hosting-access.js'
+        path: 'hosting-access'
     },
     '/browse-remote-local': {
         name: 'browse-remote-local',
-        path: 'browse-remote-local.js'
+        path: 'browse-remote-local'
     }
 };
 
@@ -42,7 +42,7 @@ async function handleRoute() {
     
     try {
         // Dynamic import of the page module
-        const module = await import(`./pages/${route.path}`);
+        const module = await import(`./pages/${route.path}.js`);
         
         // Inject template
         if (module.template) {

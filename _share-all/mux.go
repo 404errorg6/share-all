@@ -12,7 +12,7 @@ func Mux() *http.ServeMux {
 	mux := http.NewServeMux()
 
 	// HTTP Handles
-	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) { // Root logic
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { // Root logic
 		config.AssetsServer.ServeHTTP(w, r)
 	})
 	mux.HandleFunc("GET /api/logs", httphandlers.HandleLogs) //get logs

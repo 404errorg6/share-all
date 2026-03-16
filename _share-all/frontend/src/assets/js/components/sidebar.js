@@ -137,4 +137,3 @@ globalThis.Components.Sidebar = {
 globalThis.Components.injectSidebar = (id) => globalThis.Components.Sidebar.inject(id);
 globalThis.Components.toggleMenu = (force) => globalThis.Components.Sidebar.toggleMenu(force);
 globalThis.Components.handleSidebarClick = (e, url) => globalThis.Components.Sidebar.handleClick(e, url);
-globalThis.Components.Sidebar.highlight = (id) => globalThis.Components.Sidebar.highlight(id);
