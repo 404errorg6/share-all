@@ -4,9 +4,10 @@
 
 globalThis.Components.Modal = {
     inject() {
+        if (document.getElementById('gui-modal')) return;
         const modalHTML = `
         <div id="gui-modal" class="fixed inset-0 z-[100] flex items-center justify-center p-6 hidden">
-            <div id="modal-backdrop-gui" class="modal-overlay absolute inset-0" onclick="Components.Modal.close()"></div>
+            <div id="modal-backdrop-gui" class="modal-overlay absolute inset-0" onclick="globalThis.Components.Modal.close()"></div>
             <div id="modal-content-gui" class="modal-container relative w-full max-w-[340px] glass-panel rounded-[2rem] overflow-hidden shadow-2xl">
                 <div class="p-8 text-center">
                     <div id="modal-icon-container" class="mx-auto size-20 rounded-full flex items-center justify-center mb-6">
@@ -16,7 +17,7 @@ globalThis.Components.Modal = {
                     <p id="modal-message" class="text-slate-400 text-sm leading-relaxed mb-8 px-2"></p>
                     <div class="flex flex-col gap-3">
                         <button id="modal-primary-btn" class="h-14 w-full rounded-2xl font-bold text-lg shadow-lg transition-all active:scale-95"></button>
-                        <button id="modal-secondary-btn" onclick="Components.Modal.close()" class="h-14 w-full rounded-2xl font-bold text-slate-400 hover:text-white transition-colors">Cancel</button>
+                        <button id="modal-secondary-btn" onclick="globalThis.Components.Modal.close()" class="h-14 w-full rounded-2xl font-bold text-slate-400 hover:text-white transition-colors">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -27,13 +28,21 @@ globalThis.Components.Modal = {
     onPrimary: null,
     onSecondary: null,
 
-    open({ title, message, icon, type, primaryText, secondaryText, onPrimary, onSecondary }) {
+    openGuiModal({ title, message, icon, type, primaryText, secondaryText, onPrimary, onSecondary }) {
+        if (!document.getElementById('gui-modal')) {
+            this.inject();
+        }
         const mTitle = document.getElementById('modal-title');
         const mMsg = document.getElementById('modal-message');
         const mIcon = document.getElementById('modal-icon');
         const mPrimaryBtn = document.getElementById('modal-primary-btn');
         const mSecondaryBtn = document.getElementById('modal-secondary-btn');
         const mIconContainer = document.getElementById('modal-icon-container');
+
+        if (!mTitle) {
+            console.error('Modal elements not found after injection!');
+            return;
+        }
 
         mTitle.innerText = title;
         mMsg.innerText = message;
@@ -85,5 +94,5 @@ globalThis.Components.Modal = {
 
 // Aliases for compatibility
 globalThis.Components.injectModal = () => globalThis.Components.Modal.inject();
-globalThis.Components.openGuiModal = (opts) => globalThis.Components.Modal.open(opts);
+globalThis.Components.openGuiModal = (opts) => globalThis.Components.Modal.openGuiModal(opts);
 globalThis.Components.closeGuiModal = () => globalThis.Components.Modal.close();

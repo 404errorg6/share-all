@@ -1,3 +1,6 @@
+import { StartDiscovering } from '../../../../bindings/changeme/internal/services/discovery.js';
+import { Events } from '@wailsio/runtime';
+
 /**
  * Discover Servers (Remote Connections) Page Logic
  */
@@ -112,24 +115,12 @@ export function init() {
     const discoveredCards = new Map();
     let pendingServer = null;
 
-    function _Events() {
-        if (globalThis.wails && globalThis.wails.Events) return globalThis.wails.Events;
-        return { On: (name, cb) => { console.warn('Wails Events not available:', name); return () => {}; } };
-    }
-
     async function _StartDiscovering() {
-        if (globalThis.wails && globalThis.wails.Services && globalThis.wails.Services.Discovery) {
-            try {
-                const svc = new globalThis.wails.Services.Discovery();
-                return svc.StartDiscovering();
-            } catch (e) {
-                return Promise.reject(e);
-            }
+        try {
+            return StartDiscovering();
+        } catch (e) {
+            return Promise.reject(e);
         }
-        if (globalThis.wails && globalThis.wails.Call && typeof globalThis.wails.Call.ByID === 'function') {
-            return globalThis.wails.Call.ByID(253510713);
-        }
-        return Promise.reject(new Error('Wails runtime not available'));
     }
 
     async function discoverServers() {
@@ -156,7 +147,7 @@ export function init() {
         }, 10000);
 
         try {
-            discoveryEventUnsubscribe = _Events().On('client:discover-servers', (event) => {
+            discoveryEventUnsubscribe = Events.On('client:discover-servers', (event) => {
                 const server = event && event.data ? event.data : event;
                 const serverId = `${server.Name || ''}-${server.IP}:${server.Port}`;
                 discoveryState.classList.add('hidden');
