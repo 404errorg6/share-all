@@ -503,6 +503,6 @@ export function init() {
     fetchFiles('local', state.currentLocalPath || '.', false);
 
     if (globalThis.Components?.Sidebar?.highlight) {
-        globalThis.Components.Sidebar.highlight('browse-remote-local');
+        globalThis.Components.Sidebar.highlight('discover-servers');
     }
 }

@@ -262,7 +262,7 @@ export function init() {
                     localStorage.setItem('current_remote_host', host);
                     localStorage.setItem('current_remote_port', port);
                 }
-                window.location.hash = '#/access'; // Logic updated in router
+                window.location.hash = '#/browse-remote-local';
             } else {
                 if (globalThis.Components?.showToast) globalThis.Components.showToast(`Connection failed: ${text}`, 'error');
             }
@@ -299,7 +299,7 @@ export function init() {
             if (response.ok) {
                 const status = await response.json();
                 if (status === "connected") {
-                    window.location.hash = '#/access';
+                    window.location.hash = '#/browse-remote-local';
                     return;
                 }
             }
@@ -308,7 +308,7 @@ export function init() {
     }
 
     if (globalThis.Components?.Sidebar?.highlight) {
-        globalThis.Components.Sidebar.highlight('remote-connections');
+        globalThis.Components.Sidebar.highlight('discover-servers');
     }
 
     checkStatus();
