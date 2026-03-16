@@ -19,7 +19,6 @@ globalThis.Components = {
 function loadComponentModules() {
     const components = ['sidebar', 'modal', 'preview', 'logger', 'transfers', 'toast'];
     // Import modules for side-effects (they assign into globalThis.Components)
-    // Using a predictable template literal allows Vite to analyze the directory.
     return Promise.all(components.map(c => import(`./components/${c}.js`).catch(err => ({ err, name: c }))))
         .then(results => {
             const failed = results.filter(r => r && r.err);
