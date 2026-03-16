@@ -16,7 +16,7 @@ globalThis.Components.Sidebar = {
                 </button>
             </div>
             <div class="flex-1 overflow-y-auto py-2">
-                <a href="/" onclick="Components.Sidebar.handleClick(event, '/')" 
+                <a href="#/" onclick="Components.Sidebar.handleClick(event, '#/')" 
                     class="sidebar-link px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group border-l-4 border-transparent" data-id="browse-local">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-500">
@@ -25,7 +25,7 @@ globalThis.Components.Sidebar = {
                         <span class="text-sm font-semibold">Local Storage</span>
                     </div>
                 </a>
-                <a href="/src/pages/hosting-panel.html" onclick="Components.Sidebar.handleClick(event, '/src/pages/hosting-panel.html')"
+                <a href="#/hosting" onclick="Components.Sidebar.handleClick(event, '#/hosting')"
                     class="sidebar-link px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group border-l-4 border-transparent" data-id="hosting-panel">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-blue-50 dark:bg-blue-500/10 text-primary">
@@ -34,8 +34,8 @@ globalThis.Components.Sidebar = {
                         <span class="text-sm font-semibold">Hosting Panel</span>
                     </div>
                 </a>
-                <a href="/src/pages/discover-servers.html" onclick="Components.Sidebar.handleClick(event, '/src/pages/discover-servers.html')"
-                    class="sidebar-link px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group border-l-4 border-transparent" data-id="remote-connections">
+                <a href="#/discover" onclick="Components.Sidebar.handleClick(event, '#/discover')"
+                    class="sidebar-link px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group border-l-4 border-transparent" data-id="discover-servers">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-500">
                             <span class="material-symbols-outlined">wifi_tethering</span>
@@ -43,7 +43,7 @@ globalThis.Components.Sidebar = {
                         <span class="text-sm font-semibold">Discover Servers</span>
                     </div>
                 </a>
-                <a href="/src/pages/transfers.html" onclick="Components.Sidebar.handleClick(event, '/src/pages/transfers.html')"
+                <a href="#/transfers" onclick="Components.Sidebar.handleClick(event, '#/transfers')"
                     class="sidebar-link px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group border-l-4 border-transparent" data-id="transfers">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-teal-50 dark:bg-teal-500/10 text-teal-500">
@@ -52,7 +52,7 @@ globalThis.Components.Sidebar = {
                         <span class="text-sm font-semibold">Transfers</span>
                     </div>
                 </a>
-                <a href="/src/pages/hosting-access.html" onclick="Components.Sidebar.handleClick(event, '/src/pages/hosting-access.html')"
+                <a href="#/access" onclick="Components.Sidebar.handleClick(event, '#/access')"
                     class="sidebar-link px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group border-l-4 border-transparent" data-id="hosting-access">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-green-50 dark:bg-green-500/10 text-green-500">
@@ -69,14 +69,7 @@ globalThis.Components.Sidebar = {
 
     inject(activePageId) {
         document.body.insertAdjacentHTML('beforeend', this._template);
-
-        if (activePageId) {
-            const activeLink = document.querySelector(`.sidebar-link[data-id="${activePageId}"]`);
-            if (activeLink) {
-                activeLink.classList.remove('border-transparent');
-                activeLink.classList.add('bg-primary/5', 'border-primary');
-            }
-        }
+        if (activePageId) this.highlight(activePageId);
 
         // Add gesture support
         let touchStartX = 0;
@@ -86,6 +79,18 @@ globalThis.Components.Sidebar = {
             if (touchEndX > touchStartX + 100 && touchStartX < 50) this.toggleMenu(true);
             if (touchEndX < touchStartX - 100) this.toggleMenu(false);
         }, { passive: true });
+    },
+
+    highlight(activePageId) {
+        document.querySelectorAll('.sidebar-link').forEach(link => {
+            link.classList.remove('bg-primary/5', 'border-primary');
+            link.classList.add('border-transparent');
+        });
+        const activeLink = document.querySelector(`.sidebar-link[data-id="${activePageId}"]`);
+        if (activeLink) {
+            activeLink.classList.remove('border-transparent');
+            activeLink.classList.add('bg-primary/5', 'border-primary');
+        }
     },
 
     isMenuOpen: false,
@@ -119,7 +124,9 @@ globalThis.Components.Sidebar = {
         link.style.opacity = '0.7';
         this.toggleMenu(false);
         setTimeout(() => {
-            window.location.href = url;
+            window.location.hash = url;
+            link.style.transform = '';
+            link.style.opacity = '';
         }, 150);
         event.preventDefault();
         return false;
@@ -130,3 +137,4 @@ globalThis.Components.Sidebar = {
 globalThis.Components.injectSidebar = (id) => globalThis.Components.Sidebar.inject(id);
 globalThis.Components.toggleMenu = (force) => globalThis.Components.Sidebar.toggleMenu(force);
 globalThis.Components.handleSidebarClick = (e, url) => globalThis.Components.Sidebar.handleClick(e, url);
+globalThis.Components.Sidebar.highlight = (id) => globalThis.Components.Sidebar.highlight(id);

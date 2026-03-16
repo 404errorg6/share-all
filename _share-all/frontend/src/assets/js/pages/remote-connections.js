@@ -1,181 +1,209 @@
 /**
- * Remote Connections Page Logic
+ * Discover Servers (Remote Connections) Page Logic
  */
-import { Events } from '@wailsio/runtime'
-import { StartDiscovering } from '../../../../bindings/changeme/internal/services/discovery.js';
-const RemoteConnections = {
-    discoveryList: null,
-    discoveryState: null,
-    loginModal: null,
-    rescanBtn: null,
-    discoveryTimeout: null,
 
-    init() {
-        console.log('RemoteConnections: init triggered');
-        this.discoveryList = document.getElementById('discovery-list');
-        this.discoveryState = document.getElementById('discovery-state');
-        this.loginModal = document.getElementById('login-modal');
-        this.rescanBtn = document.getElementById('rescan-btn');
+export const template = `
+        <!-- Header -->
+        <header class="sticky top-0 z-20 bg-background-dark/95 backdrop-blur-md border-b border-slate-800 p-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <button id="menu-btn"
+                        class="text-primary flex size-10 items-center justify-center rounded-full hover:bg-slate-800 transition-colors">
+                        <span class="material-symbols-outlined text-3xl">menu</span>
+                    </button>
+                    <h2 class="text-xl font-bold leading-tight tracking-tight text-white">Discover Servers</h2>
+                </div>
+            </div>
+        </header>
 
-        this.checkExistingConnection();
-    },
+        <main class="flex-1 flex flex-col p-4 gap-8" id="connections-container">
+            <!-- Discovery Section -->
+            <section>
+                <div class="flex items-center justify-between mb-4">
+                    <h3
+                        class="text-sm font-black text-slate-500 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-lg animate-pulse">radar</span>
+                        Auto-Discovery
+                    </h3>
+                    <div class="h-px flex-1 bg-white/5 mx-4"></div>
+                    <button id="rescan-btn"
+                        class="flex items-center gap-1 text-[10px] font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-all">
+                        <span class="material-symbols-outlined text-sm">refresh</span> RE-SCAN
+                    </button>
+                </div>
 
-    async checkExistingConnection() {
-        const params = new URLSearchParams(window.location.search);
-        const forceDiscovery = params.get('ignoreStatus') === 'true';
+                <div id="discovery-state"
+                    class="hidden py-16 flex flex-col items-center justify-center bg-slate-800/10 rounded-[2rem] border border-white/5">
+                    <div class="size-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4">
+                    </div>
+                    <p class="text-sm font-bold text-slate-300">Scanning Network</p>
+                    <p class="text-[10px] text-slate-500 mt-1 uppercase tracking-widest font-medium">Looking for active
+                        FTP servers...</p>
+                </div>
 
-        if (forceDiscovery) {
-            this.discoverServers();
-            return;
-        }
+                <div id="discovery-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            </section>
+        </main>
 
-        try {
-            const response = await fetch('/api/ftp/client/status');
-            if (response.ok) {
-                const status = await response.json();
-                if (status === "connected") {
-                    console.log("RemoteConnections: Already connected, redirecting...");
-                    window.location.href = 'browse-remote-local.html';
-                    return;
-                }
-            }
-        } catch (e) {
-            console.error("Error checking connection status:", e);
-        }
-        this.discoverServers();
-    },
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 z-[100] flex items-center justify-center p-6 hidden">
+        <div id="login-modal-backdrop" class="modal-overlay absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+        <div id="login-modal-content"
+            class="modal-container relative w-full max-w-[360px] bg-slate-900 rounded-[2.5rem] overflow-hidden shadow-2xl transition-all scale-95 opacity-0">
+            <div class="p-8">
+                <div class="flex items-center gap-4 mb-8">
+                    <div class="size-20 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                        <span class="material-symbols-outlined text-4xl">lock_open</span>
+                    </div>
+                    <div class="flex-1 overflow-hidden">
+                        <h3 id="login-server-name" class="text-xl font-bold text-white truncate leading-tight"></h3>
+                        <p id="login-server-addr" class="text-slate-500 text-xs font-mono"></p>
+                    </div>
+                </div>
 
-    discoveryAbortController: null,
-    discoveredCards: new Map(),
-    discoveryEventUnsubscribe: null,
+                <div class="space-y-4 mb-8">
+                    <div class="group">
+                        <label
+                            class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-2 ml-1">Username</label>
+                        <div class="relative">
+                            <span
+                                class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xl group-focus-within:text-primary transition-colors">person</span>
+                            <input type="text" id="login-user"
+                                class="w-full h-14 bg-white/[0.03] border border-white/10 rounded-2xl pl-12 pr-5 text-white focus:border-primary/50 focus:bg-primary/[0.02] outline-none transition-all"
+                                placeholder="Enter username">
+                        </div>
+                    </div>
+                    <div class="group">
+                        <label
+                            class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-2 ml-1">Password</label>
+                        <div class="relative">
+                            <span
+                                class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xl group-focus-within:text-primary transition-colors">key</span>
+                            <input type="password" id="login-pass"
+                                class="w-full h-14 bg-white/[0.03] border border-white/10 rounded-2xl pl-12 pr-5 text-white focus:border-primary/50 focus:bg-primary/[0.02] outline-none transition-all"
+                                placeholder="••••••••">
+                        </div>
+                    </div>
+                </div>
 
-    // Runtime wrappers to avoid static imports when running outside Vite dev server
-    _Events() {
-        if (window.wails && window.wails.Events) return window.wails.Events;
-        // fallback shim with no-op On
+                <div class="flex flex-col gap-3">
+                    <button id="submit-login-btn"
+                        class="h-16 w-full bg-primary text-white rounded-2xl font-bold text-lg transition-all active:scale-95 shadow-lg">Connect
+                        Server</button>
+                    <button id="close-login-btn"
+                        class="h-12 w-full rounded-xl font-bold text-slate-500 hover:text-white transition-colors">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+`;
+
+export function init() {
+    const discoveryList = document.getElementById('discovery-list');
+    const discoveryState = document.getElementById('discovery-state');
+    const loginModal = document.getElementById('login-modal');
+    const rescanBtn = document.getElementById('rescan-btn');
+    const loginModalContent = document.getElementById('login-modal-content');
+    const loginModalBackdrop = document.getElementById('login-modal-backdrop');
+
+    let discoveryAbortController = null;
+    let discoveryTimeout = null;
+    let discoveryEventUnsubscribe = null;
+    const discoveredCards = new Map();
+    let pendingServer = null;
+
+    function _Events() {
+        if (globalThis.wails && globalThis.wails.Events) return globalThis.wails.Events;
         return { On: (name, cb) => { console.warn('Wails Events not available:', name); return () => {}; } };
-    },
+    }
 
-    async _StartDiscovering() {
-        // Prefer Services API
-        if (window.wails && window.wails.Services && window.wails.Services.Discovery) {
+    async function _StartDiscovering() {
+        if (globalThis.wails && globalThis.wails.Services && globalThis.wails.Services.Discovery) {
             try {
-                const svc = new window.wails.Services.Discovery();
+                const svc = new globalThis.wails.Services.Discovery();
                 return svc.StartDiscovering();
             } catch (e) {
                 return Promise.reject(e);
             }
         }
-        // Fallback to Call.ByID if available (use method id from generated bindings)
-        if (window.wails && window.wails.Call && typeof window.wails.Call.ByID === 'function') {
-            return window.wails.Call.ByID(253510713);
+        if (globalThis.wails && globalThis.wails.Call && typeof globalThis.wails.Call.ByID === 'function') {
+            return globalThis.wails.Call.ByID(253510713);
         }
         return Promise.reject(new Error('Wails runtime not available'));
-    },
+    }
 
-    async discoverServers() {
-        if (this.discoveryAbortController) {
-            this.discoveryAbortController.abort();
-            this.discoveryAbortController = null;
-        }
-        if (this.discoveryTimeout) {
-            clearTimeout(this.discoveryTimeout);
-            this.discoveryTimeout = null;
-        }
-        if (this.discoveryEventUnsubscribe) {
-            this.discoveryEventUnsubscribe();
-            this.discoveryEventUnsubscribe = null;
-        }
+    async function discoverServers() {
+        if (discoveryAbortController) discoveryAbortController.abort();
+        if (discoveryTimeout) clearTimeout(discoveryTimeout);
+        if (discoveryEventUnsubscribe) discoveryEventUnsubscribe();
 
-        // Clear existing results to ensure fresh discovery
-        this.discoveryList.innerHTML = '';
-        this.discoveredCards.clear();
+        discoveryList.innerHTML = '';
+        discoveredCards.clear();
 
-        // Reset discovery-state to scanning UI
-        this.discoveryState.innerHTML = `
+        discoveryState.innerHTML = `
             <div class="size-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4"></div>
             <p class="text-sm font-bold text-slate-300">Scanning Network</p>
             <p class="text-[10px] text-slate-500 mt-1 uppercase tracking-widest font-medium">Looking for active FTP servers...</p>
         `;
-        this.discoveryState.classList.remove('hidden');
+        discoveryState.classList.remove('hidden');
+        if (rescanBtn) rescanBtn.classList.add('hidden');
 
-        // Hide re-scan button
-        if (this.rescanBtn) this.rescanBtn.classList.add('hidden');
+        discoveryAbortController = new AbortController();
+        const signal = discoveryAbortController.signal;
 
-        this.discoveryAbortController = new AbortController();
-        const signal = this.discoveryAbortController.signal;
-
-        // Set hard 10s limit for discovery
-        this.discoveryTimeout = setTimeout(() => {
-            if (this.discoveryAbortController) {
-                this.discoveryAbortController.abort();
-            }
+        discoveryTimeout = setTimeout(() => {
+            if (discoveryAbortController) discoveryAbortController.abort();
         }, 10000);
 
         try {
-            // Set up Wails3 event listener for discovered servers
-            this.discoveryEventUnsubscribe = this._Events().On('client:discover-servers', (event) => {
+            discoveryEventUnsubscribe = _Events().On('client:discover-servers', (event) => {
                 const server = event && event.data ? event.data : event;
-                // Identity: Combination of Name, IP, and Port to distinguish "another one"
                 const serverId = `${server.Name || ''}-${server.IP}:${server.Port}`;
-
-                this.discoveryState.classList.add('hidden');
-                this.renderDiscoveredServer(serverId, server);
+                discoveryState.classList.add('hidden');
+                renderDiscoveredServer(serverId, server);
             });
 
-            // Call the Discovery.StartDiscovering Wails3 service method
-            const discoveryPromise = this._StartDiscovering();
-            
-            // Handle abort signal to cancel the discovery
+            const discoveryPromise = _StartDiscovering();
             signal.addEventListener('abort', () => {
-                if (discoveryPromise && typeof discoveryPromise.cancel === 'function') {
-                    discoveryPromise.cancel();
-                }
+                if (discoveryPromise && typeof discoveryPromise.cancel === 'function') discoveryPromise.cancel();
             });
 
             await discoveryPromise;
-
         } catch (err) {
-            if (err.name === 'AbortError') {
-                console.info('Discovery scan completed (time limit reached).');
-            } else {
-                console.error('Discovery error:', err);
-            }
+            if (err.name !== 'AbortError') console.error('Discovery error:', err);
         } finally {
-            if (this.discoveryTimeout) {
-                clearTimeout(this.discoveryTimeout);
-                this.discoveryTimeout = null;
-            }
-            if (this.discoveredCards.size === 0) {
-                this.discoveryState.innerHTML = `
+            if (discoveryTimeout) clearTimeout(discoveryTimeout);
+            if (discoveredCards.size === 0) {
+                discoveryState.innerHTML = `
                     <span class="material-symbols-outlined text-4xl text-slate-500 mb-3 opacity-20">search_off</span>
                     <p class="text-sm font-bold text-slate-300">No Servers Found</p>
                     <p class="text-[10px] text-slate-500 mt-1 uppercase tracking-widest font-medium">Make sure other devices are on the same network</p>
                 `;
-                this.discoveryState.classList.remove('hidden');
+                discoveryState.classList.remove('hidden');
             }
-            if (this.rescanBtn) this.rescanBtn.classList.remove('hidden');
-            if (this.discoveryEventUnsubscribe) {
-                this.discoveryEventUnsubscribe();
-                this.discoveryEventUnsubscribe = null;
+            if (rescanBtn) rescanBtn.classList.remove('hidden');
+            if (discoveryEventUnsubscribe) discoveryEventUnsubscribe();
+            discoveryAbortController = null;
+        }
+    }
+
+    function renderDiscoveredServer(serverId, server) {
+        if (discoveredCards.has(serverId)) return;
+
+        const card = document.createElement('div');
+        card.className = "flex flex-col bg-slate-800/40 border border-white/5 rounded-2xl overflow-hidden hover:border-primary/30 transition-all cursor-pointer group animate-fade-in";
+        discoveryList.appendChild(card);
+        discoveredCards.set(serverId, card);
+
+        card.onclick = () => {
+            const name = server.Name || server.IP;
+            localStorage.removeItem('current_server_id');
+            if (server.AnonymousAllowed) {
+                connectWithCredentials(server.IP, server.Port, 'anonymous', 'anonymous', true, name);
+            } else {
+                showLoginPrompt(server);
             }
-            this.discoveryAbortController = null;
-        }
-    },
-
-    renderDiscoveredServer(serverId, server, fromCache = false) {
-        let card = this.discoveredCards.get(serverId);
-        const isNew = !card;
-
-        if (isNew) {
-            card = document.createElement('div');
-            card.className = "flex flex-col bg-slate-800/40 border border-white/5 rounded-2xl overflow-hidden hover:border-primary/30 transition-all cursor-pointer group";
-            if (!fromCache) card.classList.add("animate-in", "fade-in", "slide-in-from-bottom-2", "duration-500");
-            this.discoveryList.appendChild(card);
-            this.discoveredCards.set(serverId, card);
-        }
-
-        card.onclick = () => this.handleDiscoveredServerClick(server);
+        };
 
         card.innerHTML = `
             <div class="p-4 flex items-center gap-4">
@@ -197,58 +225,30 @@ const RemoteConnections = {
                 </div>
             </div>
         `;
-    },
+    }
 
-    handleDiscoveredServerClick(server) {
-        const name = server.Name || server.IP;
-        localStorage.removeItem('current_server_id'); // Ensure we use discovered info
-        if (server.AnonymousAllowed) {
-            this.connectWithCredentials(server.IP, server.Port, 'anonymous', 'anonymous', true, name);
-        } else {
-            this.showLoginPrompt(server);
-        }
-    },
-
-    showLoginPrompt(server) {
+    function showLoginPrompt(server) {
         document.getElementById('login-server-name').innerText = server.Name || server.IP;
         document.getElementById('login-server-addr').innerText = `${server.IP}:${server.Port}`;
-
-        // Reset inputs
         document.getElementById('login-user').value = '';
         document.getElementById('login-pass').value = '';
 
-        this.loginModal.classList.remove('hidden');
+        loginModal.classList.remove('hidden');
         setTimeout(() => {
-            document.getElementById('login-modal-backdrop').classList.add('active');
-            document.getElementById('login-modal-content').classList.add('active');
+            loginModalContent.classList.remove('scale-95', 'opacity-0');
+            loginModalContent.classList.add('scale-100', 'opacity-100');
         }, 10);
+        pendingServer = server;
+    }
 
-        // Store current server being connected to
-        this.pendingServer = server;
-    },
+    function closeLoginModal() {
+        loginModalContent.classList.add('scale-95', 'opacity-0');
+        loginModalContent.classList.remove('scale-100', 'opacity-100');
+        setTimeout(() => loginModal.classList.add('hidden'), 300);
+    }
 
-    closeLoginModal() {
-        document.getElementById('login-modal-backdrop').classList.remove('active');
-        document.getElementById('login-modal-content').classList.remove('active');
-        setTimeout(() => this.loginModal.classList.add('hidden'), 300);
-    },
-
-    async submitLogin() {
-        const user = document.getElementById('login-user').value;
-        const pass = document.getElementById('login-pass').value;
-
-        if (!user || !pass) {
-            Components.showToast('Please enter both username and password', 'error');
-            return;
-        }
-
-        const name = this.pendingServer.Name || this.pendingServer.IP;
-        this.closeLoginModal();
-        await this.connectWithCredentials(this.pendingServer.IP, this.pendingServer.Port, user, pass, false, name);
-    },
-
-    async connectWithCredentials(host, port, user, pass, isAnon, name) {
-        Components.showToast(`Connecting to ${host}...`, 'info');
+    async function connectWithCredentials(host, port, user, pass, isAnon, name) {
+        if (globalThis.Components?.showToast) globalThis.Components.showToast(`Connecting to ${host}...`, 'info');
         try {
             const params = new URLSearchParams();
             params.append('server_host', host);
@@ -265,28 +265,61 @@ const RemoteConnections = {
 
             const text = await response.text();
             if (response.ok || text.includes('already connected')) {
-                Components.showToast('Connected successfully', 'success');
-
-                // Store connection info for the browser page
+                if (globalThis.Components?.showToast) globalThis.Components.showToast('Connected successfully', 'success');
                 if (name) {
-                    console.log(`RemoteConnections: Storing connection info for ${name} (${host}:${port})`);
                     localStorage.setItem('current_remote_name', name);
                     localStorage.setItem('current_remote_host', host);
                     localStorage.setItem('current_remote_port', port);
                 }
-
-                window.location.href = 'browse-remote-local.html';
+                window.location.hash = '#/access'; // Logic updated in router
             } else {
-                Components.showToast(`Connection failed: ${text}`, 'error');
+                if (globalThis.Components?.showToast) globalThis.Components.showToast(`Connection failed: ${text}`, 'error');
             }
         } catch (err) {
-            Components.showToast('Network error or server unreachable', 'error');
+            if (globalThis.Components?.showToast) globalThis.Components.showToast('Network error or server unreachable', 'error');
         }
     }
-};
 
-document.addEventListener('DOMContentLoaded', () => RemoteConnections.init());
+    // Set up listeners
+    if (rescanBtn) rescanBtn.onclick = () => discoverServers();
+    if (loginModalBackdrop) loginModalBackdrop.onclick = closeLoginModal;
+    const submitBtn = document.getElementById('submit-login-btn');
+    if (submitBtn) submitBtn.onclick = async () => {
+        const user = document.getElementById('login-user').value;
+        const pass = document.getElementById('login-pass').value;
+        if (!user || !pass) {
+            if (globalThis.Components?.showToast) globalThis.Components.showToast('Please enter both username and password', 'error');
+            return;
+        }
+        const name = pendingServer.Name || pendingServer.IP;
+        closeLoginModal();
+        await connectWithCredentials(pendingServer.IP, pendingServer.Port, user, pass, false, name);
+    };
+    const closeBtn = document.getElementById('close-login-btn');
+    if (closeBtn) closeBtn.onclick = closeLoginModal;
 
-// Export to global scope so inline onclick handlers can access it
-window.RemoteConnections = RemoteConnections;
+    const menuBtn = document.getElementById('menu-btn');
+    if (menuBtn && globalThis.Components?.toggleMenu) menuBtn.onclick = () => globalThis.Components.toggleMenu();
+
+    // Check status or start discovery
+    async function checkStatus() {
+        try {
+            const response = await fetch('/api/ftp/client/status');
+            if (response.ok) {
+                const status = await response.json();
+                if (status === "connected") {
+                    window.location.hash = '#/access';
+                    return;
+                }
+            }
+        } catch (e) { }
+        discoverServers();
+    }
+
+    if (globalThis.Components?.Sidebar?.highlight) {
+        globalThis.Components.Sidebar.highlight('remote-connections');
+    }
+
+    checkStatus();
+}
 

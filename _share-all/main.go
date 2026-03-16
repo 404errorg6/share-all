@@ -5,7 +5,7 @@ import (
 	"changeme/internal/services"
 	"embed"
 	_ "embed"
-	"io/fs"
+	//	"io/fs"
 	"log"
 	"net/http"
 
@@ -19,12 +19,12 @@ var assets embed.FS
 var frontend embed.FS
 
 func init() {
-	contents, err := fs.Sub(frontend, "frontend") //cd into frontend
-	if err != nil {
-		log.Fatalf("Error cding into frontend: %v", err)
-	}
+	//	contents, err := fs.Sub(frontend, "frontend") //cd into frontend
+	//	if err != nil {
+	//		log.Fatalf("Error cding into frontend: %v", err)
+	//	}
 
-	config.AssetsServer = http.FileServer(http.FS(contents))
+	config.AssetsServer = http.FileServer(http.FS(assets))
 }
 
 // Register events
