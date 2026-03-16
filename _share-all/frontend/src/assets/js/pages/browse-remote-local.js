@@ -437,7 +437,7 @@ export function init() {
                 primaryText: 'Continue & Scan',
                 secondaryText: 'Stay Connected',
                 onPrimary: () => {
-                    window.location.hash = '#/discover';
+                    window.location.hash = '#/discover?force=true';
                 }
             });
         }
