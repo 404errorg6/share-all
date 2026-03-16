@@ -8,7 +8,7 @@ func MiniMux() *http.ServeMux {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /", serveHTML)
-	mux.HandleFunc("GET /assets/", serveAssets)
+	mux.Handle("GET /assets/", http.StripPrefix("/assets/", http.HandlerFunc(serveAssets)))
 
 	mux.HandleFunc("GET /api/ls", handleLS)
 	mux.HandleFunc("GET /file", serveFile)

@@ -43,7 +43,7 @@ globalThis.Components.Preview = {
     /**
      * Open preview modal and load content
      */
-    async show(paramPath, name, isLocal = true) {
+    async show(path, name, isRemote = true) {
         if (!document.getElementById('preview-modal')) {
             this.inject();
         }
@@ -51,54 +51,49 @@ globalThis.Components.Preview = {
         const modal = document.getElementById('preview-modal');
         const container = document.getElementById('preview-container');
         const filenameLabel = document.getElementById('preview-filename');
-        const subtitleLabel = document.getElementById('preview-subtitle'); // Added this line
+        const subtitleLabel = document.getElementById('preview-subtitle');
 
         if (!modal || !container) return;
 
         filenameLabel.innerText = name;
-        if (subtitleLabel) subtitleLabel.innerText = isLocal ? 'Local Preview' : 'Remote Preview'; // Updated this line
+        if (subtitleLabel) subtitleLabel.innerText = isRemote ? 'Remote Preview' : 'Local Preview';
+        
         modal.classList.remove('hidden');
         container.innerHTML = `
             <div class="flex flex-col items-center gap-4">
                 <div class="animate-spin size-10 border-4 border-primary border-t-transparent rounded-full font-bold"></div>
-                <p class="text-[10px] font-black uppercase tracking-widest text-primary">Deciphering Content...</p>
+                <p class="text-[10px] font-black uppercase tracking-widest text-primary">Loading Preview...</p>
             </div>
         `;
 
         const ext = name.split('.').pop().toLowerCase();
-        
-        // Construct the URL based on context (local vs remote/shared)
-        let url;
-        if (isLocal) {
-            // If we are in dev mode (vite), we might need to absolute path
-            // The Go backend handler for local files is /api/ftp/client/get-file
-            url = `/api/ftp/client/get-file?path=${encodeURIComponent(paramPath)}`;
-        } else {
-            url = `/file?path=${encodeURIComponent(paramPath)}`;
-        }
+        const api = isRemote ? '/api/ftp/server/get-file' : '/api/ftp/client/get-file';
+        const paramName = isRemote ? 'remote_path' : 'local_path';
+        const url = `${api}?${paramName}=${encodeURIComponent(path)}`;
 
         if (!this.isSupported(ext)) {
-            this.showUnsupported(name, paramPath, isLocal);
+            this.showUnsupported(name, path, isRemote);
             return;
         }
 
         try {
             if (this.supportedFormats.image.includes(ext)) {
-                container.innerHTML = `<img src="${url}" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl animate-fade-in" onerror="globalThis.Components.Preview.showUnsupported('${name}', '${paramPath}', ${isLocal}, true)">`;
+                container.innerHTML = `<img src="${url}" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl animate-fade-in">`;
             } else if (this.supportedFormats.video.includes(ext)) {
                 container.innerHTML = `<video controls autoplay class="max-w-full max-h-full rounded-lg shadow-2xl animate-fade-in"><source src="${url}"></video>`;
             } else if (this.supportedFormats.pdf.includes(ext)) {
                 container.innerHTML = `<iframe src="${url}" class="w-full h-full border-0 bg-white rounded-lg shadow-inner animate-fade-in"></iframe>`;
             } else {
+                // Text/Code based preview
                 const res = await fetch(url);
                 if (!res.ok) throw new Error('Failed to load text content');
                 const text = await res.text();
                 container.innerHTML = `
-                    <pre class="w-full h-full p-8 text-[11px] font-mono text-slate-300 overflow-auto whitespace-pre-wrap bg-black/40 rounded-xl selection:bg-primary/20 leading-relaxed animate-fade-in border border-white/5">${this.escapeHtml(text)}</pre>
+                    <pre class="w-full h-full p-6 text-[11px] font-mono text-slate-300 overflow-auto whitespace-pre-wrap bg-black/30 rounded-lg selection:bg-primary/20 leading-relaxed animate-fade-in">${this.escapeHtml(text)}</pre>
                 `;
             }
         } catch (e) {
-            this.showUnsupported(name, paramPath, isLocal, true);
+            this.showUnsupported(name, path, isRemote, true);
         }
     },
 

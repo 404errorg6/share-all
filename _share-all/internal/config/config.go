@@ -105,7 +105,7 @@ func init() {
 	iface, err := getWifiOrCellularInterface()
 	if err != nil {
 		LogsCh <- err.Error()
-		panic(err)
+		//	panic(err)
 	}
 
 	_, err = GetInterfaceIpv4Addr(iface.Name)
