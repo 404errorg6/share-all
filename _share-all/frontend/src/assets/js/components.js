@@ -35,14 +35,14 @@ function loadComponentModules() {
                 if (globalThis.Components.Transfers && typeof globalThis.Components.Transfers.init === 'function') {
                     globalThis.Components.Transfers.init();
                 }
-
-            // Remove v-cloak once components are ready
-            document.body.removeAttribute('v-cloak');
         });
 }
 
 // Expose ready promise so pages can await component initialization
 globalThis.Components.ready = loadComponentModules();
+
+// Remove v-cloak immediately as router will handle loading states
+document.body.removeAttribute('v-cloak');
 
 // Early lightweight aliases so UI can call these functions before modules finish loading.
 // These will defer to the actual implementations once `Components.ready` resolves.
