@@ -1,8 +1,8 @@
 /**
- * Universal File Preview System
+ * Universal File Preview System - Component
  */
 
-const Preview = {
+globalThis.Components.Preview = {
     supportedFormats: {
         image: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'],
         video: ['mp4', 'webm', 'ogg'],
@@ -10,17 +10,54 @@ const Preview = {
         text: ['txt', 'log', 'js', 'html', 'css', 'json', 'py', 'go', 'java', 'md', 'xml', 'yaml', 'sql', 'sh', 'bat']
     },
 
+    inject() {
+        if (document.getElementById('preview-modal')) return;
+        
+        const html = `
+        <div id="preview-modal"
+            class="fixed inset-0 z-[110] hidden flex flex-col bg-slate-50 dark:bg-background-dark transition-all">
+            <header
+                class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-white/5 bg-white/95 dark:bg-background-dark/95 backdrop-blur-md">
+                <div class="flex items-center gap-3 overflow-hidden">
+                    <button id="close-preview-btn"
+                        class="size-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-200">
+                        <span class="material-symbols-outlined text-2xl">arrow_back</span>
+                    </button>
+                    <div class="flex flex-col overflow-hidden">
+                        <p id="preview-filename" class="text-sm font-bold dark:text-white truncate"></p>
+                        <p id="preview-subtitle" class="text-[10px] text-primary font-black uppercase tracking-widest">Metadata Preview</p>
+                    </div>
+                </div>
+            </header>
+            <div class="flex-1 overflow-auto bg-slate-200 dark:bg-black/40 flex items-center justify-center relative">
+                <div id="preview-container" class="w-full h-full p-4 flex items-center justify-center overflow-auto"></div>
+            </div>
+        </div>`;
+        
+        document.body.insertAdjacentHTML('beforeend', html);
+        
+        const closeBtn = document.getElementById('close-preview-btn');
+        if (closeBtn) closeBtn.onclick = () => this.close();
+    },
+
     /**
      * Open preview modal and load content
      */
     async show(path, name, isRemote = true) {
+        if (!document.getElementById('preview-modal')) {
+            this.inject();
+        }
+
         const modal = document.getElementById('preview-modal');
         const container = document.getElementById('preview-container');
         const filenameLabel = document.getElementById('preview-filename');
+        const subtitleLabel = document.getElementById('preview-subtitle');
 
         if (!modal || !container) return;
 
         filenameLabel.innerText = name;
+        if (subtitleLabel) subtitleLabel.innerText = isRemote ? 'Remote Preview' : 'Local Preview';
+        
         modal.classList.remove('hidden');
         container.innerHTML = `
             <div class="flex flex-col items-center gap-4">
@@ -85,17 +122,31 @@ const Preview = {
                     </p>
                 </div>
                 ${isRemote ? `
-                    <button onclick="Preview.close(); if(typeof toggleSelection === 'function') toggleSelection('${path}', '${name}', false, 'remote'); if(typeof switchPane === 'function') switchPane('local');" class="w-full h-14 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/20 active:scale-95 transition-all flex items-center justify-center gap-2">
+                    <button id="preview-add-sel-btn" class="w-full h-14 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/20 active:scale-95 transition-all flex items-center justify-center gap-2">
                         <span class="material-symbols-outlined text-sm">content_copy</span>
                         Add to Selection
                     </button>
                 ` : `
-                    <button onclick="Preview.close()" class="w-full h-14 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-xs uppercase tracking-widest active:scale-95 transition-all">
+                    <button onclick="globalThis.Components.Preview.close()" class="w-full h-14 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-xs uppercase tracking-widest active:scale-95 transition-all">
                         Got it
                     </button>
                 `}
             </div>
         `;
+
+        const addSelBtn = document.getElementById('preview-add-sel-btn');
+        if (addSelBtn) {
+            addSelBtn.onclick = () => {
+                this.close();
+                // This is a bit hacky but it works since toggleSelection is usually global or available on the page
+                if (window.toggleSelection) {
+                    window.toggleSelection(path, name, false, 'remote');
+                }
+                if (window.switchPane) {
+                    window.switchPane('local');
+                }
+            };
+        }
     },
 
     /**
@@ -118,4 +169,5 @@ const Preview = {
     }
 };
 
-window.Preview = Preview;
+// Compatibility alias
+globalThis.Preview = globalThis.Components.Preview;
