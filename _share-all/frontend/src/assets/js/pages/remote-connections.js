@@ -294,11 +294,14 @@ export function init() {
 
     // Check status or start discovery
     async function checkStatus() {
+        const urlParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+        const force = urlParams.get('force') === 'true';
+
         try {
             const response = await fetch('/api/ftp/client/status');
             if (response.ok) {
                 const status = await response.json();
-                if (status === "connected") {
+                if (status === "connected" && !force) {
                     window.location.hash = '#/browse-remote-local';
                     return;
                 }

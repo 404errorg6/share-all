@@ -8,7 +8,7 @@ globalThis.Components.Sidebar = {
             class="fixed inset-0 bg-black/50 z-40 hidden opacity-0 transition-opacity duration-300"></div>
 
         <div id="drawer-sidebar"
-            class="fixed inset-y-0 left-0 z-50 w-[75%] max-w-[300px] bg-white dark:bg-[#1b2327] shadow-2xl transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col text-slate-900 dark:text-white">
+            class="fixed inset-y-0 left-0 z-50 w-[75%] max-w-[300px] bg-white dark:bg-[#1b2327] shadow-2xl transform -translate-x-full flex flex-col text-slate-900 dark:text-white">
             <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800/50">
                 <h3 class="text-lg font-bold text-slate-800 dark:text-white tracking-tight text-center w-full">FTP Manager</h3>
                 <button onclick="globalThis.Components.Sidebar.toggleMenu()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
@@ -70,6 +70,15 @@ globalThis.Components.Sidebar = {
     inject(activePageId) {
         if (document.getElementById('drawer-sidebar')) return;
         document.body.insertAdjacentHTML('beforeend', this._template);
+        
+        // Add transition classes after initial render to avoid flash
+        setTimeout(() => {
+            const sidebar = document.getElementById('drawer-sidebar');
+            const backdrop = document.getElementById('drawer-backdrop');
+            if (sidebar) sidebar.classList.add('transition-transform', 'duration-300', 'ease-in-out');
+            if (backdrop) backdrop.classList.add('transition-opacity', 'duration-300');
+        }, 50);
+
         if (activePageId) this.highlight(activePageId);
 
         // Add gesture support
