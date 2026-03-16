@@ -466,7 +466,8 @@ export function init() {
                         await FTP_API.deleteItem(item.path, false);
                     }
                     Clipboard.clear();
-                    refreshCurrent(false, true);
+                    // Automatically exit selection mode after delete
+                    Clipboard.disableMode(() => refreshCurrent(false, true));
                 } catch (e) { handleError(e); }
                 finally { if (syncOverlay) syncOverlay.classList.add('hidden'); }
             }
@@ -474,25 +475,39 @@ export function init() {
     };
 
     finishSelectionBtn.onclick = () => {
-        Clipboard.toggleMode(() => refreshCurrent());
+        Clipboard.disableMode(() => refreshCurrent());
     };
 
     pasteActionBtn.onclick = () => {
         if (state.clipboard.length === 0) return;
-        const isRemoteToLocal = state.clipboard[0].pane === 'remote';
-        if (syncOverlay) syncOverlay.classList.remove('hidden');
+        
+        const items = [...state.clipboard];
+        const isRemoteToLocal = items[0].pane === 'remote';
         const targetPath = isRemoteToLocal ? state.currentLocalPath : state.currentRemotePath;
         
-        FTP_API.transferFile(state.clipboard, targetPath, isRemoteToLocal)
+        // Show "Started" notification immediately
+        if (globalThis.Components?.showToast) {
+            const label = isRemoteToLocal ? 'Download' : 'Upload';
+            globalThis.Components.showToast(`${label} started. Check Transfers page.`, 'info');
+        }
+
+        // Clear clipboard immediately to prevent double-pasting while browsing
+        Clipboard.clear(() => refreshCurrent(true));
+
+        // Call API without blocking the UI with an overlay
+        FTP_API.transferFile(items, targetPath, isRemoteToLocal)
             .then(() => {
-                if (globalThis.Components?.showToast) globalThis.Components.showToast('Transfer started. Check Transfers page.');
-                Clipboard.clear();
+                if (globalThis.Components?.showToast) {
+                    globalThis.Components.showToast('Transfer completed successfully', 'success');
+                }
+                // Refresh the target pane to show new files
+                refreshCurrent(true, true);
             })
-            .catch(handleError)
-            .finally(() => {
-                if (syncOverlay) syncOverlay.classList.add('hidden');
+            .catch((e) => {
+                handleError(e);
             });
     };
+
 
     closeOptionsBtn.onclick = closeOptionsModal;
     optModal.onclick = (e) => { if (e.target === optModal) closeOptionsModal(); };

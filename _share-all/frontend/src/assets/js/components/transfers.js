@@ -8,11 +8,25 @@ globalThis.Components.Transfers = {
     init() {
         if (this.isSubscribed) return;
         this.isSubscribed = true;
+
+        // Cleanup: Move any 100% items from tracking to history if app just started/refreshed
+        const tracking = this.getTracking();
+        const staleCompleted = tracking.filter(t => t.Percent >= 100);
+        if (staleCompleted.length > 0) {
+            staleCompleted.forEach(item => this.addCompleted(item));
+            const remaining = tracking.filter(t => t.Percent < 100);
+            sessionStorage.setItem('ftp_active_tracking', JSON.stringify(remaining));
+        }
         
         // Listen for real-time transfer updates via Wails events
-        Events.On('transfers', (event) => {
+        Events.On('transfers:ongoing', (event) => {
             const data = event && event.data ? event.data : event;
-            this.handleTransferEvent(data);
+            this.handleTransferEvent(data, false);
+        });
+
+        Events.On('transfers:completed', (event) => {
+            const data = event && event.data ? event.data : event;
+            this.handleTransferEvent(data, true);
         });
     },
 
@@ -28,10 +42,13 @@ globalThis.Components.Transfers = {
         if (!item || !item.Name) return;
         let history = this.getHistory();
 
-        // Check for duplicates within a small time window
+        // Check for duplicates - if same name and within 30s window, or if exactly same name/size/type
+        // this prevents the "leaked" cached items from creating duplicates if they are already in history
         const isDup = history.some(h =>
-            h.Name === item.Name &&
-            Math.abs((h.Timestamp || 0) - (item.Timestamp || Date.now())) < 5000
+            h.Name === item.Name && (
+                Math.abs((h.Timestamp || 0) - (item.Timestamp || Date.now())) < 30000 ||
+                (h.TotalSize === item.TotalSize && h.IsDownload === item.IsDownload)
+            )
         );
         if (isDup) return;
 
@@ -53,15 +70,17 @@ globalThis.Components.Transfers = {
         window.dispatchEvent(new CustomEvent('transfer-completed', { detail: item }));
     },
 
-    handleTransferEvent(item) {
+    handleTransferEvent(item, isCompleted = false) {
         if (!item || !item.Name) return;
 
         let lastState = this.getTracking();
 
-        if (item.IsComplete) {
+        // If completed event OR the item explicitly has IsComplete set to true OR it has reached 100%
+        if (isCompleted || item.IsComplete || (item.Percent >= 100)) {
             this.addCompleted({
                 ...item,
-                Timestamp: Date.now()
+                Timestamp: Date.now(),
+                Percent: 100 // Force 100% for history
             });
             // Immediately remove from tracking since it's confirmed finished
             const updated = lastState.filter(s => s.Name !== item.Name);

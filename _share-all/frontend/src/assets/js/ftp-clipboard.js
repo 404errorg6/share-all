@@ -12,6 +12,14 @@ export const Clipboard = {
         if (refreshFn) refreshFn();
     },
 
+    disableMode(refreshFn) {
+        if (!state.selectionMode) return;
+        state.selectionMode = false;
+        this.syncModeUI();
+        this.updateBar();
+        if (refreshFn) refreshFn();
+    },
+
     syncModeUI() {
         if (!ui.sBtn) return;
         ui.sBtn.classList.toggle('bg-primary', state.selectionMode);

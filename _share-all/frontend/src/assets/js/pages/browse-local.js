@@ -416,7 +416,16 @@ export function init() {
                            await FTP_API.deleteItem(item.path, false);
                         }
                         if (globalThis.Components?.showToast) globalThis.Components.showToast('Selected items deleted');
+                        
+                        // Clear selection and disable selection mode
                         selection = [];
+                        selectionMode = false;
+                        if (sBtn) {
+                            sBtn.classList.remove('bg-primary', 'text-white');
+                            sBtn.classList.add('text-slate-400');
+                            sBtn.querySelector('span').innerText = 'rule';
+                        }
+                        
                         updateSelectionBar();
                         FTP_API.clearCache();
                         loadDirectory(currentPath, false, true);
