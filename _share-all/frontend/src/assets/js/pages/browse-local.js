@@ -437,6 +437,11 @@ export function init() {
     if (closePrevBtn && globalThis.Preview) closePrevBtn.onclick = () => globalThis.Preview.close();
 
     // Wails Sidebar Highlight and Metadata
+    const menuBtn = document.getElementById('menu-btn');
+    if (menuBtn && globalThis.Components?.toggleMenu) {
+        menuBtn.onclick = () => globalThis.Components.toggleMenu();
+    }
+
     if (globalThis.Components?.Sidebar?.highlight) {
         globalThis.Components.Sidebar.highlight('browse-local');
     }

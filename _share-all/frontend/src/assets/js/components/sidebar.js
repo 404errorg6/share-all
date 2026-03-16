@@ -4,19 +4,19 @@
 
 globalThis.Components.Sidebar = {
     _template: `
-        <div id="drawer-backdrop" onclick="Components.Sidebar.toggleMenu()"
+        <div id="drawer-backdrop" onclick="globalThis.Components.Sidebar.toggleMenu()"
             class="fixed inset-0 bg-black/50 z-40 hidden opacity-0 transition-opacity duration-300"></div>
 
         <div id="drawer-sidebar"
             class="fixed inset-y-0 left-0 z-50 w-[75%] max-w-[300px] bg-white dark:bg-[#1b2327] shadow-2xl transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col text-slate-900 dark:text-white">
             <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800/50">
                 <h3 class="text-lg font-bold text-slate-800 dark:text-white tracking-tight text-center w-full">FTP Manager</h3>
-                <button onclick="Components.Sidebar.toggleMenu()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                <button onclick="globalThis.Components.Sidebar.toggleMenu()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
             <div class="flex-1 overflow-y-auto py-2">
-                <a href="#/" onclick="Components.Sidebar.handleClick(event, '#/')" 
+                <a href="#/" onclick="globalThis.Components.Sidebar.handleClick(event, '#/')" 
                     class="sidebar-link px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group border-l-4 border-transparent" data-id="browse-local">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-500">
@@ -25,7 +25,7 @@ globalThis.Components.Sidebar = {
                         <span class="text-sm font-semibold">Local Storage</span>
                     </div>
                 </a>
-                <a href="#/hosting" onclick="Components.Sidebar.handleClick(event, '#/hosting')"
+                <a href="#/hosting" onclick="globalThis.Components.Sidebar.handleClick(event, '#/hosting')"
                     class="sidebar-link px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group border-l-4 border-transparent" data-id="hosting-panel">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-blue-50 dark:bg-blue-500/10 text-primary">
@@ -34,7 +34,7 @@ globalThis.Components.Sidebar = {
                         <span class="text-sm font-semibold">Hosting Panel</span>
                     </div>
                 </a>
-                <a href="#/discover" onclick="Components.Sidebar.handleClick(event, '#/discover')"
+                <a href="#/discover" onclick="globalThis.Components.Sidebar.handleClick(event, '#/discover')"
                     class="sidebar-link px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group border-l-4 border-transparent" data-id="discover-servers">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-500">
@@ -43,7 +43,7 @@ globalThis.Components.Sidebar = {
                         <span class="text-sm font-semibold">Discover Servers</span>
                     </div>
                 </a>
-                <a href="#/transfers" onclick="Components.Sidebar.handleClick(event, '#/transfers')"
+                <a href="#/transfers" onclick="globalThis.Components.Sidebar.handleClick(event, '#/transfers')"
                     class="sidebar-link px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group border-l-4 border-transparent" data-id="transfers">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-teal-50 dark:bg-teal-500/10 text-teal-500">
@@ -52,7 +52,7 @@ globalThis.Components.Sidebar = {
                         <span class="text-sm font-semibold">Transfers</span>
                     </div>
                 </a>
-                <a href="#/access" onclick="Components.Sidebar.handleClick(event, '#/access')"
+                <a href="#/access" onclick="globalThis.Components.Sidebar.handleClick(event, '#/access')"
                     class="sidebar-link px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group border-l-4 border-transparent" data-id="hosting-access">
                     <div class="flex items-center gap-3">
                         <div class="flex items-center justify-center size-10 rounded-full bg-green-50 dark:bg-green-500/10 text-green-500">
@@ -68,6 +68,7 @@ globalThis.Components.Sidebar = {
         </div>`,
 
     inject(activePageId) {
+        if (document.getElementById('drawer-sidebar')) return;
         document.body.insertAdjacentHTML('beforeend', this._template);
         if (activePageId) this.highlight(activePageId);
 

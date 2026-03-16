@@ -26,14 +26,18 @@ function loadComponentModules() {
                 console.warn('Some component modules failed to load:', failed.map(f => f.name));
             }
             // Auto-initialization after components are loaded
-                if (globalThis.Components.Logger && typeof globalThis.Components.Logger.init === 'function') {
-                    globalThis.Components.Logger.init();
-                }
+        if (globalThis.Components.Sidebar && typeof globalThis.Components.Sidebar.inject === 'function') {
+            globalThis.Components.Sidebar.inject();
+        }
 
-                if (globalThis.Components.Transfers && typeof globalThis.Components.Transfers.init === 'function') {
-                    globalThis.Components.Transfers.init();
-                }
-        });
+        if (globalThis.Components.Logger && typeof globalThis.Components.Logger.init === 'function') {
+            globalThis.Components.Logger.init();
+        }
+
+        if (globalThis.Components.Transfers && typeof globalThis.Components.Transfers.init === 'function') {
+            globalThis.Components.Transfers.init();
+        }
+    });
 }
 
 // Expose ready promise so pages can await component initialization
@@ -59,15 +63,30 @@ globalThis.Components.injectSidebar = function(id) {
 };
 
 globalThis.Components.toggleMenu = function(force) {
+    // If Sidebar module is loaded, use it immediately
     if (globalThis.Components.Sidebar && typeof globalThis.Components.Sidebar.toggleMenu === 'function') {
+        // Double check injection
+        if (!document.getElementById('drawer-sidebar')) {
+            globalThis.Components.Sidebar.inject();
+        }
         return globalThis.Components.Sidebar.toggleMenu(force);
     }
+    
+    // Otherwise, wait for it
+    console.log('Components.toggleMenu called before Sidebar was ready, deferring...');
     if (globalThis.Components.ready) {
         globalThis.Components.ready.then(() => {
             if (globalThis.Components.Sidebar && typeof globalThis.Components.Sidebar.toggleMenu === 'function') {
+                if (!document.getElementById('drawer-sidebar')) {
+                    globalThis.Components.Sidebar.inject();
+                }
                 globalThis.Components.Sidebar.toggleMenu(force);
+            } else {
+                console.error('Sidebar module failed to provide toggleMenu function even after ready.');
             }
-        }).catch(() => {});
+        }).catch(err => {
+            console.error('Components.ready failed:', err);
+        });
     }
 };
 
