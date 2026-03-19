@@ -54,7 +54,7 @@ func main() {
 
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:      "Window 1",
-		StartState: application.WindowStateFullscreen,
+		StartState: application.WindowStateMaximised,
 		Mac: application.MacWindow{
 			InvisibleTitleBarHeight: 50,
 			Backdrop:                application.MacBackdropTranslucent,

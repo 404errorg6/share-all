@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/betamos/zeroconf"
 	ftpserver "github.com/fclairamb/ftpserverlib"
 )
 
@@ -89,8 +88,6 @@ var (
 	DefLocalDir            = getDefRootDir()
 	WifiOrDataInterface, _ = getWifiOrCellularInterface()
 	FTPServer              = MyServer{}
-
-	DiscoveryClient = zeroconf.New()
 )
 
 func init() {

@@ -9,6 +9,7 @@ import (
 )
 
 func registerFTP() error {
+	discoveryClient = zeroconf.New()
 	portInt, err := strconv.Atoi(config.FTPServer.Port)
 	if err != nil {
 		return err
@@ -24,7 +25,7 @@ func registerFTP() error {
 	service.Text = text
 	service.Name = config.FTPServer.Name
 
-	_, err = config.DiscoveryClient.Publish(service).Open()
+	_, err = discoveryClient.Publish(service).Open()
 	if err != nil {
 		return err
 	}
