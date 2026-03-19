@@ -53,7 +53,7 @@ export const template = `
             </button>
         </div>
 
-        <div class="flex-1 flex flex-col relative overflow-y-auto" id="local-file-list">
+        <div class="flex-1 flex flex-col relative overflow-y-auto min-h-0" id="local-file-list">
             <div id="empty-state"
                 class="flex flex-col items-center justify-center h-full text-slate-400 p-8 text-center">
                 <span class="material-symbols-outlined text-6xl mb-4 opacity-20">sd_storage</span>

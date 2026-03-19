@@ -75,7 +75,7 @@ export const template = `
         </div>
     </header>
 
-    <main class="flex-1 flex flex-col pb-24 relative min-h-0 lg:pb-0 overflow-hidden">
+    <main class="flex-1 flex flex-col relative min-h-0 lg:pb-0 overflow-hidden">
         <!-- Remote Pane -->
         <div id="remote-pane" class="flex-1 flex flex-col overflow-y-auto">
             <div id="remote-list" class="flex flex-col min-h-[100px]"></div>
