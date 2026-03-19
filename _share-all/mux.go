@@ -15,7 +15,6 @@ func Mux() *http.ServeMux {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { // Root logic
 		config.AssetsServer.ServeHTTP(w, r)
 	})
-	mux.HandleFunc("GET /api/logs", httphandlers.HandleLogs) //get logs
 	mux.HandleFunc("POST /api/http/web-share/start", httphandlers.HandleStartWebUI)
 	mux.HandleFunc("POST /api/http/web-share/stop", httphandlers.HandleStopWebUI)
 	mux.HandleFunc("GET /api/http/web-share/status", httphandlers.HandleWebStatus)
