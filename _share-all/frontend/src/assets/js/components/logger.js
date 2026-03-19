@@ -73,7 +73,8 @@ globalThis.Components.Logger = {
                 z-index: 10000 !important;
                 width: 420px !important;
                 max-width: calc(100vw - 48px) !important;
-                height: 520px !important;
+                height: auto !important;
+                max-height: min(520px, calc(100dvh - 120px)) !important;
                 background: rgba(15, 23, 42, 0.98) !important;
                 backdrop-filter: blur(20px) !important;
                 border: 1px solid rgba(255, 255, 255, 0.1) !important;
