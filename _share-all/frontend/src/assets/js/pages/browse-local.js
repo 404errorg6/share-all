@@ -65,7 +65,7 @@ export const template = `
                 </button>
             </div>
             <div id="file-list-container"
-                class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4"></div>
+                class="hidden flex flex-col min-h-[100px]"></div>
 
             <!-- Loading Indicator Overlay -->
             <div id="sync-overlay"
@@ -179,26 +179,23 @@ export function init() {
             const isSelected = selection.some(s => s.path === normalizedPath);
 
             const item = document.createElement('div');
-            item.className = `flex flex-col gap-3 p-4 bg-white dark:bg-slate-800/40 rounded-2xl hover:bg-primary/5 dark:hover:bg-primary/10 cursor-pointer border border-slate-100 dark:border-white/5 shadow-sm transition-all hover:shadow-md active:scale-[0.98] group relative ${isSelected ? 'ring-2 ring-primary border-primary bg-primary/5' : ''}`;
+            item.className = `flex items-center gap-4 px-4 py-3 bg-white dark:bg-slate-800/40 hover:bg-primary/5 dark:hover:bg-primary/10 cursor-pointer border-b border-slate-100 dark:border-white/5 transition-all group relative ${isSelected ? 'ring-2 ring-primary border-primary bg-primary/5' : ''}`;
             const icon = globalThis.Utils.getFileIcon(entry.Name, entry.IsFolder);
             const color = globalThis.Utils.getColorClass(entry.Name, entry.IsFolder);
 
             item.innerHTML = `
-                <div class="flex items-center gap-4">
-                    <div class="flex items-center justify-center rounded-xl size-12 ${color} shadow-sm group-hover:scale-110 transition-transform">
-                        <span class="material-symbols-outlined text-2xl">${isSelected ? 'check_circle' : icon}</span>
-                    </div>
-                    <div class="flex flex-col flex-1 overflow-hidden">
-                        <p class="text-sm font-bold truncate ${isSelected ? 'text-primary' : 'text-slate-900 dark:text-gray-100'}">${entry.Name}</p>
-                        <p class="text-[10px] text-slate-500 font-medium uppercase">${entry.IsFolder ? 'Folder' : globalThis.Utils.formatFileSize(entry.Size)}</p>
-                    </div>
-                    <button class="size-8 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity">
-                         <span class="material-symbols-outlined text-xl">more_vert</span>
-                    </button>
+                <div class="flex items-center justify-center rounded-xl size-11 ${color} shadow-sm group-hover:scale-110 transition-transform shrink-0">
+                    <span class="material-symbols-outlined text-2xl">${isSelected ? 'check_circle' : icon}</span>
                 </div>
-                <div class="mt-auto pt-2 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
-                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">${globalThis.Utils.formatDate(entry.LastModified)}</p>
-                    ${entry.IsFolder ? '<span class="material-symbols-outlined text-primary text-sm">folder_open</span>' : ''}
+                <div class="flex flex-col flex-1 overflow-hidden">
+                    <p class="text-sm font-bold truncate ${isSelected ? 'text-primary' : 'text-slate-900 dark:text-gray-100'}">${entry.Name}</p>
+                    <p class="text-[10px] text-slate-500 font-medium uppercase truncate">${entry.IsFolder ? 'Folder' : globalThis.Utils.formatFileSize(entry.Size)} • ${globalThis.Utils.formatDate(entry.LastModified)}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button class="size-9 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity">
+                         <span class="material-symbols-outlined text-lg">more_vert</span>
+                    </button>
+                    <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors text-sm">chevron_right</span>
                 </div>
             `;
 
