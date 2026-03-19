@@ -13,7 +13,7 @@ export const template = `
         </div>
     </header>
 
-    <main class="flex-1 flex flex-col p-4 gap-6 overflow-y-auto">
+    <main class="flex-1 flex flex-col p-4 gap-6 overflow-y-auto min-h-0">
         <!-- ACTIVE SESSIONS -->
         <section class="flex flex-col gap-3">
             <div class="flex items-center justify-between px-2">

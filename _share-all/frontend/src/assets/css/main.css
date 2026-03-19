@@ -33,6 +33,15 @@ body::-webkit-scrollbar {
     /* Chrome, Safari, Opera */
 }
 
+/* Hide scrollbars on all scrollable areas */
+*::-webkit-scrollbar {
+    display: none;
+}
+
+* {
+    scrollbar-width: none;
+}
+
 /* Glassmorphism Panels */
 .glass-panel {
     background: rgba(30, 41, 59, 0.75);

@@ -18,7 +18,7 @@ export const template = `
             </div>
         </header>
 
-        <main class="flex-1 flex flex-col p-6 gap-8 overflow-y-auto">
+        <main class="flex-1 flex flex-col p-6 gap-8 overflow-y-auto min-h-0">
             <!-- Active Transfers -->
             <section>
                 <div class="flex items-center gap-2 mb-6">
