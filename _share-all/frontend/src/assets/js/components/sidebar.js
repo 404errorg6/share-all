@@ -10,7 +10,7 @@ globalThis.Components.Sidebar = {
         <div id="drawer-sidebar"
             class="fixed inset-y-0 left-0 z-50 w-[75%] max-w-[300px] bg-white dark:bg-[#1b2327] shadow-2xl transform -translate-x-full flex flex-col text-slate-900 dark:text-white">
             <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800/50">
-                <h3 class="text-lg font-bold text-slate-800 dark:text-white tracking-tight text-center w-full">FTP Manager</h3>
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white tracking-tight text-center w-full">Share All</h3>
                 <button onclick="globalThis.Components.Sidebar.toggleMenu()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
                     <span class="material-symbols-outlined">close</span>
                 </button>
@@ -31,7 +31,7 @@ globalThis.Components.Sidebar = {
                         <div class="flex items-center justify-center size-10 rounded-full bg-blue-50 dark:bg-blue-500/10 text-primary">
                             <span class="material-symbols-outlined">wifi</span>
                         </div>
-                        <span class="text-sm font-semibold">Hosting Panel</span>
+                        <span class="text-sm font-semibold">My Server</span>
                     </div>
                 </a>
                 <a href="#/discover" onclick="globalThis.Components.Sidebar.handleClick(event, '#/discover')"
@@ -40,7 +40,7 @@ globalThis.Components.Sidebar = {
                         <div class="flex items-center justify-center size-10 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-500">
                             <span class="material-symbols-outlined">wifi_tethering</span>
                         </div>
-                        <span class="text-sm font-semibold">Discover Servers</span>
+                        <span class="text-sm font-semibold">Find Devices</span>
                     </div>
                 </a>
                 <a href="#/transfers" onclick="globalThis.Components.Sidebar.handleClick(event, '#/transfers')"
@@ -62,9 +62,7 @@ globalThis.Components.Sidebar = {
                     </div>
                 </a>
             </div>
-            <div class="p-4 border-t border-slate-100 dark:border-slate-800/50">
-                <p class="text-[10px] text-center text-slate-500 opacity-50 uppercase tracking-widest font-bold">FTP Project v1.0</p>
-            </div>
+
         </div>`,
 
     inject(activePageId) {

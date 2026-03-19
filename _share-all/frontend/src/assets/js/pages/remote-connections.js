@@ -14,7 +14,7 @@ export const template = `
                         class="text-primary flex size-10 items-center justify-center rounded-full hover:bg-slate-800 transition-colors">
                         <span class="material-symbols-outlined text-3xl">menu</span>
                     </button>
-                    <h2 class="text-xl font-bold leading-tight tracking-tight text-white">Discover Servers</h2>
+                    <h2 class="text-xl font-bold leading-tight tracking-tight text-white">Find Devices</h2>
                 </div>
             </div>
         </header>
