@@ -11,7 +11,7 @@ export const template = `
                     <span class="material-symbols-outlined text-3xl">menu</span>
                 </button>
                 <div class="flex flex-col">
-                    <h2 class="text-xl font-bold text-white">Hosting Panel</h2>
+                    <h2 class="text-xl font-bold text-white">My Server</h2>
                     <p id="server-status-label" class="text-xs text-red-500 font-black tracking-widest uppercase">Server
                         Offline</p>
                 </div>

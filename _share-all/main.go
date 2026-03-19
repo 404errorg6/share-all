@@ -53,7 +53,7 @@ func main() {
 	})
 
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:      "Window 1",
+		Title:      "Share all",
 		StartState: application.WindowStateMaximised,
 		Mac: application.MacWindow{
 			InvisibleTitleBarHeight: 50,
