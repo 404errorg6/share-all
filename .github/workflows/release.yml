@@ -1,6 +1,10 @@
 name: Build and Release
 on:
   push:
+    branches:
+      - 'main'
+      - 'app-dev'
+
     tags:
       - 'v*'      # Trigger on version tags (v1.0, etc.)
       - 'latest'  # Trigger when the 'latest' tag is pushed
