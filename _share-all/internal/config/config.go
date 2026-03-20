@@ -90,27 +90,24 @@ var (
 	FTPServer              = MyServer{}
 )
 
-func init() {
+func Setup() error {
 	MiniServer.Host = DefFTPHost
 	MiniServer.Port = "8080"
 	MiniServer.Conn = &http.Server{
 		Addr: MiniServer.Host + ":" + MiniServer.Port,
 	}
-}
 
-func init() {
 	iface, err := getWifiOrCellularInterface()
 	if err != nil {
-		LogsCh <- err.Error()
-		//	panic(err)
+		return err
 	}
 
 	_, err = GetInterfaceIpv4Addr(iface.Name)
 	if err != nil {
-		LogsCh <- err.Error()
-		return
+		return err
 	}
 
+	return nil
 }
 
 func (s *MyServer) BlockUser(host string) {

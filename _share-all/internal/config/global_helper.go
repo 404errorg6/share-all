@@ -6,11 +6,13 @@ import (
 	"net"
 	"net/http"
 	"net/netip"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 
 	"github.com/jlaffaye/ftp"
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 func ResolveRemotePath(c *ftp.ServerConn, remotePath string) (string, *ftp.Entry, error) {
@@ -110,14 +112,21 @@ func LocalFolderExists(localPath string) bool {
 	return info.IsDir()
 }
 
-/*
-func GetContentType(fileName string) string {
-	ext := filepath.Ext(fileName)
-	contentType := mime.TypeByExtension(ext)
-	if contentType == "" {
-		return "application/octet-stream"
-	}
+func DisplayError(err error, errType string) {
+	htmlTemplate := getErrWindowTemplate(err, errType)
 
-	return contentType
+	// Convert the HTML string into a Data URL
+	dataURL := "data:text/html," + url.PathEscape(htmlTemplate)
+
+	errorWindow := application.Get().Window.NewWithOptions(application.WebviewWindowOptions{
+		Title:            "System Error",
+		Width:            450,
+		Height:           250,
+		Frameless:        false,
+		AlwaysOnTop:      true,
+		BackgroundColour: application.NewRGB(27, 38, 54),
+		URL:              dataURL,
+	})
+
+	errorWindow.Show()
 }
-*/
