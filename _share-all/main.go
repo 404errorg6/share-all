@@ -3,13 +3,11 @@ package main
 import (
 	"changeme/internal/config"
 	"changeme/internal/services"
+	webshare "changeme/internal/web_share"
 	"embed"
 	_ "embed"
-	"fmt"
 	"io/fs"
-	"time"
 
-	//	"io/fs"
 	"log"
 	"net/http"
 
@@ -28,17 +26,9 @@ func init() {
 	config.AssetsServer = http.FileServer(http.FS(contents))
 }
 
-// Register events
-func init() {
-	application.RegisterEvent[config.ServerDiscoveryInfo]("client:discover-servers")
-	application.RegisterEvent[config.TransferInfo]("transfers:ongoing")
-	application.RegisterEvent[config.TransferInfo]("transfers:completed")
-}
-
 func main() {
-
 	app := application.New(application.Options{
-		Name:        "_share-all",
+		Name:        "Share all",
 		Description: "A sharing app to share anything with any device",
 		Assets: application.AssetOptions{
 			//			Handler: application.AssetFileServerFS(assets),
@@ -52,31 +42,30 @@ func main() {
 		},
 	})
 
-	app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:      "Share all",
-		StartState: application.WindowStateMaximised,
-		Mac: application.MacWindow{
-			InvisibleTitleBarHeight: 50,
-			Backdrop:                application.MacBackdropTranslucent,
-			TitleBar:                application.MacTitleBarHiddenInset,
-		},
-		BackgroundColour: application.NewRGB(27, 38, 54),
-		URL:              "/",
-	})
+	err := config.Setup()
+	if err != nil {
+		config.DisplayError(err, "")
+	} else {
+		app.Window.NewWithOptions(application.WebviewWindowOptions{
+			Title:      "Share all",
+			StartState: application.WindowStateMaximised,
 
-	//Logs events
-	go func() {
-		time.Sleep(2 * time.Second) //Wait for frontend start before sending logs
-		for log := range config.LogsCh {
-			log = fmt.Sprintf("[LOGS]: %v\n", log)
-			fmt.Print(log)
-			app.Event.Emit("Logs", log)
-		}
-	}()
+			Mac: application.MacWindow{
+				InvisibleTitleBarHeight: 50,
+				Backdrop:                application.MacBackdropTranslucent,
+				TitleBar:                application.MacTitleBarHiddenInset,
+			},
+			BackgroundColour: application.NewRGB(27, 38, 54),
+			URL:              "/",
+		})
 
-	config.LogsCh <- "app ready to start"
-	err := app.Run()
+		config.MiniServer.Conn.Handler = webshare.MiniMux()
+		StartEventSystem()
 
+		config.LogsCh <- "app ready to start"
+	}
+
+	err = app.Run()
 	if err != nil {
 		log.Fatal(err)
 	}

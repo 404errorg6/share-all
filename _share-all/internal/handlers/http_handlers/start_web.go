@@ -5,12 +5,7 @@ import (
 	"net/http"
 
 	"changeme/internal/config"
-	webshare "changeme/internal/web_share"
 )
-
-func init() {
-	config.MiniServer.Conn.Handler = webshare.MiniMux()
-}
 
 func HandleStartWebUI(w http.ResponseWriter, req *http.Request) {
 

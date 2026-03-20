@@ -31,6 +31,10 @@ func getWifiOrCellularInterface() (net.Interface, error) {
 	var nilIface net.Interface
 	ifs, err := net.Interfaces()
 	if err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "permission denied") {
+			return nilIface, fmt.Errorf("Network permission not granted. Please grant network permissions to use the app.")
+		}
+
 		return nilIface, err
 	}
 
@@ -61,7 +65,7 @@ func getWifiOrCellularInterface() (net.Interface, error) {
 		}
 	}
 
-	return nilIface, fmt.Errorf("Neither wifi nor mobile data enabled")
+	return nilIface, fmt.Errorf("Neither wifi nor mobile data enabled. Please enable to run the app normally.")
 }
 
 // TODO: Duplicate
@@ -173,4 +177,69 @@ func GetLocalIP() string { //TODO: Deprecated, waiitng for removal
 	}
 
 	return "127.0.0.1"
+}
+
+func getErrWindowTemplate(err error, errType string) string {
+	if errType == "" {
+		errType = "system"
+	}
+
+	errType = strings.ToTitle(errType)
+	htmlTemplate := fmt.Sprintf(`
+<!DOCTYPE html>
+<html style="background: #0d1117; margin: 0; padding: 0; height: 100%%; overflow: hidden;">
+<head>
+    <style>
+        body {
+            color: #c9d1d9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 24px;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
+            overflow: hidden; /* Prevent body from scrolling */
+        }
+        .header {
+            color: #58a6ff;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+        }
+        .error-container {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 16px;
+            flex-grow: 1;
+            overflow-y: auto; /* Allow scrolling for long errors */
+            scrollbar-width: none; /* Hides scrollbar in Firefox */
+        }
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .error-container::-webkit-scrollbar {
+            display: none;
+        }
+        code {
+            color: #f85149;
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">%s Error</div>
+    <div class="error-container">
+        <code>%s</code>
+    </div>
+</body>
+</html>
+`, errType, err.Error())
+
+	return htmlTemplate
 }
