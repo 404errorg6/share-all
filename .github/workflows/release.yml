@@ -9,6 +9,9 @@ on:
       - 'v*'      # Trigger on version tags (v1.0, etc.)
       - 'latest'  # Trigger when the 'latest' tag is pushed
 
+permissions:
+  contents: write
+
 jobs:
   build:
     strategy:
