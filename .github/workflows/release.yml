@@ -45,7 +45,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev
+          sudo apt install build-essential pkg-config libgtk-3-dev libwebkit2gtk-4.0-dev
 
       - name: Build Application
         working-directory: ./_share-all
