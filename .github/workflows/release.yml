@@ -47,10 +47,6 @@ jobs:
       - name: Install Wails v3 CLI
         run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
 
-      - name: Verify Pkg-Config (Debug)
-        if: runner.os == 'ubuntu-latest'
-        run: pkg-config --cflags gtk+-3.0 webkit2gtk-4.1
-
       - name: Build Application
         working-directory: ./_share-all
         run: wails3 build
