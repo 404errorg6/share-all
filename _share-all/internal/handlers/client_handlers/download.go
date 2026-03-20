@@ -73,7 +73,6 @@ func smartDownload(localDirPath, remotePath string, c *ftp.ServerConn) error { /
 		return downloadDir(localDirPath, remotePath, c)
 	}
 
-	fmt.Printf("Detected file: %s. Starting file download...\n", remotePath)
 	return downloadFile(localDirPath, remotePath, c)
 }
 
@@ -100,8 +99,6 @@ func downloadDir(localDirPath, remoteDirPath string, c *ftp.ServerConn) error {
 		if e.Name == "." || e.Name == ".." {
 			continue
 		}
-
-		fmt.Printf("Downloading: %v\n", e.Name)
 
 		if e.Type == ftp.EntryTypeFile { //Download files
 			remoteFilePath := path.Join(remoteDirPath, e.Name)

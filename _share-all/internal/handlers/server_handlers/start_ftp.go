@@ -26,7 +26,7 @@ func HandleStartFTP(w http.ResponseWriter, req *http.Request) {
 	anonymous := req.FormValue("anonymous_allowed")
 	writeAllowed := req.FormValue("write_allowed")
 
-	fmt.Printf("Form data:\n	name: %v\n	user: %v\n	pass: %v\n	server_port: %v\n	server_root_dir: %v\n	anonymous_allowed: %v\n	writeAllowed: %v\n", name, user, pass, port, newRoot, anonymous, writeAllowed)
+	config.LogsCh <- fmt.Sprintf("Form data:\n	name: %v\n	user: %v\n	pass: %v\n	server_port: %v\n	server_root_dir: %v\n	anonymous_allowed: %v\n	writeAllowed: %v\n", name, user, pass, port, newRoot, anonymous, writeAllowed)
 
 	err = initServer(name, user, pass, "", port, newRoot, writeAllowed, anonymous)
 	if err != nil {

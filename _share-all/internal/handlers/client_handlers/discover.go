@@ -52,5 +52,4 @@ func discover(w http.ResponseWriter, req *http.Request) {
 	defer discovery.Close()
 
 	<-req.Context().Done()
-	fmt.Println("Exited discover")
 }

@@ -34,15 +34,16 @@ func getWifiOrCellularInterface() (net.Interface, error) {
 		return nilIface, err
 	}
 
-	fmt.Printf("Up and Broadcast Interfaces:\n")
+	LogsCh <- "Available Interfaces:\n"
 
 	for _, iface := range ifs {
 		name := strings.ToLower(iface.Name)
 		if iface.Flags&net.FlagUp != 0 && iface.Flags&net.FlagBroadcast != 0 {
-			fmt.Printf("	%v: %v\n", iface.Name, iface)
+			LogsCh <- fmt.Sprintf("	%v: %v\n", iface.Name, iface)
 			isWifi := strings.Contains(name, "wi-fi") || strings.Contains(name, "wifi") || strings.HasPrefix(name, "wlan")
 
 			if isWifi {
+				LogsCh <- fmt.Sprintf("Selected interface:\n	 %v: %v", iface.Name, iface)
 				return iface, nil
 			}
 		}
@@ -54,6 +55,7 @@ func getWifiOrCellularInterface() (net.Interface, error) {
 			isCellular := strings.Contains(name, "cellular") || strings.HasPrefix(name, "ap") || strings.HasPrefix(name, "rmnet")
 
 			if isCellular {
+				LogsCh <- fmt.Sprintf("Selected interface:\n	 %v: %v", iface.Name, iface)
 				return iface, nil
 			}
 		}
@@ -128,15 +130,15 @@ func isAbsRemotePath(p string) bool {
 
 func getDefRootDir() string {
 	home, _ := os.UserHomeDir()
-	fmt.Printf("Home: %v\n", home)
+	LogsCh <- fmt.Sprintf("Home: %v\n", home)
 
 	if strings.Contains(home, "termux") { // support right path if in termux
 		defAndroidStorage := "/storage/emulated/0"
 		if _, err := os.Stat(defAndroidStorage); err == nil {
 			home = defAndroidStorage
-			fmt.Printf("Changed to: %v\n", home)
+			LogsCh <- fmt.Sprintf("Changed to: %v\n", home)
 		} else {
-			fmt.Printf("Home \"%v\" not accessible, returning \"%v\" instead\n", defAndroidStorage, home)
+			LogsCh <- fmt.Sprintf("Home \"%v\" not accessible, returning \"%v\" instead\n", defAndroidStorage, home)
 		}
 	}
 
