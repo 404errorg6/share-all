@@ -31,7 +31,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25' # Or your preferred version
+          go-version: '1.25'
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
