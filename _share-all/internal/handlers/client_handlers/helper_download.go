@@ -57,7 +57,6 @@ func downloadWithProgressBar(localFilePath, remoteFilePath string) { //Starts an
 
 	trackedLFile := progress.NewWriter(localFile)
 	progressCh := progress.NewTicker(context.Background(), trackedLFile, int64(remoteEntry.Size), time.Second)
-	fmt.Printf("Total size: %v\n", remoteEntry.Size)
 
 	go startTracking(remoteEntry.Name, int64(remoteEntry.Size), true, progressCh)
 	func() {

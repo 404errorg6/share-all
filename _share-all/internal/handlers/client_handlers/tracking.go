@@ -44,8 +44,6 @@ func startTracking(name string, size int64, isDownload bool, progressCh <-chan p
 		info.Written = p.N()
 		app.Event.Emit("transfers:ongoing", info)
 		transferMap.Store(name, info)
-
-		fmt.Printf("\n")
 	}
 
 	info.IsComplete = true

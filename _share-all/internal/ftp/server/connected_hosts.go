@@ -9,7 +9,7 @@ import (
 
 func GetConnectedHosts() []config.Client {
 	connectedClients := []config.Client{}
-	fmt.Printf("Connected Clients:\n")
+	config.LogsCh <- "Connected Clients:\n"
 	config.FTPServer.ConnectedClients.Range(func(key, value any) bool {
 		client, ok := value.(config.Client)
 		if !ok {
@@ -17,7 +17,7 @@ func GetConnectedHosts() []config.Client {
 			return false
 		}
 
-		fmt.Printf("	%v is connected\n", client.Msg)
+		config.LogsCh <- fmt.Sprintf("	%v is connected\n", client.Msg)
 		connectedClients = append(connectedClients, client)
 		return true
 	})
