@@ -31,7 +31,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22' # Or your preferred version
+          go-version: '1.25' # Or your preferred version
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -45,8 +45,11 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev pkg-config build-essential
+
+      - name: Verify Pkg-Config (Debug)
+        if: runner.os == 'ubuntu-latest'
+        run: pkg-config --cflags gtk+-3.0 webkit2gtk-4.1
 
       - name: Build Application
         working-directory: ./_share-all
@@ -57,6 +60,6 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            build/bin/*
+            ./_share-all/bin/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
