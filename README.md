@@ -1,5 +1,10 @@
 <div align="center">
   <img src="https://github.com/404errorg6/FTP-server/blob/685b05e59a51d67953e95099178d4b0b30c8bf6e/appicon.png" alt="Share-All Icon" width="128" height="128">
+
+  [![Go](https://img.shields.io/badge/Language-Go-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://go.dev/)
+  [![Wails](https://img.shields.io/badge/Framework-Wails_3-50C2F7?style=for-the-badge&logo=wails&logoColor=white)](https://v3.wails.io/)
+  [![Web](https://img.shields.io/badge/Frontend-HTML5_/_CSS3_/_JS-E34F26?style=for-the-badge&logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/HTML5)
+  [![Tailwind](https://img.shields.io/badge/Styling-Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 </div>
 
 
