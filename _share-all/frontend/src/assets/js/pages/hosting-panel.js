@@ -41,12 +41,12 @@ export const template = `
                     </label>
                 </div>
 
-                <div id="ftp-url-container"
-                    class="mt-4 p-3 bg-white/5 rounded-xl flex items-center transition-all duration-300 max-h-0 opacity-0 overflow-hidden">
-                    <div class="overflow-hidden">
-                        <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">FTP Address</p>
-                        <p id="ftp-url" class="text-primary text-sm font-medium truncate">Running on 127.0.0.1</p>
-                    </div>
+
+
+                <!-- FTP info hint -->
+                <div class="mt-3 flex items-start gap-2 px-1">
+                    <span class="material-symbols-outlined text-[14px] text-slate-500 mt-px shrink-0">info</span>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">Best for sharing with others who also have the Share-All app installed. Both devices must be on the same local network.</p>
                 </div>
 
                 <!-- Advanced Configuration Toggler (Inside FTP Card) -->
@@ -146,8 +146,8 @@ export const template = `
                             <span class="material-symbols-outlined text-2xl">public</span>
                         </div>
                         <div>
-                            <h3 class="text-white font-bold">Web Direct Share</h3>
-                            <p id="web-share-status" class="text-[#9cb0ba] text-xs">Disabled</p>
+                            <h3 class="text-white font-bold">Web Browser Access</h3>
+                            <p id="web-share-status" class="text-[#9cb0ba] text-xs">No App Required</p>
                         </div>
                     </div>
                     <label class="relative inline-flex cursor-pointer">
@@ -172,6 +172,12 @@ export const template = `
                         <span class="material-symbols-outlined text-lg">content_copy</span>
                     </button>
                 </div>
+
+                <!-- Web Direct Share info hint -->
+                <div class="mt-3 flex items-start gap-2 px-1">
+                    <span class="material-symbols-outlined text-[14px] text-slate-500 mt-px shrink-0">info</span>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">Use this to share with devices that don't have the app. They can simply open the address shown above in their web browser.</p>
+                </div>
             </div>
         </main>
 `;
@@ -180,8 +186,6 @@ export function init() {
     const statusLabel = document.getElementById('server-status-label');
     const ftpToggle = document.getElementById('status-toggle');
     const ftpStatusText = document.getElementById('status-text');
-    const ftpUrlContainer = document.getElementById('ftp-url-container');
-    const ftpUrlText = document.getElementById('ftp-url');
     const webToggle = document.getElementById('web-share-toggle');
     const webStatusText = document.getElementById('web-share-status');
     const webUrlContainer = document.getElementById('web-share-url-container');
@@ -197,8 +201,39 @@ export function init() {
         const isOnline = ftpRunning || webRunning;
         statusLabel.textContent = isOnline ? 'Server Online' : 'Server Offline';
         statusLabel.className = isOnline
-            ? 'text-xs text-green-400 font-black tracking-widest uppercase'
+            ? 'text-xs text-green- green-400 font-black tracking-widest uppercase'
             : 'text-xs text-red-500 font-black tracking-widest uppercase';
+    }
+
+    function setFtpInputsDisabled(disabled) {
+        const form = document.getElementById('ftp-config-form');
+        if (!form) return;
+        
+        // Disable all inputs, selects, and buttons inside the form
+        const elements = form.querySelectorAll('input, select, button, a');
+        elements.forEach(el => {
+            if (el.id === 'status-toggle') return; // Don't disable the toggle itself!
+            
+            if (el.tagName === 'A') {
+                el.style.pointerEvents = disabled ? 'none' : 'auto';
+                el.style.opacity = disabled ? '0.5' : '1';
+            } else {
+                el.disabled = disabled;
+                // Add a visual cue for disabled state
+                if (disabled) {
+                    el.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    el.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+        });
+
+        // Also dim the label text
+        const labels = form.querySelectorAll('label');
+        labels.forEach(l => {
+            if (disabled) l.classList.add('opacity-50');
+            else l.classList.remove('opacity-50');
+        });
     }
 
     async function toggleServer() {
@@ -237,14 +272,10 @@ export function init() {
                 });
 
                 if (response.ok) {
-                    let address = '';
-                    try { address = await response.json(); } catch (e) { address = await response.text(); }
                     ftpStatusText.textContent = 'Running';
-                    ftpUrlText.textContent = `Running on ${address || '127.0.0.1'}`;
-                    ftpUrlContainer.classList.remove('max-h-0', 'opacity-0');
-                    ftpUrlContainer.classList.add('max-h-[80px]', 'opacity-100');
                     updateServerOnlineLabel();
                     updateToggleUI(ftpToggle, true);
+                    setFtpInputsDisabled(true);
                     if (globalThis.Components?.showToast) globalThis.Components.showToast('Server started');
                 } else {
                     const err = await response.text();
@@ -263,10 +294,9 @@ export function init() {
                 const response = await fetch('/api/ftp/server/stop-ftp', { method: 'POST' });
                 if (response.ok) {
                     ftpStatusText.textContent = 'Stopped';
-                    ftpUrlContainer.classList.add('max-h-0', 'opacity-0');
-                    ftpUrlContainer.classList.remove('max-h-[80px]', 'opacity-100');
                     updateServerOnlineLabel();
                     updateToggleUI(ftpToggle, false);
+                    setFtpInputsDisabled(false);
                     if (globalThis.Components?.showToast) globalThis.Components.showToast('Server stopped');
                 } else {
                     throw new Error('Failed to stop server');
@@ -295,15 +325,8 @@ export function init() {
                 const isRunning = result !== false;
                 ftpToggle.checked = isRunning;
                 ftpStatusText.textContent = isRunning ? 'Running' : 'Stopped';
-                if (isRunning) {
-                    ftpUrlText.textContent = `Running on ${result}`;
-                    ftpUrlContainer.classList.remove('max-h-0', 'opacity-0');
-                    ftpUrlContainer.classList.add('max-h-[80px]', 'opacity-100');
-                } else {
-                    ftpUrlContainer.classList.add('max-h-0', 'opacity-0');
-                    ftpUrlContainer.classList.remove('max-h-[80px]', 'opacity-100');
-                }
                 updateToggleUI(ftpToggle, isRunning);
+                setFtpInputsDisabled(isRunning);
                 updateServerOnlineLabel();
             }
         } catch (e) { }

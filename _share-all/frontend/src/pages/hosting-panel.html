@@ -85,7 +85,7 @@
         <!-- Header -->
         <header class="sticky top-0 z-20 bg-background-dark/95 backdrop-blur-md border-b border-white/5 p-4">
             <div class="flex items-center gap-3">
-                <button onclick="Components.toggleMenu()"
+                <button id="menu-btn"
                     class="text-primary flex size-10 items-center justify-center rounded-full hover:bg-white/10 transition-colors">
                     <span class="material-symbols-outlined text-3xl">menu</span>
                 </button>
@@ -121,17 +121,15 @@
                     </label>
                 </div>
 
-                <div id="ftp-url-container"
-                    class="mt-4 p-3 bg-white/5 rounded-xl flex items-center transition-all duration-300 max-h-0 opacity-0 overflow-hidden">
-                    <div class="overflow-hidden">
-                        <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">FTP Address</p>
-                        <p id="ftp-url" class="text-primary text-sm font-medium truncate">Running on 127.0.0.1</p>
-                    </div>
+                <!-- FTP info hint -->
+                <div class="mt-3 flex items-start gap-2 px-1">
+                    <span class="material-symbols-outlined text-[14px] text-slate-500 mt-px shrink-0">info</span>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">Best for sharing with others who also have the Share-All app installed. Both devices must be on the same local network.</p>
                 </div>
 
                 <!-- Advanced Configuration Toggler (Inside FTP Card) -->
                 <div class="mt-4 pt-4 border-t border-white/5">
-                    <button onclick="toggleSettings()"
+                    <button id="toggle-settings-btn"
                         class="flex items-center gap-2 text-[#9cb0ba] hover:text-white transition-colors text-xs font-medium group">
                         <span id="settings-chevron"
                             class="material-symbols-outlined transition-transform duration-300">chevron_right</span>
@@ -168,7 +166,7 @@
                             <div class="flex flex-col gap-1">
                                 <label
                                     class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Port</label>
-                                <input id="ftp-port" name="port" type="number" value="2121" oninput="updateUrl()"
+                                <input id="ftp-port" name="port" type="number" value="2121"
                                     class="bg-background-dark/50 border border-white/5 rounded-lg text-[#9cb0ba] text-xs px-3 py-2 focus:border-primary transition-colors outline-none" />
                             </div>
                         </div>
@@ -227,8 +225,8 @@
                             <span class="material-symbols-outlined text-2xl">public</span>
                         </div>
                         <div>
-                            <h3 class="text-white font-bold">Web Direct Share</h3>
-                            <p id="web-share-status" class="text-[#9cb0ba] text-xs">Disabled</p>
+                            <h3 class="text-white font-bold">Web Browser Access</h3>
+                            <p id="web-share-status" class="text-[#9cb0ba] text-xs">No App Required</p>
                         </div>
                     </div>
                     <label class="relative inline-flex cursor-pointer">
@@ -249,10 +247,16 @@
                         <p id="web-share-url" class="text-primary text-sm font-medium truncate">http://127.0.0.1:8080
                         </p>
                     </div>
-                    <button onclick="copyWebUrl()"
+                    <button id="copy-web-url-btn"
                         class="size-8 flex items-center justify-center rounded-full hover:bg-white/10 text-white/70 transition-colors">
                         <span class="material-symbols-outlined text-lg">content_copy</span>
                     </button>
+                </div>
+
+                <!-- Web Direct Share info hint -->
+                <div class="mt-3 flex items-start gap-2 px-1">
+                    <span class="material-symbols-outlined text-[14px] text-slate-500 mt-px shrink-0">info</span>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">Use this to share with devices that don't have the app. They can simply open the address shown above in their web browser.</p>
                 </div>
             </div>
         </main>
