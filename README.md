@@ -14,6 +14,7 @@ The name Share-All represents the project’s core objective: to provide a unive
 ## Application Screenshots
 
 ![browse-local](https://github.com/404errorg6/FTP-server/blob/73b6cdec4d0f613a1d7cc14e3dc60b84ade214b8/browse-local.png)
+![my-server](https://github.com/404errorg6/share-all/blob/b08e0837af507d6483cd42eecd7b4ed888bd01bb/my-server.png)
 ![discovery](https://github.com/404errorg6/share-all/blob/73b6cdec4d0f613a1d7cc14e3dc60b84ade214b8/discover-servers.png)
 ![successful-connection](https://github.com/404errorg6/share-all/blob/73b6cdec4d0f613a1d7cc14e3dc60b84ade214b8/successful-connection.png)
 ![preview-image](https://github.com/404errorg6/share-all/blob/73b6cdec4d0f613a1d7cc14e3dc60b84ade214b8/preview-image.png)
