@@ -13,8 +13,13 @@ The name Share-All represents the project’s core objective: to provide a unive
 
 ## Application Screenshots
 
-> [!NOTE]
-> Add Your App Screenshots Here
+![browse-local](https://github.com/404errorg6/FTP-server/blob/73b6cdec4d0f613a1d7cc14e3dc60b84ade214b8/browse-local.png)
+![discovery](https://github.com/404errorg6/share-all/blob/73b6cdec4d0f613a1d7cc14e3dc60b84ade214b8/discover-servers.png)
+![successful-connection](https://github.com/404errorg6/share-all/blob/73b6cdec4d0f613a1d7cc14e3dc60b84ade214b8/successful-connection.png)
+![preview-image](https://github.com/404errorg6/share-all/blob/73b6cdec4d0f613a1d7cc14e3dc60b84ade214b8/preview-image.png)
+![preview-text](https://github.com/404errorg6/share-all/blob/73b6cdec4d0f613a1d7cc14e3dc60b84ade214b8/preview-text.png)
+![transfers](https://github.com/404errorg6/share-all/blob/73b6cdec4d0f613a1d7cc14e3dc60b84ade214b8/transfers.png)
+![access-control](https://github.com/404errorg6/FTP-server/blob/73b6cdec4d0f613a1d7cc14e3dc60b84ade214b8/access-control.png)
 
 ---
 
