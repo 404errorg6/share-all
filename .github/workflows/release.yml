@@ -1,9 +1,13 @@
 name: Build and Release
+
 on:
   push:
     tags:
-      - 'v*'      # Trigger on version tags (v1.0, etc.)
-      - 'latest'  # Trigger when the 'latest' tag is pushed
+      - 'v*'
+      - 'latest'
+
+env:
+  NODE_OPTIONS: "--max-old-space-size=4096"
 
 permissions:
   contents: write
@@ -26,6 +30,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive # Added from guide for project dependencies
 
       - name: Setup Go
         uses: actions/setup-go@v5
