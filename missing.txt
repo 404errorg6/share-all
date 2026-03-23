@@ -1,4 +1,0 @@
-drag n drop support for uploads
-transfers cancel button
-pause/resume transfers
-seeking support for retrying failed downloads instead of redownloading
