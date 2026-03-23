@@ -90,7 +90,7 @@ We welcome community contributions! Share-All is built using [Wails 3](https://v
 - [x] Discovery of local servers
 - [x] Active session monitoring and device blocking
 - [x] Client-side transfer details and history
-- [x] Preview and download for common file types
+- [x] Preview for common file types
 - [ ] Drag & Drop support for file uploads
 - [ ] Enhanced Transfer Controls (Cancel, Pause, Resume)
 - [ ] Seeking support for retrying failed downloads instead of redownloading
