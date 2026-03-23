@@ -1,6 +1,7 @@
 <div align="center">
-  <img src="https://via.placeholder.com/128" alt="Share-All Icon" width="128" height="128">
+  <img src="https://github.com/404errorg6/FTP-server/blob/685b05e59a51d67953e95099178d4b0b30c8bf6e/appicon.png" alt="Share-All Icon" width="128" height="128">
 </div>
+
 
 # Share-All
 
