@@ -100,7 +100,7 @@ We welcome community contributions! Share-All is built using [Wails 3](https://v
 To build from source, ensure you have the latest versions of Go and [Wails 3](https://v3alpha.wails.io/quick-start/installation/) installed on your machine.
 
 ```bash
-git clone https://github.com/404errorg6/FTP-server.git
+git clone https://github.com/404errorg6/share-all.git
 cd _share-all
 wails3 build
 ```
