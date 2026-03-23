@@ -20,19 +20,25 @@ The name Share-All represents the project’s core objective: to provide a unive
 ## Core Features
 
 ### FTP Server (App-to-App)
+
 Best for sharing with others who also have the Share-All app installed on their device.
+
 - **Robust Performance**: Optimized for large directories and simultaneous multiple-file transfers.
 - **System Security**: Full authentication support and IP-based access control.
 
 ### Web Browser Access (No App Required)
+
 Use this to share with devices that do not have the app installed. Receivers can simply open the address shown in your panel using any modern web browser.
+
 - **Zero Configuration**: No installation or setup required for the recipient.
 - **Universal Compatibility**: Works across smartphones, tablets, smart TVs, and other PCs.
 
 ### Network Discovery and Security
+
 Automatically identify other Share-All servers on the local Wi-Fi or LAN. Monitor active sessions in real-time and manage a blacklist of unauthorized IPs for enhanced network security.
 
 ### Platform Support
+
 Share-All is currently tested and supported on **Windows** and **Linux**. While Wails 3 supports multiple platforms, macOS has not yet been tested.
 
 ---
@@ -40,11 +46,14 @@ Share-All is currently tested and supported on **Windows** and **Linux**. While 
 ## Installation and Setup
 
 ### Windows
+
 1. Download the latest release binary.
 2. Run the executable file.
 
 ### Linux
+
 To allow global execution of the application from any directory, move the binary to your local bin path:
+
 ```bash
 # After granting execution permissions
 chmod +x share-all
@@ -58,10 +67,12 @@ sudo mv share-all /usr/local/bin/share-all
 We welcome community contributions! Share-All is built using [Wails 3](https://v3.wails.io/), providing a modern bridge between Go backends and modern web frontends.
 
 ### Project Structure
+
 - **Root Directory**: Contains the core server logic (FTP/Web) and the browser-based (pure web) interface.
 - **_share-all Directory**: Contains the Wails 3 specific application logic and integration components.
 
 ### Development Roadmap
+
 - [x] App-to-app share
 - [x] No app share (Web Browser Access)
 - [x] Discovery of local servers
@@ -73,7 +84,9 @@ We welcome community contributions! Share-All is built using [Wails 3](https://v
 - [ ] Seeking support for retrying failed downloads instead of redownloading
 
 ### Build Instructions
+
 To build from source, ensure you have the latest versions of Go and [Wails 3](https://v3alpha.wails.io/quick-start/installation/) installed on your machine.
+
 ```bash
 git clone https://github.com/404errorg6/FTP-server.git
 cd _share-all
