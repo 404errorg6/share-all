@@ -5,9 +5,9 @@
 globalThis.Components.Preview = {
     supportedFormats: {
         image: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'],
-        video: ['mp4', 'webm', 'ogg'],
+        video: ['mp4', 'webm', 'ogg', 'mov'],
         pdf: ['pdf'],
-        text: ['txt', 'log', 'js', 'html', 'css', 'json', 'py', 'go', 'java', 'md', 'xml', 'yaml', 'sql', 'sh', 'bat']
+        text: ['txt', 'log', 'js', 'html', 'css', 'json', 'py', 'go', 'java', 'md', 'xml', 'yaml', 'yml', 'sql', 'sh', 'bat', 'mod', 'sum', 'env', 'gitignore', 'dockerfile']
     },
 
     inject() {

@@ -91,5 +91,13 @@ func serveFile(w http.ResponseWriter, req *http.Request) {
 	}
 
 	localPath = config.ResolveLocalPath(localPath)
+	
+	// Set content type and disposition to ensure preview works correctly
+	ext := filepath.Ext(localPath)
+	if ext == ".pdf" {
+		w.Header().Set("Content-Type", "application/pdf")
+		w.Header().Set("Content-Disposition", "inline")
+	}
+
 	http.ServeFile(w, req, localPath)
 }

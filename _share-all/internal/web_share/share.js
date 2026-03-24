@@ -190,7 +190,8 @@ async function init() {
         const url = `/api/file?path=${encodeURIComponent(path)}`;
 
         // Determine if supported
-        const supported = PreviewComp ? PreviewComp.isSupported(ext) : ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'webm', 'mov', 'pdf', 'txt', 'js', 'css', 'html', 'json', 'md', 'go', 'py'].includes(ext);
+        const textFormats = ['txt', 'js', 'css', 'html', 'json', 'md', 'go', 'py', 'mod', 'sum', 'yml', 'yaml', 'sql', 'sh', 'bat', 'conf', 'ini', 'cfg', 'env', 'gitignore', 'dockerfile'];
+        const supported = PreviewComp ? PreviewComp.isSupported(ext) : ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'webm', 'mov', 'pdf', ...textFormats].includes(ext);
 
         if (!supported) {
             if (PreviewComp) {
@@ -202,8 +203,8 @@ async function init() {
         }
 
         try {
-            const isImg = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
-            const isVid = ['mp4', 'webm', 'mov'].includes(ext);
+            const isImg = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
+            const isVid = ['mp4', 'webm', 'mov', 'ogg'].includes(ext);
             const isPdf = ext === 'pdf';
 
             if (isImg) {
@@ -272,15 +273,18 @@ async function init() {
 
     if (uploadBtn && fileInput) {
         uploadBtn.onclick = () => fileInput.click();
-        fileInput.onchange = async () => {
+        fileInput.onchange = () => {
             if (fileInput.files.length === 0) return;
-            await handleUploadAction(fileInput.files);
+            handleUploadAction(fileInput.files);
             fileInput.value = ''; // Reset input
         };
     }
 
     async function handleUploadAction(files) {
-        if (loader) loader.classList.remove('hidden');
+        if (globalThis.Components?.showToast) {
+            globalThis.Components.showToast(`Starting background upload of ${files.length} file(s)...`, 'info');
+        }
+
         try {
             for (const file of files) {
                 const formData = new FormData();
@@ -303,14 +307,14 @@ async function init() {
             if (globalThis.Components?.showToast) {
                 globalThis.Components.showToast(`Successfully uploaded ${files.length} file(s)`, 'success');
             }
+            
+            // Refresh current view if we're still in the same directory
             loadDirectory(currentPath);
         } catch (err) {
             console.error('Upload error:', err);
             if (globalThis.Components?.showToast) {
                 globalThis.Components.showToast(err.message, 'error');
             }
-        } finally {
-            if (loader) loader.classList.add('hidden');
         }
     }
 
