@@ -285,11 +285,12 @@ async function init() {
             globalThis.Components.showToast(`Starting background upload of ${files.length} file(s)...`, 'info');
         }
 
+        let remaining = files.length;
         try {
             for (const file of files) {
                 const formData = new FormData();
                 formData.append('file', file);
-                
+
                 const uploadPath = (currentPath === '.' || currentPath === '') ? file.name : `${currentPath}/${file.name}`;
                 formData.append('path', uploadPath);
 
@@ -302,12 +303,14 @@ async function init() {
                     const errorText = await response.text();
                     throw new Error(`Failed to upload ${file.name}: ${errorText}`);
                 }
+
+                remaining--;
+                if (globalThis.Components?.showToast) {
+                    const moreText = remaining > 0 ? ` (${remaining} remaining)` : '';
+                    globalThis.Components.showToast(`${file.name} uploaded successfully${moreText}`, 'success');
+                }
             }
 
-            if (globalThis.Components?.showToast) {
-                globalThis.Components.showToast(`Successfully uploaded ${files.length} file(s)`, 'success');
-            }
-            
             // Refresh current view if we're still in the same directory
             loadDirectory(currentPath);
         } catch (err) {
