@@ -258,6 +258,12 @@ export function init() {
             renderActiveBreadcrumbs(path, type);
         } catch (e) {
             handleError(e);
+            if (type === 'remote') {
+                if (globalThis.Components?.showToast) {
+                    globalThis.Components.showToast('Remote connection failed. Redirecting to discover...', 'error');
+                }
+                window.location.hash = '#/discover?force=true';
+            }
         } finally {
             if (!silent && syncOverlay) syncOverlay.classList.add('hidden');
         }
@@ -546,7 +552,7 @@ export function init() {
         }
     }
 
-    fetchFiles('remote', state.currentRemotePath || '.', false);
+    fetchFiles('remote', state.currentRemotePath || '.', false, true);
     fetchFiles('local', state.currentLocalPath || '.', false);
 
     if (globalThis.Components?.Sidebar?.highlight) {
