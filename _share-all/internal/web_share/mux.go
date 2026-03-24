@@ -11,7 +11,8 @@ func MiniMux() *http.ServeMux {
 	mux.Handle("GET /assets/", http.StripPrefix("/assets/", http.HandlerFunc(serveAssets)))
 
 	mux.HandleFunc("GET /api/ls", handleLS)
-	mux.HandleFunc("GET /file", serveFile)
+	mux.HandleFunc("GET /api/file", serveFile)
+	mux.HandleFunc("POST /api/file", recieveFile)
 
 	return mux
 }

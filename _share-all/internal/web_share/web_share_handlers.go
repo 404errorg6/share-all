@@ -2,7 +2,11 @@ package webshare
 
 import (
 	"embed"
+	"fmt"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"changeme/internal/config"
 	clienthandlers "changeme/internal/handlers/client_handlers"
@@ -10,6 +14,44 @@ import (
 
 //go:embed share.*
 var shareFS embed.FS
+
+func recieveFile(w http.ResponseWriter, req *http.Request) {
+	localFilePath := req.FormValue("path")
+	if localFilePath == "" {
+		http.Error(w, "path is required", http.StatusBadRequest)
+		return
+	}
+
+	remoteFile, _, err := req.FormFile("file")
+	if err != nil {
+		http.Error(w, "Error getting file from form: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer remoteFile.Close()
+
+	localFilePath = config.ResolveLocalPath(localFilePath)
+	dirPath := filepath.Dir(localFilePath)
+	fileName := filepath.Base(localFilePath)
+
+	os.MkdirAll(dirPath, os.ModeDir)
+
+	localFile, err := os.Create(localFilePath)
+	if err != nil {
+		http.Error(w, "Could not create file: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer localFile.Close()
+
+	config.LogsCh <- fmt.Sprintf("[Web-share] \"%v\" is downloading %v to this device...", req.RemoteAddr, fileName)
+	_, err = io.Copy(localFile, remoteFile)
+	if err != nil {
+		http.Error(w, "Failed to successfully upload file: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	config.LogsCh <- fmt.Sprintf("[Web-share] %v completed!", fileName)
+
+	w.WriteHeader(http.StatusNoContent)
+}
 
 func handleLS(w http.ResponseWriter, req *http.Request) {
 	path := req.URL.Query().Get("path")

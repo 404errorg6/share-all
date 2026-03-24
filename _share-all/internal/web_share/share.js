@@ -115,10 +115,10 @@ async function init() {
     function openOptions(entry, path) {
         const titleEl = document.getElementById('options-filename');
         const typeEl = document.getElementById('options-type');
-        
+
         if (titleEl) titleEl.innerText = entry.Name;
         if (typeEl) typeEl.innerText = "Shared " + (entry.IsFolder ? "Folder" : "File") + " Access";
-        
+
         if (optModal) optModal.classList.remove('hidden');
         setTimeout(() => {
             if (optContent) {
@@ -144,7 +144,7 @@ async function init() {
         if (dlBtn) {
             dlBtn.onclick = () => {
                 closeOptionsModal();
-                const downloadUrl = `/file?path=${encodeURIComponent(path)}`;
+                const downloadUrl = `/api/file?path=${encodeURIComponent(path)}`;
                 const link = document.createElement('a');
                 link.href = downloadUrl;
                 link.download = entry.Name;
@@ -187,10 +187,10 @@ async function init() {
         `;
 
         const ext = name.split('.').pop().toLowerCase();
-        const url = `/file?path=${encodeURIComponent(path)}`;
+        const url = `/api/file?path=${encodeURIComponent(path)}`;
 
         // Determine if supported
-        const supported = PreviewComp ? PreviewComp.isSupported(ext) : ['jpg','jpeg','png','gif','mp4','webm','mov','pdf','txt','js','css','html','json','md','go','py'].includes(ext);
+        const supported = PreviewComp ? PreviewComp.isSupported(ext) : ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'webm', 'mov', 'pdf', 'txt', 'js', 'css', 'html', 'json', 'md', 'go', 'py'].includes(ext);
 
         if (!supported) {
             if (PreviewComp) {
@@ -202,8 +202,8 @@ async function init() {
         }
 
         try {
-            const isImg = ['jpg','jpeg','png','gif','webp'].includes(ext);
-            const isVid = ['mp4','webm','mov'].includes(ext);
+            const isImg = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
+            const isVid = ['mp4', 'webm', 'mov'].includes(ext);
             const isPdf = ext === 'pdf';
 
             if (isImg) {
@@ -265,6 +265,54 @@ async function init() {
         parts.pop();
         loadDirectory(parts.length === 0 ? '.' : parts.join('/'));
     };
+
+    // Upload handling
+    const uploadBtn = document.getElementById('upload-btn');
+    const fileInput = document.getElementById('file-input');
+
+    if (uploadBtn && fileInput) {
+        uploadBtn.onclick = () => fileInput.click();
+        fileInput.onchange = async () => {
+            if (fileInput.files.length === 0) return;
+            await handleUploadAction(fileInput.files);
+            fileInput.value = ''; // Reset input
+        };
+    }
+
+    async function handleUploadAction(files) {
+        if (loader) loader.classList.remove('hidden');
+        try {
+            for (const file of files) {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const uploadPath = (currentPath === '.' || currentPath === '') ? file.name : `${currentPath}/${file.name}`;
+                formData.append('path', uploadPath);
+
+                const response = await fetch('/api/file', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Failed to upload ${file.name}: ${errorText}`);
+                }
+            }
+
+            if (globalThis.Components?.showToast) {
+                globalThis.Components.showToast(`Successfully uploaded ${files.length} file(s)`, 'success');
+            }
+            loadDirectory(currentPath);
+        } catch (err) {
+            console.error('Upload error:', err);
+            if (globalThis.Components?.showToast) {
+                globalThis.Components.showToast(err.message, 'error');
+            }
+        } finally {
+            if (loader) loader.classList.add('hidden');
+        }
+    }
 
     // Global closure helper
     window.closeOptionsModal = closeOptionsModal;
