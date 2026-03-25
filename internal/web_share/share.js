@@ -275,43 +275,37 @@ async function init() {
         uploadBtn.onclick = () => fileInput.click();
         fileInput.onchange = () => {
             if (fileInput.files.length === 0) return;
-            handleUploadAction(fileInput.files);
+            handleUploadAction(fileInput.files[0]);
             fileInput.value = ''; // Reset input
         };
     }
 
-    async function handleUploadAction(files) {
+    async function handleUploadAction(file) {
         if (globalThis.Components?.showToast) {
-            globalThis.Components.showToast(`Starting background upload of ${files.length} file(s)...`, 'info');
+            globalThis.Components.showToast(`Starting background upload of "${file.name}"...`, 'info');
         }
 
-        let remaining = files.length;
         try {
-            for (const file of files) {
-                const formData = new FormData();
-                formData.append('file', file);
+            const formData = new FormData();
+            formData.append('file', file);
 
-                const uploadPath = (currentPath === '.' || currentPath === '') ? file.name : `${currentPath}/${file.name}`;
-                formData.append('path', uploadPath);
+            const uploadPath = (currentPath === '.' || currentPath === '') ? file.name : `${currentPath}/${file.name}`;
+            
+            const response = await fetch(`/api/file?path=${encodeURIComponent(uploadPath)}`, {
+                method: 'POST',
+                body: formData
+            });
 
-                const response = await fetch('/api/file', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`Failed to upload ${file.name}: ${errorText}`);
-                }
-
-                remaining--;
-                if (globalThis.Components?.showToast) {
-                    const moreText = remaining > 0 ? ` (${remaining} remaining)` : '';
-                    globalThis.Components.showToast(`${file.name} uploaded successfully${moreText}`, 'success');
-                }
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Failed to upload ${file.name}: ${errorText}`);
             }
 
-            // Refresh current view if we're still in the same directory
+            if (globalThis.Components?.showToast) {
+                globalThis.Components.showToast(`${file.name} uploaded successfully`, 'success');
+            }
+
+            // Refresh current view
             loadDirectory(currentPath);
         } catch (err) {
             console.error('Upload error:', err);

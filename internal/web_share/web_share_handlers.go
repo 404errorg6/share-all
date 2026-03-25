@@ -16,11 +16,17 @@ import (
 var shareFS embed.FS
 
 func handleUploadToServer(w http.ResponseWriter, req *http.Request) {
-	localFilePath := req.FormValue("path")
+	localFilePath := req.URL.Query().Get("path")
 	if localFilePath == "" {
 		http.Error(w, "path is required", http.StatusBadRequest)
 		return
 	}
+
+	localFilePath = config.ResolveLocalPath(localFilePath)
+	dirPath := filepath.Dir(localFilePath)
+	fileName := filepath.Base(localFilePath)
+
+	config.LogsCh <- fmt.Sprintf("[Web-share] \"%v\" is uploading \"%v\" to this device at \"%v\"...", req.RemoteAddr, fileName, dirPath)
 
 	remoteFile, _, err := req.FormFile("file")
 	if err != nil {
@@ -28,10 +34,6 @@ func handleUploadToServer(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	defer remoteFile.Close()
-
-	localFilePath = config.ResolveLocalPath(localFilePath)
-	dirPath := filepath.Dir(localFilePath)
-	fileName := filepath.Base(localFilePath)
 
 	os.MkdirAll(dirPath, os.ModeDir)
 
@@ -42,7 +44,6 @@ func handleUploadToServer(w http.ResponseWriter, req *http.Request) {
 	}
 	defer localFile.Close()
 
-	config.LogsCh <- fmt.Sprintf("[Web-share] \"%v\" is uploading \"%v\" to this device...", req.RemoteAddr, fileName)
 	_, err = io.Copy(localFile, remoteFile)
 	if err != nil {
 		http.Error(w, "Failed to upload file: "+err.Error(), http.StatusInternalServerError)
