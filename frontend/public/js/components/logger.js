@@ -216,15 +216,45 @@ globalThis.Components.Logger = {
 
     createEntry(line) {
         const entry = document.createElement('div');
-        let colorClass = 'text-slate-300';
-        if (line.includes('[ERROR]') || line.toLowerCase().includes('failed')) colorClass = 'text-red-400';
-        else if (line.includes('[SYSTEM]') || line.includes('Starting')) colorClass = 'text-primary';
-        else if (line.includes('[SUCCESS]')) colorClass = 'text-green-400';
+        entry.className = `py-0.5 border-b border-white/5 break-all opacity-90 text-slate-300`;
 
-        entry.className = `${colorClass} py-0.5 border-b border-white/5 break-all opacity-90`;
-        entry.innerText = line;
+        const lowerLine = line.toLowerCase();
+        const isWebShare = lowerLine.includes('[web-share]');
+        
+        let textColor = 'text-slate-300';
+        
+        if (isWebShare) {
+            textColor = 'text-orange-200/70'; // Slightly muted orange for the whole line
+        } else {
+            if (lowerLine.includes('error')) textColor = 'text-red-400';
+            else if (lowerLine.includes('success') || lowerLine.includes('successfully')) textColor = 'text-green-400';
+            else if (line.includes('[SYSTEM]') || lowerLine.includes('starting')) textColor = 'text-primary';
+            else if (line.includes('[Discovery]')) textColor = 'text-cyan-400/80';
+        }
+
+        entry.classList.add(textColor);
+
+        // Escape HTML to prevent XSS from filenames/paths in logs
+        let html = line.replace(/&/g, '&amp;')
+                       .replace(/</g, '&lt;')
+                       .replace(/>/g, '&gt;');
+
+        // Theme [LOGS]: prefix based on app theme (Primary Blue)
+        html = html.replace('[LOGS]:', '<span class="text-primary font-black">[LOGS]:</span>');
+        
+        // Theme [Web-share] prefix as vibrant Orange
+        if (isWebShare) {
+            html = html.replace(/\[Web-share\]/gi, '<span class="text-orange-500 font-bold">[Web-share]</span>');
+        }
+
+        // Theme other common prefixes
+        html = html.replace(/\[Discovery\]/gi, '<span class="text-cyan-400 font-bold">[Discovery]</span>');
+        html = html.replace(/\[SYSTEM\]/gi, '<span class="text-primary font-bold">[SYSTEM]</span>');
+
+        entry.innerHTML = html;
         return entry;
     },
+
 
     subscribe() {
         console.log('Subscribing to session logs via Events...');

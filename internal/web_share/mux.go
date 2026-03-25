@@ -12,7 +12,7 @@ func MiniMux() *http.ServeMux {
 
 	mux.HandleFunc("GET /api/ls", handleLS)
 	mux.HandleFunc("GET /api/file", serveFile)
-	mux.HandleFunc("POST /api/file", recieveFile)
+	mux.HandleFunc("POST /api/file", handleUploadToServer)
 
 	return mux
 }

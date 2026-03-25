@@ -15,7 +15,7 @@ import (
 //go:embed share.*
 var shareFS embed.FS
 
-func recieveFile(w http.ResponseWriter, req *http.Request) {
+func handleUploadToServer(w http.ResponseWriter, req *http.Request) {
 	localFilePath := req.FormValue("path")
 	if localFilePath == "" {
 		http.Error(w, "path is required", http.StatusBadRequest)
@@ -42,10 +42,10 @@ func recieveFile(w http.ResponseWriter, req *http.Request) {
 	}
 	defer localFile.Close()
 
-	config.LogsCh <- fmt.Sprintf("[Web-share] \"%v\" is downloading %v to this device...", req.RemoteAddr, fileName)
+	config.LogsCh <- fmt.Sprintf("[Web-share] \"%v\" is uploading %v to this device...", req.RemoteAddr, fileName)
 	_, err = io.Copy(localFile, remoteFile)
 	if err != nil {
-		http.Error(w, "Failed to successfully upload file: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Failed to upload file: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 	config.LogsCh <- fmt.Sprintf("[Web-share] %v completed!", fileName)
@@ -91,7 +91,7 @@ func serveFile(w http.ResponseWriter, req *http.Request) {
 	}
 
 	localPath = config.ResolveLocalPath(localPath)
-	
+
 	// Set content type and disposition to ensure preview works correctly
 	ext := filepath.Ext(localPath)
 	if ext == ".pdf" {
