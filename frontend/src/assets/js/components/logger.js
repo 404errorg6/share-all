@@ -217,44 +217,46 @@ globalThis.Components.Logger = {
 
     createEntry(line) {
         const entry = document.createElement('div');
-        entry.className = `py-0.5 border-b border-white/5 break-all opacity-90 text-slate-300`;
+        entry.className = `py-0.5 border-b border-white/5 break-all opacity-90`;
 
         const lowerLine = line.toLowerCase();
+        const isError = lowerLine.includes('error');
+        const isSuccess = lowerLine.includes('success') || lowerLine.includes('successfully');
         const isWebShare = lowerLine.includes('[web-share]');
-        
-        let textColor = 'text-slate-300';
-        
-        if (isWebShare) {
-            textColor = 'text-orange-200/70'; // Slightly muted orange for the whole line
-        } else {
-            if (lowerLine.includes('error')) textColor = 'text-red-400';
-            else if (lowerLine.includes('success') || lowerLine.includes('successfully')) textColor = 'text-green-400';
-            else if (line.includes('[SYSTEM]') || lowerLine.includes('starting')) textColor = 'text-primary';
-            else if (line.includes('[Discovery]')) textColor = 'text-cyan-400/80';
-        }
 
-        entry.classList.add(textColor);
-
-        // Escape HTML to prevent XSS from filenames/paths in logs
+        // Escape HTML to prevent XSS
         let html = line.replace(/&/g, '&amp;')
                        .replace(/</g, '&lt;')
                        .replace(/>/g, '&gt;');
 
-        // Theme [LOGS]: prefix based on app theme (Primary Blue)
-        html = html.replace('[LOGS]:', '<span class="text-primary font-black">[LOGS]:</span>');
-        
-        // Theme [Web-share] prefix as vibrant Orange
-        if (isWebShare) {
+        if (isError) {
+            entry.classList.add('text-red-400');
+            html = html.replace('[LOGS]:', '<span class="text-red-500 font-black">[LOGS]:</span>');
+        } else if (isWebShare) {
+            entry.classList.add('text-orange-400');
+            html = html.replace('[LOGS]:', '<span class="text-orange-500 font-black">[LOGS]:</span>');
             html = html.replace(/\[Web-share\]/gi, '<span class="text-orange-500 font-bold">[Web-share]</span>');
+        } else if (isSuccess) {
+            entry.classList.add('text-green-400');
+            html = html.replace('[LOGS]:', '<span class="text-green-500 font-black">[LOGS]:</span>');
+        } else {
+            // Default: Only the prefix is blue, the message remains neutral
+            entry.classList.add('text-slate-300');
+            html = html.replace('[LOGS]:', '<span class="text-primary font-black">[LOGS]:</span>');
+            
+            // Sub-rule: Theme specific tags if present in normal logs
+            if (line.includes('[Discovery]')) {
+                html = html.replace(/\[Discovery\]/gi, '<span class="text-cyan-400 font-bold">[Discovery]</span>');
+            }
+            if (line.includes('[SYSTEM]')) {
+                html = html.replace(/\[SYSTEM\]/gi, '<span class="text-primary font-bold">[SYSTEM]</span>');
+            }
         }
-
-        // Theme other common prefixes
-        html = html.replace(/\[Discovery\]/gi, '<span class="text-cyan-400 font-bold">[Discovery]</span>');
-        html = html.replace(/\[SYSTEM\]/gi, '<span class="text-primary font-bold">[SYSTEM]</span>');
 
         entry.innerHTML = html;
         return entry;
     },
+
 
 
     subscribe() {

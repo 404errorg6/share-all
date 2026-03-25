@@ -42,7 +42,7 @@ func handleUploadToServer(w http.ResponseWriter, req *http.Request) {
 	}
 	defer localFile.Close()
 
-	config.LogsCh <- fmt.Sprintf("[Web-share] \"%v\" is uploading %v to this device...", req.RemoteAddr, fileName)
+	config.LogsCh <- fmt.Sprintf("[Web-share] \"%v\" is uploading \"%v\" to this device...", req.RemoteAddr, fileName)
 	_, err = io.Copy(localFile, remoteFile)
 	if err != nil {
 		http.Error(w, "Failed to upload file: "+err.Error(), http.StatusInternalServerError)
