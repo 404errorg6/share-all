@@ -17,9 +17,14 @@ type AndroidMainDriver struct {
 }
 
 func (d *AndroidMainDriver) GetSettings() (*ftpserver.Settings, error) {
+	host, err := config.GetHost()
+	if err != nil {
+		return &ftpserver.Settings{}, err
+	}
+
 	settings := ftpserver.Settings{
-		ListenAddr:              config.FTPServer.Host + ":" + config.FTPServer.Port,
-		PublicHost:              config.FTPServer.Host,
+		ListenAddr:              host + ":" + config.FTPServer.Port,
+		PublicHost:              host,
 		ActiveConnectionsCheck:  ftpserver.IPMatchRequired,
 		PasvConnectionsCheck:    ftpserver.IPMatchRequired,
 		IdleTimeout:             500,

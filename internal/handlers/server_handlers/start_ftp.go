@@ -28,7 +28,7 @@ func HandleStartFTP(w http.ResponseWriter, req *http.Request) {
 
 	config.LogsCh <- fmt.Sprintf("Form data:\n	name: %v\n	user: %v\n	pass: %v\n	server_port: %v\n	server_root_dir: %v\n	anonymous_allowed: %v\n	writeAllowed: %v\n", name, user, pass, port, newRoot, anonymous, writeAllowed)
 
-	err = initServer(name, user, pass, "", port, newRoot, writeAllowed, anonymous)
+	err = initServer(name, user, pass, port, newRoot, writeAllowed, anonymous)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -40,14 +40,15 @@ func HandleStartFTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	config.SendJSON(w, config.FTPServer.Host+":"+config.FTPServer.Port)
+	config.SendJSON(w, config.FTPServer.Conn.Addr()+":"+config.FTPServer.Port)
 }
 
-func initServer(name, user, pass, host, port, root, writeAllowed, anonymous string) error {
+func initServer(name, user, pass, port, root, writeAllowed, anonymous string) error {
+	var err error
 	root = config.ResolveLocalPath(root)
 
 	if !config.LocalFolderExists(root) {
-		err := fmt.Errorf("\"%v\" folder does not exist", root)
+		err = fmt.Errorf("\"%v\" folder does not exist", root)
 		return err
 	}
 
@@ -57,10 +58,6 @@ func initServer(name, user, pass, host, port, root, writeAllowed, anonymous stri
 
 	if strings.EqualFold(name, config.COMMONFTPNAME) {
 		name = config.DefFTPServerName
-	}
-
-	if host == "" {
-		host = config.DefFTPHost
 	}
 
 	if port == "" {
@@ -94,7 +91,6 @@ func initServer(name, user, pass, host, port, root, writeAllowed, anonymous stri
 	config.FTPServer.Name = name
 	config.FTPServer.User = user
 	config.FTPServer.Password = pass
-	config.FTPServer.Host = host
 	config.FTPServer.Port = port
 	config.FTPServer.RootDir = root
 	config.FTPServer.AnonymousAccessAllowed = isAnonymous

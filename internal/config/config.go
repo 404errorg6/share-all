@@ -20,7 +20,6 @@ type MyServer struct { //FTP server's struct
 	Name                   string
 	User                   string
 	Password               string
-	Host                   string
 	Port                   string
 	RootDir                string
 	AnonymousAccessAllowed bool
@@ -33,7 +32,6 @@ type MyServer struct { //FTP server's struct
 }
 
 type MiniWebServer struct { //WEb-share server's struct
-	Host      string
 	Port      string
 	Conn      *http.Server //Initialized in handlers/http_handlers/start_web.go
 	IsRunning bool
@@ -77,7 +75,6 @@ var (
 var (
 	DefFTPServerName  = getHostname()
 	DefFTPPort        = "2121"
-	DefFTPHost, _     = GetInterfaceIpv4Addr(WifiOrDataInterface.Name)
 	DefFTPWriteAccess = "false"
 	DefAnonymous      = "true"
 	DownloadLimit     = 1                //Won't change anything
@@ -91,18 +88,12 @@ var (
 )
 
 func Setup() error {
-	MiniServer.Host = DefFTPHost
-	MiniServer.Port = "8080"
-	MiniServer.Conn = &http.Server{
-		Addr: MiniServer.Host + ":" + MiniServer.Port,
-	}
-
 	iface, err := getWifiOrCellularInterface()
 	if err != nil {
 		return err
 	}
 
-	_, err = GetInterfaceIpv4Addr(iface.Name)
+	_, err = getInterfaceIpv4Addr(iface.Name)
 	if err != nil {
 		return err
 	}

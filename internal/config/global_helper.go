@@ -15,6 +15,10 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
+func GetHost() (string, error) {
+	return getInterfaceIpv4Addr(WifiOrDataInterface.Name)
+}
+
 func ResolveRemotePath(c *ftp.ServerConn, remotePath string) (string, *ftp.Entry, error) {
 	if remotePath == "" || remotePath == "." {
 		entry, err := c.GetEntry(remotePath)

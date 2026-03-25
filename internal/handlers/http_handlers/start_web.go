@@ -8,6 +8,8 @@ import (
 )
 
 func HandleStartWebUI(w http.ResponseWriter, req *http.Request) {
+	var host string
+	var err error
 
 	if config.MiniServer.IsRunning {
 		goto EXIT
@@ -22,8 +24,14 @@ func HandleStartWebUI(w http.ResponseWriter, req *http.Request) {
 		}
 	}()
 
+	host, err = config.GetHost()
+	if err != nil {
+		config.DisplayError(err, "")
+		return
+	}
+
 EXIT:
 	config.MiniServer.IsRunning = true
-	accessibleAddr := fmt.Sprintf("%v:%v", config.MiniServer.Host, config.MiniServer.Port)
+	accessibleAddr := fmt.Sprintf("%v:%v", host, config.MiniServer.Port)
 	config.SendJSON(w, accessibleAddr)
 }

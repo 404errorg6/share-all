@@ -87,7 +87,7 @@ func getUsableIP(addrs []netip.Addr) (netip.Addr, error) {
 	return netip.Addr{}, fmt.Errorf("No usable ip found")
 }
 
-func GetInterfaceIpv4Addr(interfaceName string) (addr string, err error) {
+func getInterfaceIpv4Addr(interfaceName string) (addr string, err error) {
 	var (
 		ief      *net.Interface
 		addrs    []net.Addr
