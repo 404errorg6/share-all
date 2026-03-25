@@ -28,7 +28,7 @@ func StartFTP() error {
 		return err
 	}
 
-	config.LogsCh <- fmt.Sprintf("FTP server started on: %v:%v with path: %v", config.FTPServer.Conn.Addr(), config.FTPServer.Port, config.FTPServer.RootDir)
+	config.LogsCh <- fmt.Sprintf("FTP server started on: %v with path: %v", config.FTPServer.Conn.Addr(), config.FTPServer.RootDir)
 	return nil
 }
 

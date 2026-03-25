@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"changeme/internal/config"
+	webshare "changeme/internal/web_share"
 )
 
 func HandleStartWebUI(w http.ResponseWriter, req *http.Request) {
@@ -15,7 +16,19 @@ func HandleStartWebUI(w http.ResponseWriter, req *http.Request) {
 		goto EXIT
 	}
 
-	config.LogsCh <- fmt.Sprintln("Starting web-share...")
+	host, err = config.GetHost()
+	if err != nil {
+		config.DisplayError(err, "")
+		return
+	}
+
+	//Initialize miniserver
+	config.MiniServer.Conn = &http.Server{
+		Addr:    host + ":" + "8080",
+		Handler: webshare.MiniMux(),
+	}
+
+	config.LogsCh <- fmt.Sprintf("Starting web-share on %v...", config.MiniServer.Conn.Addr)
 
 	go func() {
 		err := config.MiniServer.Conn.ListenAndServe()
@@ -24,14 +37,7 @@ func HandleStartWebUI(w http.ResponseWriter, req *http.Request) {
 		}
 	}()
 
-	host, err = config.GetHost()
-	if err != nil {
-		config.DisplayError(err, "")
-		return
-	}
-
 EXIT:
 	config.MiniServer.IsRunning = true
-	accessibleAddr := fmt.Sprintf("%v:%v", host, config.MiniServer.Port)
-	config.SendJSON(w, accessibleAddr)
+	config.SendJSON(w, config.MiniServer.Conn.Addr)
 }

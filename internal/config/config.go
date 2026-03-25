@@ -32,7 +32,6 @@ type MyServer struct { //FTP server's struct
 }
 
 type MiniWebServer struct { //WEb-share server's struct
-	Port      string
 	Conn      *http.Server //Initialized in handlers/http_handlers/start_web.go
 	IsRunning bool
 }

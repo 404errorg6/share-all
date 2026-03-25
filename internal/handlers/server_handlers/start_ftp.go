@@ -40,15 +40,14 @@ func HandleStartFTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	config.SendJSON(w, config.FTPServer.Conn.Addr()+":"+config.FTPServer.Port)
+	config.SendJSON(w, config.FTPServer.Conn.Addr())
 }
 
 func initServer(name, user, pass, port, root, writeAllowed, anonymous string) error {
-	var err error
 	root = config.ResolveLocalPath(root)
 
 	if !config.LocalFolderExists(root) {
-		err = fmt.Errorf("\"%v\" folder does not exist", root)
+		err := fmt.Errorf("\"%v\" folder does not exist", root)
 		return err
 	}
 

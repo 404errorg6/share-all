@@ -3,7 +3,6 @@ package main
 import (
 	"changeme/internal/config"
 	"changeme/internal/services"
-	webshare "changeme/internal/web_share"
 	"embed"
 	_ "embed"
 	"io/fs"
@@ -59,7 +58,6 @@ func main() {
 			URL:              "/",
 		})
 
-		config.MiniServer.Conn.Handler = webshare.MiniMux()
 		StartEventSystem()
 
 		config.LogsCh <- "app ready to start"
