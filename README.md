@@ -16,6 +16,20 @@ The name Share-All represents the project’s core objective: to provide a unive
 
 ---
 
+# Why use Share-all?
+
+Ever been at that moment when you want to share something and you have to face one of the following hurdles:
+
+* You don't have an internet connection.
+* The other person doesn't have the app.
+* The other person has a different platform (e.g., you have Windows, while the other person is on Android, Mac, Linux, etc.).
+
+Share-all solves all of these problems.
+
+It's fully offline, only one person needs to have the app (sender or receiver), and it is cross-platform, meaning you can share anything with anyone on the same network.
+
+---
+
 ## Application Screenshots
 
 ![browse-local](https://github.com/404errorg6/FTP-server/blob/73b6cdec4d0f613a1d7cc14e3dc60b84ade214b8/browse-local.png)
@@ -26,6 +40,13 @@ The name Share-All represents the project’s core objective: to provide a unive
 ![preview-text](https://github.com/404errorg6/share-all/blob/73b6cdec4d0f613a1d7cc14e3dc60b84ade214b8/preview-text.png)
 ![transfers](https://github.com/404errorg6/share-all/blob/73b6cdec4d0f613a1d7cc14e3dc60b84ade214b8/transfers.png)
 ![access-control](https://github.com/404errorg6/FTP-server/blob/73b6cdec4d0f613a1d7cc14e3dc60b84ade214b8/access-control.png)
+
+---
+
+# How to use:
+1. Download the latest version from [releases](https://github.com/404errorg6/share-all/releases/latest) section.  
+2. **Ensure both are on same network** (whether using data/hotspot or wifi), no need for internet connection.  
+3. Use **FTP server** for app-to-app sharing or **Web Browser Access** for sharing without app.
 
 ---
 
