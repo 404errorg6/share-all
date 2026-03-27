@@ -30,8 +30,9 @@ It's fully offline, only one person needs to have the app (sender or receiver), 
 
 ---
 
-## Application Screenshots
-
+<details>
+  <summary><h2><b>Application screenshots (Click to expand)</b></h2></summary>
+  
 ![browse-local](https://github.com/404errorg6/FTP-server/blob/73b6cdec4d0f613a1d7cc14e3dc60b84ade214b8/browse-local.png)
 ![my-server](https://github.com/404errorg6/share-all/blob/b08e0837af507d6483cd42eecd7b4ed888bd01bb/my-server.png)
 ![discovery](https://github.com/404errorg6/share-all/blob/73b6cdec4d0f613a1d7cc14e3dc60b84ade214b8/discover-servers.png)
@@ -40,6 +41,7 @@ It's fully offline, only one person needs to have the app (sender or receiver), 
 ![preview-text](https://github.com/404errorg6/share-all/blob/73b6cdec4d0f613a1d7cc14e3dc60b84ade214b8/preview-text.png)
 ![transfers](https://github.com/404errorg6/share-all/blob/73b6cdec4d0f613a1d7cc14e3dc60b84ade214b8/transfers.png)
 ![access-control](https://github.com/404errorg6/FTP-server/blob/73b6cdec4d0f613a1d7cc14e3dc60b84ade214b8/access-control.png)
+</details>
 
 ---
 
@@ -88,7 +90,6 @@ Share-All is currently tested and supported on **Windows** and **Linux**. While 
 To allow global execution of the application from any directory, move the binary to your local bin path:
 
 ```bash
-# After granting execution permissions
 chmod +x share-all
 sudo mv share-all /usr/local/bin/share-all
 ```
@@ -122,7 +123,7 @@ To build from source, ensure you have the latest versions of Go and [Wails 3](ht
 
 ```bash
 git clone https://github.com/404errorg6/share-all.git
-cd _share-all
+cd share-all
 wails3 build
 ```
 
