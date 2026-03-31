@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=share-all-linux
+Exec=share-all-linux
+Icon=share-all-linux
+Categories=Development;
+Terminal=false
+Keywords=wails
+Version=1.0
+StartupNotify=false
