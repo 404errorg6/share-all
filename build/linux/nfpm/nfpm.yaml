@@ -3,26 +3,26 @@
 #
 # The lines below are called `modelines`. See `:help modeline`
 
-name: "_share-all.exe"
+name: "share-all-windows"
 arch: ${GOARCH}
 platform: "linux"
-version: "0.1.0"
+version: "2.2.5"
 section: "default"
 priority: "extra"
 maintainer: ${GIT_COMMITTER_NAME} <${GIT_COMMITTER_EMAIL}>
-description: "A _share-all application"
-vendor: "My Company"
+description: "A cross-platform app to share anything with any device on local network"
+vendor: "404errorg6"
 homepage: "https://wails.io"
 license: "MIT"
 release: "1"
 
 contents:
-  - src: "./bin/_share-all.exe"
-    dst: "/usr/local/bin/_share-all.exe"
+  - src: "./bin/share-all-windows"
+    dst: "/usr/local/bin/share-all-windows"
   - src: "./build/appicon.png"
-    dst: "/usr/share/icons/hicolor/128x128/apps/_share-all.exe.png"
-  - src: "./build/linux/_share-all.exe.desktop"
-    dst: "/usr/share/applications/_share-all.exe.desktop"
+    dst: "/usr/share/icons/hicolor/128x128/apps/share-all-windows.png"
+  - src: "./build/linux/share-all-windows.desktop"
+    dst: "/usr/share/applications/share-all-windows.desktop"
 
 # Default dependencies for Debian 12/Ubuntu 22.04+ with WebKit 4.1
 depends:

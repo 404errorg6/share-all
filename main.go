@@ -41,29 +41,36 @@ func main() {
 		},
 	})
 
-	err := config.Setup()
-	if err != nil {
-		config.DisplayError(err, "")
-	} else {
-		app.Window.NewWithOptions(application.WebviewWindowOptions{
-			Title:      "Share all",
-			StartState: application.WindowStateMaximised,
+	app.Event.On("common:ApplicationStarted", func(event *application.CustomEvent) {
+		err := config.Setup()
+		if err != nil {
+			dlgWin := application.Get().Dialog.Error()
+			dlgWin.SetTitle("System Error")
+			dlgWin.SetMessage(err.Error())
+			button := dlgWin.AddButton("Exit")
+			button.OnClick(func() { app.Quit() })
+			dlgWin.Show()
+			//config.DisplayError(err, "")
+		} else {
+			app.Window.NewWithOptions(application.WebviewWindowOptions{
+				Title:      "Share all",
+				StartState: application.WindowStateMaximised,
 
-			Mac: application.MacWindow{
-				InvisibleTitleBarHeight: 50,
-				Backdrop:                application.MacBackdropTranslucent,
-				TitleBar:                application.MacTitleBarHiddenInset,
-			},
-			BackgroundColour: application.NewRGB(27, 38, 54),
-			URL:              "/",
-		})
+				Mac: application.MacWindow{
+					InvisibleTitleBarHeight: 50,
+					Backdrop:                application.MacBackdropTranslucent,
+					TitleBar:                application.MacTitleBarHiddenInset,
+				},
+				BackgroundColour: application.NewRGB(27, 38, 54),
+				URL:              "/",
+			})
+			StartEventSystem()
 
-		StartEventSystem()
+			config.LogsCh <- "app ready to start"
+		}
+	})
 
-		config.LogsCh <- "app ready to start"
-	}
-
-	err = app.Run()
+	err := app.Run()
 	if err != nil {
 		log.Fatal(err)
 	}
