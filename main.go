@@ -30,7 +30,6 @@ func main() {
 		Name:        "Share all",
 		Description: "A sharing app to share anything with any device",
 		Assets: application.AssetOptions{
-			//			Handler: application.AssetFileServerFS(assets),
 			Handler: Mux(),
 		},
 		Services: []application.Service{
@@ -44,13 +43,7 @@ func main() {
 	app.Event.On("common:ApplicationStarted", func(event *application.CustomEvent) {
 		err := config.Setup()
 		if err != nil {
-			dlgWin := application.Get().Dialog.Error()
-			dlgWin.SetTitle("System Error")
-			dlgWin.SetMessage(err.Error())
-			button := dlgWin.AddButton("Exit")
-			button.OnClick(func() { app.Quit() })
-			dlgWin.Show()
-			//config.DisplayError(err, "")
+			config.DisplayError(err, "")
 		} else {
 			app.Window.NewWithOptions(application.WebviewWindowOptions{
 				Title:      "Share all",
@@ -63,8 +56,9 @@ func main() {
 				},
 				BackgroundColour: application.NewRGB(27, 38, 54),
 				URL:              "/",
+				EnableFileDrop:   true,
 			})
-			StartEventSystem()
+			StartEventSystem(app.Window.Current())
 
 			config.LogsCh <- "app ready to start"
 		}

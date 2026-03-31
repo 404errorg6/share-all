@@ -6,13 +6,22 @@ import (
 	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
 )
 
 // Register events
-func StartEventSystem() {
+func StartEventSystem(w application.Window) {
 	application.RegisterEvent[config.ServerDiscoveryInfo]("client:discover-servers")
 	application.RegisterEvent[config.TransferInfo]("transfers:ongoing")
 	application.RegisterEvent[config.TransferInfo]("transfers:completed")
+
+	application.Window.OnWindowEvent(w, events.Common.WindowFilesDropped, func(event *application.WindowEvent) {
+		files := event.Context().DroppedFiles()
+		for _, file := range files {
+			fmt.Printf("Dropped: %v", file)
+		}
+	},
+	)
 
 	// Logs events
 	go func() {
