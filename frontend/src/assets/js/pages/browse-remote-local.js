@@ -35,6 +35,12 @@ export const template = `
             </button>
         </div>
 
+        <!-- Hint Bridge -->
+        <div id="drop-hint" class="hidden sm:flex items-center justify-center gap-2 py-2 bg-slate-50/50 dark:bg-white/5 border-b border-slate-200 dark:border-white/5 text-slate-400/50 dark:text-slate-500/60 pointer-events-none select-none transition-all">
+            <span class="material-symbols-outlined text-[16px]">upload_file</span>
+            <p class="text-[9px] font-black uppercase tracking-[0.2em]">You can also drag &amp; drop items here</p>
+        </div>
+
         <!-- Global Toolbar -->
         <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-900/30 px-4 py-2 border-b border-slate-200 dark:border-slate-800">
             <button id="refresh-btn"
@@ -90,16 +96,7 @@ export const template = `
                 </div>
             </div>
 
-            <!-- Clickable Upload Toggle Button (Tablet/Desktop) -->
-            <button id="upload-mode-btn" class="hidden sm:flex absolute bottom-6 right-6 items-center gap-3 bg-white/10 dark:bg-black/20 backdrop-blur-md border border-white/10 p-3 rounded-2xl opacity-60 hover:opacity-100 hover:scale-105 active:scale-95 transition-all text-slate-300">
-                <div class="icon-box size-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary transition-colors">
-                    <span class="material-symbols-outlined">add_circle</span>
-                </div>
-                <div class="flex flex-col pr-2 text-left">
-                    <p class="text-[10px] font-black uppercase tracking-widest opacity-70">Upload</p>
-                    <p id="upload-btn-text" class="text-[11px] font-bold">Press to Drop</p>
-                </div>
-            </button>
+
         </div>
 
         <!-- Local Pane -->
@@ -260,6 +257,9 @@ export function init() {
             serverInfoEl.innerText = "Internal Device";
             renderActiveBreadcrumbs(state.currentLocalPath, 'local');
         }
+        // Show drop hint only on the remote pane
+        const dh = document.getElementById('drop-hint');
+        if (dh) dh.classList.toggle('!hidden', pane !== 'remote');
         Clipboard.updateBar();
         Clipboard.syncModeUI();
     }
@@ -537,36 +537,7 @@ export function init() {
     closeOptionsBtn.onclick = closeOptionsModal;
     optModal.onclick = (e) => { if (e.target === optModal) closeOptionsModal(); };
 
-    // --- Wails v3 Drag n Drop Mode ---
-    const uploadModeBtn = document.getElementById('upload-mode-btn');
-    const uploadBtnText = document.getElementById('upload-btn-text');
-    let uploadMode = false;
 
-    function toggleUploadMode() {
-        uploadMode = !uploadMode;
-        
-        const rPane = document.getElementById('remote-pane');
-        const iconBox = uploadModeBtn.querySelector('.icon-box');
-
-        if (uploadMode) {
-            uploadModeBtn.classList.remove('opacity-60', 'text-slate-300');
-            uploadModeBtn.classList.add('opacity-100', 'text-white', 'bg-primary/40', 'ring-2', 'ring-primary/50');
-            iconBox.classList.remove('bg-primary/20', 'text-primary');
-            iconBox.classList.add('bg-white', 'text-primary');
-            uploadBtnText.innerText = "Mode: Active";
-            rPane.classList.add('upload-mode-waiting'); // For potential CSS border hint
-            if (globalThis.Components?.showToast) globalThis.Components.showToast('Upload Mode Enabled. Drop files now!', 'info');
-        } else {
-            uploadModeBtn.classList.add('opacity-60', 'text-slate-300');
-            uploadModeBtn.classList.remove('opacity-100', 'text-white', 'bg-primary/40', 'ring-2', 'ring-primary/50');
-            iconBox.classList.add('bg-primary/20', 'text-primary');
-            iconBox.classList.remove('bg-white', 'text-primary');
-            uploadBtnText.innerText = "Press to Drop";
-            rPane.classList.remove('upload-mode-waiting');
-        }
-    }
-
-    if (uploadModeBtn) uploadModeBtn.onclick = toggleUploadMode;
 
     // Wails backend event: emitted by helper.go via app.Event.Emit("item-dropped", files)
     // Wails v3 spreads Go []string into event.data directly:
