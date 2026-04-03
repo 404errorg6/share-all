@@ -2,10 +2,10 @@
 set -e
 
 # Build configuration
-APP_NAME="share-all-windows"
+APP_NAME=""
 BUNDLE_ID="com.404errorg6.shareall"
-VERSION="2.2.5"
-BUILD_NUMBER="2.2.5"
+VERSION="2.3.0"
+BUILD_NUMBER="2.3.0"
 BUILD_DIR="build/ios"
 TARGET="simulator"
 

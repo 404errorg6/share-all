@@ -1,13 +1,13 @@
 [Desktop Entry]
 Version=1.0
-Name=Share All
-Comment=A cross-platform app to share anything with any device on local network
+Name=Share all
+Comment=Sharing app to share anything with any deivce on local network
 # The Exec line includes %u to pass the URL to the application
-Exec=/usr/local/bin/share-all-windows %u
+Exec=/usr/local/bin/ %u
 Terminal=false
 Type=Application
-Icon=share-all-windows
+Icon=
 Categories=Utility;
-StartupWMClass=share-all-windows
+StartupWMClass=
 
  

@@ -1,15 +1,15 @@
 {
 	"fixed": {
-		"file_version": "2.2.5"
+		"file_version": "2.3.0"
 	},
 	"info": {
 		"0000": {
-			"ProductVersion": "2.2.5",
+			"ProductVersion": "2.3.0",
 			"CompanyName": "404errorg6",
-			"FileDescription": "A cross-platform app to share anything with any device on local network",
+			"FileDescription": "Sharing app to share anything with any deivce on local network",
 			"LegalCopyright": "© now, My Company",
-			"ProductName": "Share All",
-			"Comments": "Some Product Comments"
+			"ProductName": "Share all",
+			"Comments": "This is a comment"
 		}
 	}
 }

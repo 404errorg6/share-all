@@ -3,21 +3,21 @@
 <plist version="1.0">
 	<dict>
 		<key>CFBundleDisplayName</key>
-		<string>Share All (Dev)</string>
+		<string>Share all (Dev)</string>
 		<key>CFBundleExecutable</key>
-		<string>share-all-windows</string>
+		<string/>
 		<key>CFBundleGetInfoString</key>
-		<string>Some Product Comments</string>
+		<string>This is a comment</string>
 		<key>CFBundleIdentifier</key>
 		<string>com.404errorg6.shareall.dev</string>
 		<key>CFBundleName</key>
-		<string>Share All (Dev)</string>
+		<string>Share all (Dev)</string>
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
 		<key>CFBundleShortVersionString</key>
-		<string>2.2.5-dev</string>
+		<string>2.3.0-dev</string>
 		<key>CFBundleVersion</key>
-		<string>2.2.5</string>
+		<string>2.3.0</string>
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>MinimumOSVersion</key>
