@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"changeme/internal/config"
-	webshare "changeme/internal/web_share"
+	"github.com/404errorg6/share-all/internal/config"
+	webshare "github.com/404errorg6/share-all/internal/web_share"
 )
 
 func HandleStartWebUI(w http.ResponseWriter, req *http.Request) {

@@ -7,7 +7,7 @@ import type { Events } from "@wailsio/runtime";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
-import type * as config$0 from "../../../../../changeme/internal/config/models.js";
+import type * as config$0 from "../../../../404errorg6/share-all/internal/config/models.js";
 
 declare module "@wailsio/runtime" {
     namespace Events {

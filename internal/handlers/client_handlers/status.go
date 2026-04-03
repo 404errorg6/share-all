@@ -3,8 +3,8 @@ package clienthandlers
 import (
 	"net/http"
 
-	"changeme/internal/ftp/client"
-	"changeme/internal/config"
+	"github.com/404errorg6/share-all/internal/ftp/client"
+	"github.com/404errorg6/share-all/internal/config"
 )
 
 func HandleStatus(w http.ResponseWriter, req *http.Request) {

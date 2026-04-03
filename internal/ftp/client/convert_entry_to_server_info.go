@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"changeme/internal/config"
+	"github.com/404errorg6/share-all/internal/config"
 	"github.com/betamos/zeroconf"
 )
 

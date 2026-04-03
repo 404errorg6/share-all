@@ -8,8 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"changeme/internal/config"
-	clienthandlers "changeme/internal/handlers/client_handlers"
+	"github.com/404errorg6/share-all/internal/config"
+	clienthandlers "github.com/404errorg6/share-all/internal/handlers/client_handlers"
 )
 
 //go:embed share.*

@@ -5,8 +5,8 @@ import (
 	"io"
 	"net/http"
 
-	"changeme/internal/config"
-	"changeme/internal/ftp/client"
+	"github.com/404errorg6/share-all/internal/config"
+	"github.com/404errorg6/share-all/internal/ftp/client"
 	"github.com/jlaffaye/ftp"
 )
 

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"changeme/internal/config"
+	"github.com/404errorg6/share-all/internal/config"
 	"fmt"
 	"time"
 

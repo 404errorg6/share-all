@@ -1,4 +1,4 @@
-module changeme
+module github.com/404errorg6/share-all
 
 go 1.25
 

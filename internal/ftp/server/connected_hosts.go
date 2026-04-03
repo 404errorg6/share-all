@@ -3,7 +3,7 @@ package server
 import (
 	"fmt"
 
-	"changeme/internal/config"
+	"github.com/404errorg6/share-all/internal/config"
 	ftpserver "github.com/fclairamb/ftpserverlib"
 )
 

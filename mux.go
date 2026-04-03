@@ -1,10 +1,10 @@
 package main
 
 import (
-	"changeme/internal/config"
-	clienthandlers "changeme/internal/handlers/client_handlers"
-	httphandlers "changeme/internal/handlers/http_handlers"
-	serverhandlers "changeme/internal/handlers/server_handlers"
+	"github.com/404errorg6/share-all/internal/config"
+	clienthandlers "github.com/404errorg6/share-all/internal/handlers/client_handlers"
+	httphandlers "github.com/404errorg6/share-all/internal/handlers/http_handlers"
+	serverhandlers "github.com/404errorg6/share-all/internal/handlers/server_handlers"
 	"net/http"
 )
 

@@ -3,7 +3,7 @@ package serverhandlers
 import (
 	"net/http"
 
-	"changeme/internal/ftp/server"
+	"github.com/404errorg6/share-all/internal/ftp/server"
 )
 
 func HandleStopFTP(w http.ResponseWriter, req *http.Request) {

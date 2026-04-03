@@ -1,8 +1,6 @@
 package main
 
 import (
-	"changeme/internal/config"
-	"changeme/internal/services"
 	"embed"
 	_ "embed"
 	"io/fs"
@@ -11,6 +9,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/404errorg6/share-all/internal/config"
+	"github.com/404errorg6/share-all/internal/services"
 	"github.com/joho/godotenv"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )

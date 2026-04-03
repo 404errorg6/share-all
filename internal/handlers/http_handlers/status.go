@@ -3,7 +3,7 @@ package httphandlers
 import (
 	"net/http"
 
-	"changeme/internal/config"
+	"github.com/404errorg6/share-all/internal/config"
 )
 
 func HandleWebStatus(w http.ResponseWriter, req *http.Request) {

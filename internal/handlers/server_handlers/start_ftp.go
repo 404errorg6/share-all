@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"changeme/internal/config"
-	"changeme/internal/ftp/server"
+	"github.com/404errorg6/share-all/internal/config"
+	"github.com/404errorg6/share-all/internal/ftp/server"
 )
 
 func HandleStartFTP(w http.ResponseWriter, req *http.Request) {

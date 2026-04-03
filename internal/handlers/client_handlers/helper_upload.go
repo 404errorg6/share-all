@@ -7,7 +7,7 @@ import (
 	"path"
 	"time"
 
-	"changeme/internal/config"
+	"github.com/404errorg6/share-all/internal/config"
 	"github.com/jlaffaye/ftp"
 	"github.com/machinebox/progress"
 )

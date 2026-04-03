@@ -8,7 +8,7 @@ import { Create as $Create } from "@wailsio/runtime";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
-import * as config$0 from "../../../../../changeme/internal/config/models.js";
+import * as config$0 from "../../../../404errorg6/share-all/internal/config/models.js";
 
 function configure() {
     Object.freeze(Object.assign($Create.Events, {

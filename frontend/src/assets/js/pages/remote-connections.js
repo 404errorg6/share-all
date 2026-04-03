@@ -1,4 +1,4 @@
-import { StartDiscovering, StopDiscovery } from '../../../../bindings/changeme/internal/services/discovery.js';
+import { StartDiscovering, StopDiscovery } from '../../../../bindings/github.com/404errorg6/share-all/internal/services/discovery.js';
 import { Events } from '@wailsio/runtime';
 
 /**

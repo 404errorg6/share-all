@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"os"
 
-	"changeme/internal/config"
+	"github.com/404errorg6/share-all/internal/config"
 )
 
 func HandleDelete(w http.ResponseWriter, req *http.Request) {

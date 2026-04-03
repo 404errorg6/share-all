@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"changeme/internal/config"
+	"github.com/404errorg6/share-all/internal/config"
 )
 
 func HandleTransfer(w http.ResponseWriter, req *http.Request) {

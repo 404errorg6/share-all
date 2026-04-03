@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"slices"
 
-	"changeme/internal/config"
+	"github.com/404errorg6/share-all/internal/config"
 	"github.com/fclairamb/ftpserverlib"
 	"github.com/spf13/afero"
 )

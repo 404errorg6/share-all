@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"changeme/internal/config"
-	"changeme/internal/ftp/client"
+	"github.com/404errorg6/share-all/internal/config"
+	"github.com/404errorg6/share-all/internal/ftp/client"
 )
 
 func HandleConnectToServer(w http.ResponseWriter, req *http.Request) {

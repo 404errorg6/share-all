@@ -1,7 +1,7 @@
 package client
 
 import (
-	"changeme/internal/config"
+	"github.com/404errorg6/share-all/internal/config"
 	"os"
 
 	"github.com/jlaffaye/ftp"
