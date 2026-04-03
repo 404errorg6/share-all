@@ -100,10 +100,6 @@ sudo mv share-all /usr/local/bin/share-all
 
 We welcome community contributions! Share-All is built using [Wails 3](https://v3.wails.io/), providing a modern bridge between Go backends and modern web frontends.
 
-### Project Structure
-
-- **Root Directory**: Contains the core server logic (FTP/Web) and the browser-based (pure web) interface.
-- **_share-all Directory**: Contains the Wails 3 specific application logic and integration components.
 
 ### Development Roadmap
 
@@ -113,7 +109,7 @@ We welcome community contributions! Share-All is built using [Wails 3](https://v
 - [x] Active session monitoring and device blocking
 - [x] Client-side transfer details and history
 - [x] Preview for common file types
-- [ ] Drag & Drop support for file uploads
+- [x] Drag & Drop support for file uploads
 - [ ] Enhanced Transfer Controls (Cancel, Pause, Resume)
 - [ ] Seeking support for retrying failed downloads instead of redownloading
 
