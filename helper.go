@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/404errorg6/share-all/internal/config"
 	"fmt"
+	"github.com/404errorg6/share-all/internal/config"
 	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -18,10 +18,6 @@ func StartEventSystem(app *application.App, win *application.WebviewWindow) {
 	win.OnWindowEvent(events.Common.WindowFilesDropped, func(event *application.WindowEvent) {
 		files := event.Context().DroppedFiles()
 		app.Event.Emit("item-dropped", files)
-		for _, file := range files {
-			app.Event.Emit("dropped-item", files)
-			fmt.Printf("Dropped: %v\n", file)
-		}
 	},
 	)
 
