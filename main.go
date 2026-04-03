@@ -6,6 +6,7 @@ import (
 	"embed"
 	_ "embed"
 	"io/fs"
+	"os"
 
 	"log"
 	"net/http"
@@ -17,6 +18,11 @@ import (
 var assets embed.FS
 
 func init() {
+	dev := os.Getenv("DEV")
+	if dev == "true" {
+		config.Dev = true
+	}
+
 	contents, err := fs.Sub(assets, "frontend/dist") //cd into frontend
 	if err != nil {
 		log.Fatalf("Error cding into frontend: %v", err)

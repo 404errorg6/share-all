@@ -72,6 +72,7 @@ var (
 )
 
 var (
+	Dev               bool
 	DefFTPServerName  = getHostname()
 	DefFTPPort        = "2121"
 	DefFTPWriteAccess = "false"
