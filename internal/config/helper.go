@@ -41,9 +41,26 @@ func getWifiOrCellularInterface() (net.Interface, error) {
 	LogsCh <- "Available Interfaces:\n"
 
 	for _, iface := range ifs {
-		name := strings.ToLower(iface.Name)
 		if iface.Flags&net.FlagUp != 0 && iface.Flags&net.FlagBroadcast != 0 {
 			LogsCh <- fmt.Sprintf("	%v: %v\n", iface.Name, iface)
+		}
+	}
+
+	for _, iface := range ifs {
+		name := strings.ToLower(iface.Name)
+		if iface.Flags&net.FlagUp != 0 && iface.Flags&net.FlagBroadcast != 0 {
+			isEthernet := !strings.Contains(name, "veth") && (strings.Contains(name, "ethernet") || strings.HasPrefix(name, "eth") || strings.HasPrefix(name, "en"))
+
+			if isEthernet {
+				LogsCh <- fmt.Sprintf("Selected interface:\n	 %v: %v", iface.Name, iface)
+				return iface, nil
+			}
+		}
+	}
+
+	for _, iface := range ifs {
+		name := strings.ToLower(iface.Name)
+		if iface.Flags&net.FlagUp != 0 && iface.Flags&net.FlagBroadcast != 0 {
 			isWifi := strings.Contains(name, "wi-fi") || strings.Contains(name, "wifi") || strings.HasPrefix(name, "wlan")
 
 			if isWifi {
@@ -65,7 +82,7 @@ func getWifiOrCellularInterface() (net.Interface, error) {
 		}
 	}
 
-	return nilIface, fmt.Errorf("Neither wifi nor mobile data enabled. Please enable to run the app normally.")
+	return nilIface, fmt.Errorf("No network connection found. Please enable Wi-Fi, Ethernet, or mobile data to proceed")
 }
 
 // TODO: Duplicate

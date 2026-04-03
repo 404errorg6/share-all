@@ -22,7 +22,6 @@ func init() {
 	err := godotenv.Load(".env")
 	if err != nil {
 		config.LogsCh <- "Error loading env file: " + err.Error()
-		return
 	}
 
 	dev := os.Getenv("DEV")

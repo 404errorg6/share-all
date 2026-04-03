@@ -4,8 +4,8 @@ set -e
 # Build configuration
 APP_NAME=""
 BUNDLE_ID="com.404errorg6.shareall"
-VERSION="2.3.0"
-BUILD_NUMBER="2.3.0"
+VERSION="2.4.0"
+BUILD_NUMBER="2.4.0"
 BUILD_DIR="build/ios"
 TARGET="simulator"
 
