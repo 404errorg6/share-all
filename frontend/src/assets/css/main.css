@@ -184,3 +184,42 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
+
+/* Wails v3 File Drop Target */
+[data-file-drop-target] {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    border-radius: 1rem;
+}
+
+[data-file-drop-target].file-drop-target-active {
+    background: rgba(80, 194, 247, 0.05) !important;
+    outline: 3px dashed var(--primary);
+    outline-offset: -12px;
+}
+
+[data-file-drop-target].file-drop-target-active::after {
+    content: 'Drop to Upload';
+    position: absolute;
+    inset: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(16, 28, 34, 0.85);
+    backdrop-filter: blur(8px);
+    color: var(--primary);
+    font-size: 1.5rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    z-index: 50;
+    border-radius: 12px;
+    pointer-events: none;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.3);
+    animation: pulse-drop 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse-drop {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(0.98); }
+}

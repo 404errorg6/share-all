@@ -2,6 +2,7 @@ import { FTP_API } from '../ftp-api.js';
 import { Renderer } from '../ftp-renderer.js';
 import { state, ui } from '../ftp-state.js';
 import { Clipboard } from '../ftp-clipboard.js';
+import { Events } from '@wailsio/runtime';
 
 /**
  * Browse Remote Local Page Logic
@@ -77,13 +78,28 @@ export const template = `
 
     <main class="flex-1 flex flex-col relative min-h-0 lg:pb-0 overflow-hidden">
         <!-- Remote Pane -->
-        <div id="remote-pane" class="flex-1 flex flex-col overflow-y-auto">
+        <div id="remote-pane" data-file-drop-target class="flex-1 flex flex-col overflow-y-auto relative">
             <div id="remote-list" class="flex flex-col min-h-[100px]"></div>
             <div id="remote-empty"
                 class="hidden flex flex-col items-center justify-center py-20 text-slate-400 text-center">
                 <span class="material-symbols-outlined text-6xl mb-4 opacity-20">cloud_off</span>
                 <p class="font-bold text-xl text-slate-300">No Files Found</p>
+                <div class="mt-8 flex flex-col items-center gap-2 opacity-40">
+                   <span class="material-symbols-outlined text-4xl animate-bounce">upload_file</span>
+                   <p class="text-xs font-black uppercase tracking-widest">Drag files here to upload</p>
+                </div>
             </div>
+
+            <!-- Clickable Upload Toggle Button (Tablet/Desktop) -->
+            <button id="upload-mode-btn" class="hidden sm:flex absolute bottom-6 right-6 items-center gap-3 bg-white/10 dark:bg-black/20 backdrop-blur-md border border-white/10 p-3 rounded-2xl opacity-60 hover:opacity-100 hover:scale-105 active:scale-95 transition-all text-slate-300">
+                <div class="icon-box size-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary transition-colors">
+                    <span class="material-symbols-outlined">add_circle</span>
+                </div>
+                <div class="flex flex-col pr-2 text-left">
+                    <p class="text-[10px] font-black uppercase tracking-widest opacity-70">Upload</p>
+                    <p id="upload-btn-text" class="text-[11px] font-bold">Press to Drop</p>
+                </div>
+            </button>
         </div>
 
         <!-- Local Pane -->
@@ -520,6 +536,95 @@ export function init() {
 
     closeOptionsBtn.onclick = closeOptionsModal;
     optModal.onclick = (e) => { if (e.target === optModal) closeOptionsModal(); };
+
+    // --- Wails v3 Drag n Drop Mode ---
+    const uploadModeBtn = document.getElementById('upload-mode-btn');
+    const uploadBtnText = document.getElementById('upload-btn-text');
+    let uploadMode = false;
+
+    function toggleUploadMode() {
+        uploadMode = !uploadMode;
+        
+        const rPane = document.getElementById('remote-pane');
+        const iconBox = uploadModeBtn.querySelector('.icon-box');
+
+        if (uploadMode) {
+            uploadModeBtn.classList.remove('opacity-60', 'text-slate-300');
+            uploadModeBtn.classList.add('opacity-100', 'text-white', 'bg-primary/40', 'ring-2', 'ring-primary/50');
+            iconBox.classList.remove('bg-primary/20', 'text-primary');
+            iconBox.classList.add('bg-white', 'text-primary');
+            uploadBtnText.innerText = "Mode: Active";
+            rPane.classList.add('upload-mode-waiting'); // For potential CSS border hint
+            if (globalThis.Components?.showToast) globalThis.Components.showToast('Upload Mode Enabled. Drop files now!', 'info');
+        } else {
+            uploadModeBtn.classList.add('opacity-60', 'text-slate-300');
+            uploadModeBtn.classList.remove('opacity-100', 'text-white', 'bg-primary/40', 'ring-2', 'ring-primary/50');
+            iconBox.classList.add('bg-primary/20', 'text-primary');
+            iconBox.classList.remove('bg-white', 'text-primary');
+            uploadBtnText.innerText = "Press to Drop";
+            rPane.classList.remove('upload-mode-waiting');
+        }
+    }
+
+    if (uploadModeBtn) uploadModeBtn.onclick = toggleUploadMode;
+
+    // Wails backend event: emitted by helper.go via app.Event.Emit("item-dropped", files)
+    // Wails v3 spreads Go []string into event.data directly:
+    //   event.data = ["path1", "path2"]          (flat – one arg per path)
+    // OR wraps the whole slice as the first arg:
+    //   event.data = [["path1", "path2"]]         (nested)
+    // Normalise both shapes so we always end up with a plain string[].
+    Events.On('item-dropped', async (event) => {
+        const raw = event?.data;
+        console.log('[item-dropped] raw event.data:', raw);
+
+        let filePaths;
+        if (Array.isArray(raw?.[0])) {
+            // Nested: [["path1", "path2"]]
+            filePaths = raw[0];
+        } else if (Array.isArray(raw) && raw.length > 0) {
+            // Flat: ["path1", "path2"]
+            filePaths = raw;
+        } else {
+            console.warn('[item-dropped] unexpected payload shape, aborting', raw);
+            return;
+        }
+
+        console.log('[item-dropped] resolved paths:', filePaths);
+        if (filePaths.length === 0) return;
+
+        const remotePath = state.currentRemotePath || '.';
+
+        if (globalThis.Components?.showToast) {
+            globalThis.Components.showToast(`Uploading ${filePaths.length} dropped item(s)...`, 'info');
+        }
+
+        try {
+            const body = new URLSearchParams();
+            body.append('remote_path', remotePath);
+            for (const p of filePaths) {
+                body.append('local_paths', p);
+            }
+
+            const res = await fetch('/api/ftp/client/upload', {
+                method: 'POST',
+                body,
+            });
+
+            if (!res.ok) {
+                const msg = await res.text();
+                throw new Error(msg || `Upload failed (${res.status})`);
+            }
+
+            if (globalThis.Components?.showToast) {
+                globalThis.Components.showToast('Upload completed successfully!', 'success');
+            }
+            refreshCurrent(true, true);
+        } catch (e) {
+            console.error('[item-dropped] upload error:', e);
+            handleError(e);
+        }
+    });
 
     // Initial state setup
     optContent.classList.add('scale-95', 'opacity-0');

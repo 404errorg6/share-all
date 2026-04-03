@@ -40,31 +40,30 @@ func main() {
 		},
 	})
 
-	app.Event.On("common:ApplicationStarted", func(event *application.CustomEvent) {
-		err := config.Setup()
-		if err != nil {
-			config.DisplayError(err, "")
-		} else {
-			app.Window.NewWithOptions(application.WebviewWindowOptions{
-				Title:      "Share all",
-				StartState: application.WindowStateMaximised,
+	err := config.Setup()
+	if err != nil {
+		config.DisplayError(err, "")
+	} else {
+		win := app.Window.NewWithOptions(application.WebviewWindowOptions{
+			Title:      "Share all",
+			StartState: application.WindowStateMaximised,
 
-				Mac: application.MacWindow{
-					InvisibleTitleBarHeight: 50,
-					Backdrop:                application.MacBackdropTranslucent,
-					TitleBar:                application.MacTitleBarHiddenInset,
-				},
-				BackgroundColour: application.NewRGB(27, 38, 54),
-				URL:              "/",
-				EnableFileDrop:   true,
-			})
-			StartEventSystem(app.Window.Current())
+			Mac: application.MacWindow{
+				InvisibleTitleBarHeight: 50,
+				Backdrop:                application.MacBackdropTranslucent,
+				TitleBar:                application.MacTitleBarHiddenInset,
+			},
+			BackgroundColour: application.NewRGB(27, 38, 54),
+			URL:              "/",
+			EnableFileDrop:   true,
+		})
 
-			config.LogsCh <- "app ready to start"
-		}
-	})
+		StartEventSystem(app, win)
 
-	err := app.Run()
+		config.LogsCh <- "app ready to start"
+	}
+
+	err = app.Run()
 	if err != nil {
 		log.Fatal(err)
 	}
