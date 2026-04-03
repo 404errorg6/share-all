@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/joho/godotenv"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
@@ -18,6 +19,12 @@ import (
 var assets embed.FS
 
 func init() {
+	err := godotenv.Load(".env")
+	if err != nil {
+		config.LogsCh <- "Error loading env file: " + err.Error()
+		return
+	}
+
 	dev := os.Getenv("DEV")
 	if dev == "true" {
 		config.Dev = true
