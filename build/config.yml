@@ -8,9 +8,9 @@ info:
   companyName: "404errorg6" # The name of the company
   productName: "Share all" # The name of the application
   productIdentifier: "com.404errorg6.shareall" # The unique product identifier
-  description: "Sharing app to share anything with any deivce on local network" # The application description
+  description: "Share all" # The application description
   copyright: "" # Copyright text
-  comments: "" # Comments
+  comments: "Sharing app to share anything with any deivce on local network" # Comments
   version: "2.3.0" # The application version
   # cfBundleIconName: "appicon" # The macOS icon name in Assets.car icon bundles (optional)
   #                               # Should match the name of your .icon file without the extension

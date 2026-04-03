@@ -7,7 +7,7 @@
 		<key>CFBundleExecutable</key>
 		<string/>
 		<key>CFBundleGetInfoString</key>
-		<string>This is a comment</string>
+		<string>Sharing app to share anything with any deivce on local network</string>
 		<key>CFBundleIdentifier</key>
 		<string>com.404errorg6.shareall</string>
 		<key>CFBundleName</key>

@@ -10,7 +10,7 @@ version: "2.3.0"
 section: "default"
 priority: "extra"
 maintainer: ${GIT_COMMITTER_NAME} <${GIT_COMMITTER_EMAIL}>
-description: "Sharing app to share anything with any deivce on local network"
+description: "Share all"
 vendor: "404errorg6"
 homepage: "https://wails.io"
 license: "MIT"
