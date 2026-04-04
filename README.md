@@ -110,6 +110,7 @@ We welcome community contributions! Share-All is built using [Wails 3](https://v
 - [x] Client-side transfer details and history
 - [x] Preview for common file types
 - [x] Drag & Drop support for file uploads
+- [ ] Fix app-to-app transfer while using mobile data.
 - [ ] Enhanced Transfer Controls (Cancel, Pause, Resume)
 - [ ] Seeking support for retrying failed downloads instead of redownloading
 
