@@ -154,37 +154,52 @@ export const template = `
                     <div id="internet-status-pill" class="px-3 py-1 rounded-full bg-white/5 text-[10px] font-black tracking-widest uppercase text-slate-400">Idle</div>
                 </div>
 
-                <div class="mt-4 grid gap-3">
-                    <div class="rounded-xl bg-white/5 border border-white/5 p-3">
-                        <div class="flex items-center justify-between gap-3 mb-2">
-                            <div>
-                                <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Invite Link</p>
-                                <p class="text-[11px] text-slate-500 mt-1">Create a secure room link, then send the link and the 6-digit code to your friend.</p>
-                            </div>
-                            <button id="create-invite-btn"
-                                class="shrink-0 px-4 h-10 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary font-black text-[10px] uppercase tracking-widest transition-all">
-                                Create Invite
-                            </button>
-                        </div>
-                        <textarea id="internet-offer-output" rows="4" readonly
-                            class="w-full rounded-xl bg-background-dark/40 border border-white/5 p-3 text-[11px] text-[#9cb0ba] outline-none"
-                            placeholder="shareall://join?room=..."></textarea>
-                        <div class="grid grid-cols-[1fr_auto] gap-2 mt-3">
-                            <button id="copy-invite-btn"
-                                class="h-10 rounded-xl border border-primary/20 text-primary font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 transition-colors">
-                                Copy Invite Link
-                            </button>
-                            <div class="min-w-[120px] rounded-xl bg-violet-500/10 text-violet-300 px-3 h-10 flex items-center justify-center gap-2">
-                                <span class="material-symbols-outlined text-[16px]">pin</span>
-                                <span id="internet-otp-code" class="font-black text-xs tracking-[0.25em]">------</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
+                <!-- Internet App-to-App info hint -->
                 <div class="mt-3 flex items-start gap-2 px-1">
                     <span class="material-symbols-outlined text-[14px] text-slate-500 mt-px shrink-0">info</span>
                     <p class="text-[11px] text-slate-500 leading-relaxed">A free helper network is used only to help peers find each other. Your actual file data still goes directly between devices whenever a direct connection succeeds.</p>
+                </div>
+
+                <!-- Advanced Configuration Toggler -->
+                <div class="mt-4 pt-4 border-t border-white/5">
+                    <button id="toggle-internet-btn"
+                        class="flex items-center gap-2 text-[#9cb0ba] hover:text-white transition-colors text-xs font-medium group">
+                        <span id="internet-chevron"
+                            class="material-symbols-outlined transition-transform duration-300">chevron_right</span>
+                        <span>Connection Details</span>
+                    </button>
+                </div>
+
+                <!-- Configuration Section -->
+                <div id="internet-panel"
+                    class="max-h-0 opacity-0 overflow-hidden transition-all duration-500 ease-in-out">
+                    <div class="mt-4 grid gap-3">
+                        <div class="rounded-xl bg-white/5 border border-white/5 p-3">
+                            <div class="flex items-center justify-between gap-3 mb-2">
+                                <div>
+                                    <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Invite Link</p>
+                                    <p class="text-[11px] text-slate-500 mt-1">Create a secure room link, then send the link and the 6-digit code to your friend.</p>
+                                </div>
+                                <button id="create-invite-btn"
+                                    class="shrink-0 px-4 h-10 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary font-black text-[10px] uppercase tracking-widest transition-all">
+                                    Create Invite
+                                </button>
+                            </div>
+                            <textarea id="internet-offer-output" rows="1" readonly
+                                class="w-full rounded-xl bg-background-dark/40 border border-white/5 p-3 text-[11px] text-[#9cb0ba] outline-none"
+                                placeholder="shareall://join?room=..."></textarea>
+                            <div class="grid grid-cols-[1fr_auto] gap-2 mt-3">
+                                <button id="copy-invite-btn"
+                                    class="h-10 rounded-xl border border-primary/20 text-primary font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 transition-colors">
+                                    Copy Invite Link
+                                </button>
+                                <div class="min-w-[120px] rounded-xl bg-violet-500/10 text-violet-300 px-3 h-10 flex items-center justify-center gap-2">
+                                    <span class="material-symbols-outlined text-[16px]">pin</span>
+                                    <span id="internet-otp-code" class="font-black text-xs tracking-[0.25em]">------</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -248,6 +263,9 @@ export function init() {
   const internetStatusPill = document.getElementById("internet-status-pill");
   const createInviteBtn = document.getElementById("create-invite-btn");
   const copyInviteBtn = document.getElementById("copy-invite-btn");
+  const toggleInternetBtn = document.getElementById("toggle-internet-btn");
+  const internetPanel = document.getElementById("internet-panel");
+  const internetChevron = document.getElementById("internet-chevron");
   const offerOutput = document.getElementById("internet-offer-output");
   const otpCode = document.getElementById("internet-otp-code");
   let p2pUnsubscribe = null;
@@ -572,6 +590,21 @@ export function init() {
         settingsChevron.classList.remove("rotate-90");
       }
     };
+
+  if (toggleInternetBtn) {
+    toggleInternetBtn.onclick = () => {
+      const isHidden = internetPanel.classList.contains("max-h-0");
+      if (isHidden) {
+        internetPanel.classList.remove("max-h-0", "opacity-0");
+        internetPanel.classList.add("max-h-[1000px]", "opacity-100");
+        internetChevron.classList.add("rotate-90");
+      } else {
+        internetPanel.classList.add("max-h-0", "opacity-0");
+        internetPanel.classList.remove("max-h-[1000px]", "opacity-100");
+        internetChevron.classList.remove("rotate-90");
+      }
+    };
+  }
 
   const anonymousToggle = document.getElementById("anonymous-login-toggle");
   if (anonymousToggle)
