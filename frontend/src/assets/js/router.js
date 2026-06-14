@@ -13,7 +13,15 @@ const routes = {
   },
   "/discover": {
     name: "discover-servers",
-    path: "remote-connections",
+    path: "connect-landing",
+  },
+  "/discover/auto": {
+    name: "discover-servers",
+    path: "discover-auto",
+  },
+  "/discover/internet": {
+    name: "discover-servers",
+    path: "discover-internet",
   },
   "/transfers": {
     name: "transfers",
@@ -117,3 +125,5 @@ export const Router = {
     window.location.hash = path.startsWith("#") ? path : `#${path}`;
   },
 };
+
+globalThis.Router = Router;

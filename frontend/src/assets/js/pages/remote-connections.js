@@ -10,43 +10,55 @@ import { P2PConnection, parseInviteLink } from "../p2p/session.js";
  */
 
 export const template = `
-        <header class="sticky top-0 z-20 bg-background-dark/95 backdrop-blur-md border-b border-slate-800 p-4">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <button id="menu-btn"
-                        class="text-primary flex size-10 items-center justify-center rounded-full hover:bg-slate-800 transition-colors">
-                        <span class="material-symbols-outlined text-3xl">menu</span>
-                    </button>
-                    <h2 class="text-xl font-bold leading-tight tracking-tight text-white">Find Devices</h2>
+        <header class="sticky top-0 z-20 bg-background-dark/95 backdrop-blur-md border-b border-white/5 p-4">
+            <div class="flex items-center gap-3">
+                <button id="menu-btn"
+                    class="text-primary flex size-10 items-center justify-center rounded-full hover:bg-slate-800 transition-colors">
+                    <span class="material-symbols-outlined text-3xl">menu</span>
+                </button>
+                <div class="flex flex-col">
+                    <h2 class="text-xl font-bold text-white">Connect to Other Device</h2>
                 </div>
             </div>
         </header>
 
-        <main class="flex-1 flex flex-col p-4 gap-8" id="connections-container">
-            <section>
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-sm font-black text-slate-500 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-primary text-lg animate-pulse">radar</span>
-                        Auto-Discovery
-                    </h3>
-                    <div class="h-px flex-1 bg-white/5 mx-4"></div>
+        <main class="flex flex-col gap-4 p-4">
+            <!-- Auto-Discovery Card -->
+            <div class="bg-white/5 rounded-2xl overflow-hidden border border-white/5 p-4 transition-all duration-300">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-3">
+                        <div class="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                            <span class="material-symbols-outlined text-2xl">radar</span>
+                        </div>
+                        <div>
+                            <h3 class="text-white font-bold">Auto-Discovery</h3>
+                            <p id="auto-discovery-status" class="text-[#9cb0ba] text-xs">Scan local network</p>
+                        </div>
+                    </div>
                     <button id="rescan-btn"
                         class="flex items-center gap-1 text-[10px] font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-all">
                         <span class="material-symbols-outlined text-sm">refresh</span> RE-SCAN
                     </button>
                 </div>
 
-                <div id="discovery-state"
-                    class="hidden py-16 flex flex-col items-center justify-center bg-slate-800/10 rounded-[2rem] border border-white/5">
-                    <div class="size-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4"></div>
-                    <p class="text-sm font-bold text-slate-300">Scanning Network</p>
-                    <p class="text-[10px] text-slate-500 mt-1 uppercase tracking-widest font-medium">Looking for active FTP servers...</p>
+                <div class="mt-3">
+                    <div id="discovery-state"
+                        class="hidden py-12 flex flex-col items-center justify-center bg-slate-800/10 rounded-2xl border border-white/5">
+                        <div class="size-10 border-3 border-primary/20 border-t-primary rounded-full animate-spin mb-3"></div>
+                        <p class="text-sm font-bold text-slate-300">Scanning Network</p>
+                        <p class="text-[10px] text-slate-500 mt-1 uppercase tracking-widest font-medium">Looking for active FTP servers...</p>
+                    </div>
+                    <div id="discovery-list" class="grid grid-cols-1 gap-3"></div>
                 </div>
 
-                <div id="discovery-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-            </section>
+                <div class="mt-3 flex items-start gap-2 px-1">
+                    <span class="material-symbols-outlined text-[14px] text-slate-500 mt-px shrink-0">info</span>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">Best for devices on the same local network.</p>
+                </div>
+            </div>
 
-            <section class="bg-white/5 rounded-2xl overflow-hidden border border-white/5 p-4 transition-all duration-300">
+            <!-- Internet App-to-App Card -->
+            <div class="bg-white/5 rounded-2xl overflow-hidden border border-white/5 p-4 transition-all duration-300">
                 <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center gap-3">
                         <div class="size-10 rounded-full bg-violet-500/10 flex items-center justify-center text-violet-400">
@@ -54,7 +66,7 @@ export const template = `
                         </div>
                         <div>
                             <h3 class="text-white font-bold">Internet App-to-App</h3>
-                            <p class="text-[#9cb0ba] text-xs">Open a shared link and enter the 6-digit code from the host.</p>
+                            <p id="internet-status-text" class="text-[#9cb0ba] text-xs">Connect via invite link</p>
                         </div>
                     </div>
                     <div id="internet-pill" class="px-3 py-1 rounded-full bg-white/5 text-[10px] font-black tracking-widest uppercase text-slate-400">Idle</div>
@@ -65,10 +77,10 @@ export const template = `
                         <div class="flex items-center justify-between gap-3 mb-2">
                             <div>
                                 <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Invite Link</p>
-                                <p id="internet-invite-hint" class="text-[11px] text-slate-500 mt-1">Paste the link sent by your friend. If the app was opened from the link, this will already be filled in.</p>
+                                <p id="internet-invite-hint" class="text-[11px] text-slate-500 mt-1">Paste the link sent by your friend.</p>
                             </div>
                         </div>
-                        <textarea id="internet-link-input" rows="4"
+                        <textarea id="internet-link-input" rows="3"
                             class="w-full rounded-xl bg-background-dark/40 border border-white/5 p-3 text-[11px] text-[#9cb0ba] outline-none focus:border-primary/40"
                             placeholder="shareall://join?room=..."></textarea>
                     </div>
@@ -92,9 +104,9 @@ export const template = `
 
                 <div class="mt-3 flex items-start gap-2 px-1">
                     <span class="material-symbols-outlined text-[14px] text-slate-500 mt-px shrink-0">info</span>
-                    <p class="text-[11px] text-slate-500 leading-relaxed">A free helper network is used only for peer discovery. Your actual file data still goes directly between devices whenever a direct connection succeeds.</p>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">A free helper network is used only for peer discovery. Your actual file data still goes directly between devices whenever possible.</p>
                 </div>
-            </section>
+            </div>
         </main>
 
     <div id="login-modal" class="fixed inset-0 z-[100] flex items-center justify-center p-6 hidden">

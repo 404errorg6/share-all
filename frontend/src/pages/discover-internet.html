@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Internet App-to-App - FTP Manager</title>
+  <script type="module" src="/src/assets/vendor/tailwind-cdn.min.js"></script>
+  <script type="module">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#50c2f7",
+            "background-dark": "#101c22",
+            "surface-dark": "#1b2327",
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="stylesheet" href="/src/assets/css/fonts.css">
+  <link rel="stylesheet" href="/src/assets/css/main.css">
+</head>
+<body v-cloak class="bg-background-dark font-display text-slate-100 antialiased overflow-x-hidden">
+  <div class="relative flex min-h-screen w-full flex-col max-w-none shadow-2xl bg-background-dark overflow-hidden">
+    <header class="sticky top-0 z-20 bg-background-dark/95 backdrop-blur-md border-b border-white/5 p-4">
+      <div class="flex items-center gap-3">
+        <button onclick="globalThis.Router.navigate('/discover')" class="text-primary flex size-10 items-center justify-center rounded-full hover:bg-slate-800 transition-colors">
+          <span class="material-symbols-outlined text-3xl">arrow_back</span>
+        </button>
+        <div class="flex flex-col">
+          <h2 class="text-xl font-bold text-white">Internet App-to-App</h2>
+        </div>
+      </div>
+    </header>
+    <main class="flex flex-col gap-4 p-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-violet-400">hub</span>
+          <h3 class="text-sm font-black text-slate-500 uppercase tracking-[0.2em]">Connect via Invite</h3>
+        </div>
+        <div id="internet-pill" class="px-3 py-1 rounded-full bg-white/5 text-[10px] font-black tracking-widest uppercase text-slate-400">Idle</div>
+      </div>
+      <div class="grid gap-3">
+        <div class="rounded-xl bg-white/5 border border-white/5 p-3">
+          <div class="flex items-center justify-between gap-3 mb-2">
+            <div>
+              <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Invite Link</p>
+              <p id="internet-invite-hint" class="text-[11px] text-slate-500 mt-1">Paste the link sent by your friend.</p>
+            </div>
+          </div>
+          <textarea id="internet-link-input" rows="3" class="w-full rounded-xl bg-background-dark/40 border border-white/5 p-3 text-[11px] text-[#9cb0ba] outline-none focus:border-primary/40" placeholder="shareall://join?room=..."></textarea>
+        </div>
+        <div class="rounded-xl bg-white/5 border border-white/5 p-3">
+          <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2">6-Digit Code</p>
+          <input id="internet-code-input" maxlength="6" class="w-full h-12 rounded-xl bg-background-dark/40 border border-white/5 px-4 text-sm tracking-[0.35em] font-black text-white outline-none focus:border-primary/40" placeholder="123456">
+          <button id="internet-connect-btn" class="mt-3 w-full h-10 rounded-xl bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 font-black text-[10px] uppercase tracking-widest transition-all">
+            Connect Over Internet
+          </button>
+        </div>
+      </div>
+      <div id="internet-status" class="rounded-xl bg-white/[0.03] border border-white/5 p-3 text-[11px] text-slate-400 leading-relaxed">
+        Waiting for an invite link.
+      </div>
+      <div class="flex items-start gap-2 px-1">
+        <span class="material-symbols-outlined text-[14px] text-slate-500 mt-px shrink-0">info</span>
+        <p class="text-[11px] text-slate-500 leading-relaxed">A free helper network is used only for peer discovery. Your actual file data still goes directly between devices whenever possible.</p>
+      </div>
+    </main>
+  </div>
+  <script src="/wails/ipc.js"></script>
+  <script src="/wails/runtime.js"></script>
+  <script type="module" src="/src/assets/js/utils.js"></script>
+  <script type="module" src="/src/assets/js/components.js"></script>
+  <script type="module" src="/src/assets/js/pages/discover-internet.js"></script>
+  <script type="module">
+    async function initializePageComponents() {
+      try {
+        if (window.Components && window.Components.ready) await window.Components.ready;
+        if (window.Components && typeof window.Components.injectSidebar === 'function') {
+          window.Components.injectSidebar('discover-servers');
+          window.Components.injectModal();
+        } else if (window.Components && window.Components.Sidebar && typeof window.Components.Sidebar.inject === 'function') {
+          window.Components.Sidebar.inject('discover-servers');
+          if (window.Components.Sidebar && typeof window.Components.Sidebar.injectModal === 'function') window.Components.Sidebar.injectModal();
+        } else {
+          console.error('Components failed to load');
+        }
+      } catch (err) {
+        console.error('Failed to initialize components:', err);
+      }
+    }
+    initializePageComponents().catch(err => console.error('Failed to initialize:', err));
+  </script>
+</body>
+</html>

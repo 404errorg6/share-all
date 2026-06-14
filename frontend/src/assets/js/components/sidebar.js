@@ -40,7 +40,7 @@ globalThis.Components.Sidebar = {
                         <div class="flex items-center justify-center size-10 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-500">
                             <span class="material-symbols-outlined">wifi_tethering</span>
                         </div>
-                        <span class="text-sm font-semibold">Find Devices</span>
+                        <span class="text-sm font-semibold">Connect to Other Device</span>
                     </div>
                 </a>
                 <a href="#/transfers" onclick="globalThis.Components.Sidebar.handleClick(event, '#/transfers')"
