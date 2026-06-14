@@ -1,11 +1,13 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/404errorg6/share-all/internal/config"
 	clienthandlers "github.com/404errorg6/share-all/internal/handlers/client_handlers"
 	httphandlers "github.com/404errorg6/share-all/internal/handlers/http_handlers"
+	p2phandlers "github.com/404errorg6/share-all/internal/handlers/p2p_handlers"
 	serverhandlers "github.com/404errorg6/share-all/internal/handlers/server_handlers"
-	"net/http"
 )
 
 func Mux() *http.ServeMux {
@@ -40,5 +42,16 @@ func Mux() *http.ServeMux {
 	mux.HandleFunc("POST /api/ftp/client/delete", clienthandlers.HandleDelete)          //delete from local, local_path required
 	mux.HandleFunc("GET /api/ftp/discover", clienthandlers.HandlerDiscoverServers)
 	mux.HandleFunc("GET /api/ftp/transfers", clienthandlers.HandleTransfer)
+
+	// P2P shared filesystem helpers for internet mode
+	mux.HandleFunc("GET /api/p2p/invite/pending", p2phandlers.HandlePendingInvite)
+	mux.HandleFunc("POST /api/p2p/share/configure", p2phandlers.HandleConfigureShare)
+	mux.HandleFunc("GET /api/p2p/share/status", p2phandlers.HandleShareStatus)
+	mux.HandleFunc("GET /api/p2p/fs/list", p2phandlers.HandleListFS)
+	mux.HandleFunc("GET /api/p2p/fs/file", p2phandlers.HandleReadFile)
+	mux.HandleFunc("POST /api/p2p/fs/mkdir", p2phandlers.HandleMkdir)
+	mux.HandleFunc("POST /api/p2p/fs/write/start", p2phandlers.HandleWriteStart)
+	mux.HandleFunc("POST /api/p2p/fs/write/chunk", p2phandlers.HandleWriteChunk)
+	mux.HandleFunc("POST /api/p2p/fs/write/finish", p2phandlers.HandleWriteFinish)
 	return mux
 }

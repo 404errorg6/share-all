@@ -1,3 +1,5 @@
+import { P2PConnection } from "../p2p/session.js";
+
 /**
  * Hosting Panel Page Logic
  */
@@ -137,6 +139,55 @@ export const template = `
                 </div>
             </div>
 
+            <!-- Internet App-to-App Card -->
+            <div class="bg-white/5 rounded-2xl overflow-hidden border border-white/5 p-4 transition-all duration-300">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-3">
+                        <div class="size-10 rounded-full bg-violet-500/10 flex items-center justify-center text-violet-400">
+                            <span class="material-symbols-outlined text-2xl">hub</span>
+                        </div>
+                        <div>
+                            <h3 class="text-white font-bold">Internet App-to-App</h3>
+                            <p id="internet-share-status" class="text-[#9cb0ba] text-xs">Not Connected</p>
+                        </div>
+                    </div>
+                    <div id="internet-status-pill" class="px-3 py-1 rounded-full bg-white/5 text-[10px] font-black tracking-widest uppercase text-slate-400">Idle</div>
+                </div>
+
+                <div class="mt-4 grid gap-3">
+                    <div class="rounded-xl bg-white/5 border border-white/5 p-3">
+                        <div class="flex items-center justify-between gap-3 mb-2">
+                            <div>
+                                <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Invite Link</p>
+                                <p class="text-[11px] text-slate-500 mt-1">Create a secure room link, then send the link and the 6-digit code to your friend.</p>
+                            </div>
+                            <button id="create-invite-btn"
+                                class="shrink-0 px-4 h-10 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary font-black text-[10px] uppercase tracking-widest transition-all">
+                                Create Invite
+                            </button>
+                        </div>
+                        <textarea id="internet-offer-output" rows="4" readonly
+                            class="w-full rounded-xl bg-background-dark/40 border border-white/5 p-3 text-[11px] text-[#9cb0ba] outline-none"
+                            placeholder="shareall://join?room=..."></textarea>
+                        <div class="grid grid-cols-[1fr_auto] gap-2 mt-3">
+                            <button id="copy-invite-btn"
+                                class="h-10 rounded-xl border border-primary/20 text-primary font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 transition-colors">
+                                Copy Invite Link
+                            </button>
+                            <div class="min-w-[120px] rounded-xl bg-violet-500/10 text-violet-300 px-3 h-10 flex items-center justify-center gap-2">
+                                <span class="material-symbols-outlined text-[16px]">pin</span>
+                                <span id="internet-otp-code" class="font-black text-xs tracking-[0.25em]">------</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3 flex items-start gap-2 px-1">
+                    <span class="material-symbols-outlined text-[14px] text-slate-500 mt-px shrink-0">info</span>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">A free helper network is used only to help peers find each other. Your actual file data still goes directly between devices whenever a direct connection succeeds.</p>
+                </div>
+            </div>
+
             <!-- Web Share Card -->
             <div class="bg-white/5 rounded-2xl overflow-hidden border border-white/5 p-4 transition-all duration-300">
                 <div class="flex items-center justify-between mb-2">
@@ -183,286 +234,413 @@ export const template = `
 `;
 
 export function init() {
-    const statusLabel = document.getElementById('server-status-label');
-    const ftpToggle = document.getElementById('status-toggle');
-    const ftpStatusText = document.getElementById('status-text');
-    const webToggle = document.getElementById('web-share-toggle');
-    const webStatusText = document.getElementById('web-share-status');
-    const webUrlContainer = document.getElementById('web-share-url-container');
-    const webUrlText = document.getElementById('web-share-url');
-    const settingsPanel = document.getElementById('settings-panel');
-    const settingsChevron = document.getElementById('settings-chevron');
-    const authFields = document.getElementById('auth-fields');
+  const statusLabel = document.getElementById("server-status-label");
+  const ftpToggle = document.getElementById("status-toggle");
+  const ftpStatusText = document.getElementById("status-text");
+  const webToggle = document.getElementById("web-share-toggle");
+  const webStatusText = document.getElementById("web-share-status");
+  const webUrlContainer = document.getElementById("web-share-url-container");
+  const webUrlText = document.getElementById("web-share-url");
+  const settingsPanel = document.getElementById("settings-panel");
+  const settingsChevron = document.getElementById("settings-chevron");
+  const authFields = document.getElementById("auth-fields");
+  const internetShareStatus = document.getElementById("internet-share-status");
+  const internetStatusPill = document.getElementById("internet-status-pill");
+  const createInviteBtn = document.getElementById("create-invite-btn");
+  const copyInviteBtn = document.getElementById("copy-invite-btn");
+  const offerOutput = document.getElementById("internet-offer-output");
+  const otpCode = document.getElementById("internet-otp-code");
+  let p2pUnsubscribe = null;
 
-    function updateServerOnlineLabel() {
-        const ftpRunning = ftpToggle?.checked ?? false;
-        const webRunning = webToggle?.checked ?? false;
-        if (!statusLabel) return;
-        const isOnline = ftpRunning || webRunning;
-        statusLabel.textContent = isOnline ? 'Server Online' : 'Server Offline';
-        statusLabel.className = isOnline
-            ? 'text-xs text-green- green-400 font-black tracking-widest uppercase'
-            : 'text-xs text-red-500 font-black tracking-widest uppercase';
+  function collectShareConfig() {
+    return {
+      name: document.getElementById("ftp-name")?.value || "Share-All Peer",
+      rootDir: document.getElementById("ftp-root")?.value || "",
+      writeAllowed:
+        document.getElementById("allow-writing-toggle")?.checked ?? true,
+    };
+  }
+
+  function updateP2PStatusUI(status = P2PConnection.getStatus()) {
+    if (!internetShareStatus || !internetStatusPill) return;
+
+    internetStatusPill.className =
+      "px-3 py-1 rounded-full bg-white/5 text-[10px] font-black tracking-widest uppercase text-slate-400";
+    internetStatusPill.textContent = "Idle";
+
+    if (status.role === "host" && !status.connected) {
+      internetShareStatus.textContent = status.verificationCode
+        ? "Link ready. Waiting for your friend to join..."
+        : "Not Connected";
+      internetStatusPill.textContent = status.verificationCode
+        ? "Waiting"
+        : "Idle";
+      if (status.verificationCode) {
+        internetStatusPill.className =
+          "px-3 py-1 rounded-full bg-violet-500/10 text-[10px] font-black tracking-widest uppercase text-violet-300";
+      }
+      return;
     }
 
-    function setFtpInputsDisabled(disabled) {
-        const form = document.getElementById('ftp-config-form');
-        if (!form) return;
-        
-        // Disable all inputs, selects, and buttons inside the form
-        const elements = form.querySelectorAll('input, select, button, a');
-        elements.forEach(el => {
-            if (el.id === 'status-toggle') return; // Don't disable the toggle itself!
-            
-            if (el.tagName === 'A') {
-                el.style.pointerEvents = disabled ? 'none' : 'auto';
-                el.style.opacity = disabled ? '0.5' : '1';
-            } else {
-                el.disabled = disabled;
-                // Add a visual cue for disabled state
-                if (disabled) {
-                    el.classList.add('opacity-50', 'cursor-not-allowed');
-                } else {
-                    el.classList.remove('opacity-50', 'cursor-not-allowed');
-                }
-            }
+    if (status.connected && status.authenticated && status.role === "host") {
+      internetShareStatus.textContent = `Connected to ${status.peerInfo?.name || "internet peer"}`;
+      internetStatusPill.textContent = "Connected";
+      internetStatusPill.className =
+        "px-3 py-1 rounded-full bg-emerald-500/10 text-[10px] font-black tracking-widest uppercase text-emerald-300";
+      return;
+    }
+
+    if (status.joinError) {
+      internetShareStatus.textContent = status.joinError;
+      internetStatusPill.textContent = "Error";
+      internetStatusPill.className =
+        "px-3 py-1 rounded-full bg-red-500/10 text-[10px] font-black tracking-widest uppercase text-red-300";
+    }
+  }
+
+  function updateServerOnlineLabel() {
+    const ftpRunning = ftpToggle?.checked ?? false;
+    const webRunning = webToggle?.checked ?? false;
+    if (!statusLabel) return;
+    const isOnline = ftpRunning || webRunning;
+    statusLabel.textContent = isOnline ? "Server Online" : "Server Offline";
+    statusLabel.className = isOnline
+      ? "text-xs text-green- green-400 font-black tracking-widest uppercase"
+      : "text-xs text-red-500 font-black tracking-widest uppercase";
+  }
+
+  function setFtpInputsDisabled(disabled) {
+    const form = document.getElementById("ftp-config-form");
+    if (!form) return;
+
+    // Disable all inputs, selects, and buttons inside the form
+    const elements = form.querySelectorAll("input, select, button, a");
+    elements.forEach((el) => {
+      if (el.id === "status-toggle") return; // Don't disable the toggle itself!
+
+      if (el.tagName === "A") {
+        el.style.pointerEvents = disabled ? "none" : "auto";
+        el.style.opacity = disabled ? "0.5" : "1";
+      } else {
+        el.disabled = disabled;
+        // Add a visual cue for disabled state
+        if (disabled) {
+          el.classList.add("opacity-50", "cursor-not-allowed");
+        } else {
+          el.classList.remove("opacity-50", "cursor-not-allowed");
+        }
+      }
+    });
+
+    // Also dim the label text
+    const labels = form.querySelectorAll("label");
+    labels.forEach((l) => {
+      if (disabled) l.classList.add("opacity-50");
+      else l.classList.remove("opacity-50");
+    });
+  }
+
+  async function toggleServer() {
+    const isStarting = ftpToggle.checked;
+    if (isStarting) {
+      const name = document.getElementById("ftp-name").value || "My FTP Server";
+      const port = document.getElementById("ftp-port").value || "2121";
+      const rootFolder = document.getElementById("ftp-root").value || "";
+      const anonymous = document.getElementById(
+        "anonymous-login-toggle",
+      ).checked;
+      const allowWriting = document.getElementById(
+        "allow-writing-toggle",
+      ).checked;
+
+      if (!name) {
+        if (globalThis.Components?.showToast)
+          globalThis.Components.showToast("Server Name is required", "error");
+        ftpToggle.checked = false;
+        return;
+      }
+
+      ftpStatusText.textContent = "Starting...";
+      try {
+        const params = new URLSearchParams();
+        params.append("name", name);
+        params.append("server_port", port);
+        params.append("server_root_dir", rootFolder);
+        params.append("anonymous_allowed", anonymous ? "true" : "false");
+        params.append("write_allowed", allowWriting ? "true" : "false");
+
+        if (!anonymous) {
+          params.append("user", document.getElementById("ftp-username").value);
+          params.append(
+            "password",
+            document.getElementById("ftp-password").value,
+          );
+        }
+
+        const response = await fetch("/api/ftp/server/start-ftp", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: params.toString(),
         });
 
-        // Also dim the label text
-        const labels = form.querySelectorAll('label');
-        labels.forEach(l => {
-            if (disabled) l.classList.add('opacity-50');
-            else l.classList.remove('opacity-50');
+        if (response.ok) {
+          ftpStatusText.textContent = "Running";
+          updateServerOnlineLabel();
+          updateToggleUI(ftpToggle, true);
+          setFtpInputsDisabled(true);
+          if (globalThis.Components?.showToast)
+            globalThis.Components.showToast("Server started");
+        } else {
+          const err = await response.text();
+          throw new Error(err || "Failed to start server");
+        }
+      } catch (error) {
+        if (globalThis.Components?.showToast)
+          globalThis.Components.showToast(error.message, "error");
+        ftpToggle.checked = false;
+        ftpStatusText.textContent = "Stopped";
+        updateServerOnlineLabel();
+        updateToggleUI(ftpToggle, false);
+      }
+    } else {
+      ftpStatusText.textContent = "Stopping...";
+      try {
+        const response = await fetch("/api/ftp/server/stop-ftp", {
+          method: "POST",
         });
-    }
-
-    async function toggleServer() {
-        const isStarting = ftpToggle.checked;
-        if (isStarting) {
-            const name = document.getElementById('ftp-name').value || 'My FTP Server';
-            const port = document.getElementById('ftp-port').value || '2121';
-            const rootFolder = document.getElementById('ftp-root').value || '';
-            const anonymous = document.getElementById('anonymous-login-toggle').checked;
-            const allowWriting = document.getElementById('allow-writing-toggle').checked;
-
-            if (!name) {
-                if (globalThis.Components?.showToast) globalThis.Components.showToast('Server Name is required', 'error');
-                ftpToggle.checked = false;
-                return;
-            }
-
-            ftpStatusText.textContent = 'Starting...';
-            try {
-                const params = new URLSearchParams();
-                params.append('name', name);
-                params.append('server_port', port);
-                params.append('server_root_dir', rootFolder);
-                params.append('anonymous_allowed', anonymous ? 'true' : 'false');
-                params.append('write_allowed', allowWriting ? 'true' : 'false');
-
-                if (!anonymous) {
-                    params.append('user', document.getElementById('ftp-username').value);
-                    params.append('password', document.getElementById('ftp-password').value);
-                }
-
-                const response = await fetch('/api/ftp/server/start-ftp', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: params.toString()
-                });
-
-                if (response.ok) {
-                    ftpStatusText.textContent = 'Running';
-                    updateServerOnlineLabel();
-                    updateToggleUI(ftpToggle, true);
-                    setFtpInputsDisabled(true);
-                    if (globalThis.Components?.showToast) globalThis.Components.showToast('Server started');
-                } else {
-                    const err = await response.text();
-                    throw new Error(err || 'Failed to start server');
-                }
-            } catch (error) {
-                if (globalThis.Components?.showToast) globalThis.Components.showToast(error.message, 'error');
-                ftpToggle.checked = false;
-                ftpStatusText.textContent = 'Stopped';
-                updateServerOnlineLabel();
-                updateToggleUI(ftpToggle, false);
-            }
+        if (response.ok) {
+          ftpStatusText.textContent = "Stopped";
+          updateServerOnlineLabel();
+          updateToggleUI(ftpToggle, false);
+          setFtpInputsDisabled(false);
+          if (globalThis.Components?.showToast)
+            globalThis.Components.showToast("Server stopped");
         } else {
-            ftpStatusText.textContent = 'Stopping...';
-            try {
-                const response = await fetch('/api/ftp/server/stop-ftp', { method: 'POST' });
-                if (response.ok) {
-                    ftpStatusText.textContent = 'Stopped';
-                    updateServerOnlineLabel();
-                    updateToggleUI(ftpToggle, false);
-                    setFtpInputsDisabled(false);
-                    if (globalThis.Components?.showToast) globalThis.Components.showToast('Server stopped');
-                } else {
-                    throw new Error('Failed to stop server');
-                }
-            } catch (error) {
-                if (globalThis.Components?.showToast) globalThis.Components.showToast(error.message, 'error');
-                ftpToggle.checked = true;
-                ftpStatusText.textContent = 'Running';
-                updateServerOnlineLabel();
-                updateToggleUI(ftpToggle, true);
-            }
+          throw new Error("Failed to stop server");
         }
+      } catch (error) {
+        if (globalThis.Components?.showToast)
+          globalThis.Components.showToast(error.message, "error");
+        ftpToggle.checked = true;
+        ftpStatusText.textContent = "Running";
+        updateServerOnlineLabel();
+        updateToggleUI(ftpToggle, true);
+      }
     }
+  }
 
-    function updateToggleUI(input, isOn) {
-        // Now handled by CSS via :checked state on .toggle-input
-        // This function remains for potential future needs but is mostly redundant now
-        if (input) input.checked = isOn;
-    }
+  function updateToggleUI(input, isOn) {
+    // Now handled by CSS via :checked state on .toggle-input
+    // This function remains for potential future needs but is mostly redundant now
+    if (input) input.checked = isOn;
+  }
 
-    async function fetchServerStatus() {
-        try {
-            const response = await fetch('/api/ftp/server/status');
-            if (response.ok) {
-                const result = await response.json();
-                const isRunning = result !== false;
-                ftpToggle.checked = isRunning;
-                ftpStatusText.textContent = isRunning ? 'Running' : 'Stopped';
-                updateToggleUI(ftpToggle, isRunning);
-                setFtpInputsDisabled(isRunning);
-                updateServerOnlineLabel();
-            }
-        } catch (e) { }
-    }
+  async function fetchServerStatus() {
+    try {
+      const response = await fetch("/api/ftp/server/status");
+      if (response.ok) {
+        const result = await response.json();
+        const isRunning = result !== false;
+        ftpToggle.checked = isRunning;
+        ftpStatusText.textContent = isRunning ? "Running" : "Stopped";
+        updateToggleUI(ftpToggle, isRunning);
+        setFtpInputsDisabled(isRunning);
+        updateServerOnlineLabel();
+      }
+    } catch (e) {}
+  }
 
-    async function toggleWebShare() {
-        const isStarting = webToggle.checked;
-        if (isStarting) {
-            webStatusText.textContent = 'Starting...';
-            try {
-                const response = await fetch('/api/http/web-share/start', { method: 'POST' });
-                if (response.ok) {
-                    const address = await response.json();
-                    webStatusText.textContent = 'Sharing';
-                    webUrlText.textContent = `http://${address}`;
-                    webUrlContainer.classList.remove('max-h-0', 'opacity-0');
-                    webUrlContainer.classList.add('max-h-[80px]', 'opacity-100');
-                    updateServerOnlineLabel();
-                    updateToggleUI(webToggle, true);
-                    if (globalThis.Components?.showToast) globalThis.Components.showToast('Web share started');
-                } else {
-                    throw new Error('Failed to start web share');
-                }
-            } catch (error) {
-                if (globalThis.Components?.showToast) globalThis.Components.showToast(error.message, 'error');
-                webToggle.checked = false;
-                webStatusText.textContent = 'Disabled';
-                updateServerOnlineLabel();
-                updateToggleUI(webToggle, false);
-            }
-        } else {
-            webStatusText.textContent = 'Stopping...';
-            try {
-                const response = await fetch('/api/http/web-share/stop', { method: 'POST' });
-                if (response.ok) {
-                    webStatusText.textContent = 'Disabled';
-                    webUrlContainer.classList.add('max-h-0', 'opacity-0');
-                    webUrlContainer.classList.remove('max-h-[80px]', 'opacity-100');
-                    updateServerOnlineLabel();
-                    updateToggleUI(webToggle, false);
-                    if (globalThis.Components?.showToast) globalThis.Components.showToast('Web share stopped');
-                } else {
-                    throw new Error('Failed to stop web share');
-                }
-            } catch (error) {
-                if (globalThis.Components?.showToast) globalThis.Components.showToast(error.message, 'error');
-                webToggle.checked = true;
-                webStatusText.textContent = 'Sharing';
-                updateServerOnlineLabel();
-                updateToggleUI(webToggle, true);
-            }
-        }
-    }
-
-    async function fetchWebShareStatus() {
-        try {
-            const response = await fetch('/api/http/web-share/status');
-            if (response.ok) {
-                const result = await response.json();
-                const isRunning = result !== false;
-                webToggle.checked = isRunning;
-                webStatusText.textContent = isRunning ? 'Sharing' : 'Disabled';
-                if (isRunning) {
-                    webUrlText.textContent = `http://${result}`;
-                    webUrlContainer.classList.remove('max-h-0', 'opacity-0');
-                    webUrlContainer.classList.add('max-h-[80px]', 'opacity-100');
-                } else {
-                    webUrlContainer.classList.add('max-h-0', 'opacity-0');
-                    webUrlContainer.classList.remove('max-h-[80px]', 'opacity-100');
-                }
-                updateToggleUI(webToggle, isRunning);
-                updateServerOnlineLabel();
-            }
-        } catch (e) { }
-    }
-
-    // Event Listeners
-    if (ftpToggle) ftpToggle.onchange = toggleServer;
-    if (webToggle) webToggle.onchange = toggleWebShare;
-
-    const toggleSettingsBtn = document.getElementById('toggle-settings-btn');
-    if (toggleSettingsBtn) toggleSettingsBtn.onclick = () => {
-        const isHidden = settingsPanel.classList.contains('max-h-0');
-        if (isHidden) {
-            settingsPanel.classList.remove('max-h-0', 'opacity-0');
-            settingsPanel.classList.add('max-h-[1000px]', 'opacity-100');
-            settingsChevron.classList.add('rotate-90');
-        } else {
-            settingsPanel.classList.add('max-h-0', 'opacity-0');
-            settingsPanel.classList.remove('max-h-[1000px]', 'opacity-100');
-            settingsChevron.classList.remove('rotate-90');
-        }
-    };
-
-    const anonymousToggle = document.getElementById('anonymous-login-toggle');
-    if (anonymousToggle) anonymousToggle.onchange = () => {
-        const isAnonymous = anonymousToggle.checked;
-        const uInput = document.getElementById('ftp-username');
-        const pInput = document.getElementById('ftp-password');
-        if (isAnonymous) {
-            authFields.classList.add('max-h-0', 'opacity-0');
-            authFields.classList.remove('max-h-[200px]', 'opacity-100');
-            if (uInput) uInput.disabled = true;
-            if (pInput) pInput.disabled = true;
-        } else {
-            authFields.classList.remove('max-h-0', 'opacity-0');
-            authFields.classList.add('max-h-[200px]', 'opacity-100');
-            if (uInput) uInput.disabled = false;
-            if (pInput) pInput.disabled = false;
-        }
-        updateToggleUI(anonymousToggle, isAnonymous);
-    };
-
-    const copyBtn = document.getElementById('copy-web-url-btn');
-    if (copyBtn) copyBtn.onclick = () => {
-        const url = webUrlText.innerText;
-        navigator.clipboard.writeText(url).then(() => {
-            if (globalThis.Components?.showToast) globalThis.Components.showToast('Web URL copied');
+  async function toggleWebShare() {
+    const isStarting = webToggle.checked;
+    if (isStarting) {
+      webStatusText.textContent = "Starting...";
+      try {
+        const response = await fetch("/api/http/web-share/start", {
+          method: "POST",
         });
+        if (response.ok) {
+          const address = await response.json();
+          webStatusText.textContent = "Sharing";
+          webUrlText.textContent = `http://${address}`;
+          webUrlContainer.classList.remove("max-h-0", "opacity-0");
+          webUrlContainer.classList.add("max-h-[80px]", "opacity-100");
+          updateServerOnlineLabel();
+          updateToggleUI(webToggle, true);
+          if (globalThis.Components?.showToast)
+            globalThis.Components.showToast("Web share started");
+        } else {
+          throw new Error("Failed to start web share");
+        }
+      } catch (error) {
+        if (globalThis.Components?.showToast)
+          globalThis.Components.showToast(error.message, "error");
+        webToggle.checked = false;
+        webStatusText.textContent = "Disabled";
+        updateServerOnlineLabel();
+        updateToggleUI(webToggle, false);
+      }
+    } else {
+      webStatusText.textContent = "Stopping...";
+      try {
+        const response = await fetch("/api/http/web-share/stop", {
+          method: "POST",
+        });
+        if (response.ok) {
+          webStatusText.textContent = "Disabled";
+          webUrlContainer.classList.add("max-h-0", "opacity-0");
+          webUrlContainer.classList.remove("max-h-[80px]", "opacity-100");
+          updateServerOnlineLabel();
+          updateToggleUI(webToggle, false);
+          if (globalThis.Components?.showToast)
+            globalThis.Components.showToast("Web share stopped");
+        } else {
+          throw new Error("Failed to stop web share");
+        }
+      } catch (error) {
+        if (globalThis.Components?.showToast)
+          globalThis.Components.showToast(error.message, "error");
+        webToggle.checked = true;
+        webStatusText.textContent = "Sharing";
+        updateServerOnlineLabel();
+        updateToggleUI(webToggle, true);
+      }
+    }
+  }
+
+  async function fetchWebShareStatus() {
+    try {
+      const response = await fetch("/api/http/web-share/status");
+      if (response.ok) {
+        const result = await response.json();
+        const isRunning = result !== false;
+        webToggle.checked = isRunning;
+        webStatusText.textContent = isRunning ? "Sharing" : "Disabled";
+        if (isRunning) {
+          webUrlText.textContent = `http://${result}`;
+          webUrlContainer.classList.remove("max-h-0", "opacity-0");
+          webUrlContainer.classList.add("max-h-[80px]", "opacity-100");
+        } else {
+          webUrlContainer.classList.add("max-h-0", "opacity-0");
+          webUrlContainer.classList.remove("max-h-[80px]", "opacity-100");
+        }
+        updateToggleUI(webToggle, isRunning);
+        updateServerOnlineLabel();
+      }
+    } catch (e) {}
+  }
+
+  async function createInternetInvite() {
+    try {
+      const config = collectShareConfig();
+      const invite = await P2PConnection.createInvite(config);
+      if (offerOutput) offerOutput.value = invite;
+      if (otpCode)
+        otpCode.textContent =
+          P2PConnection.getStatus().verificationCode || "------";
+      updateP2PStatusUI();
+      if (globalThis.Components?.showToast) {
+        globalThis.Components.showToast(
+          "Invite created. Send it with the OTP to the other device.",
+          "success",
+        );
+      }
+    } catch (error) {
+      if (globalThis.Components?.showToast) {
+        globalThis.Components.showToast(
+          error.message || "Failed to create invite",
+          "error",
+        );
+      }
+    }
+  }
+
+  // Event Listeners
+  if (ftpToggle) ftpToggle.onchange = toggleServer;
+  if (webToggle) webToggle.onchange = toggleWebShare;
+
+  const toggleSettingsBtn = document.getElementById("toggle-settings-btn");
+  if (toggleSettingsBtn)
+    toggleSettingsBtn.onclick = () => {
+      const isHidden = settingsPanel.classList.contains("max-h-0");
+      if (isHidden) {
+        settingsPanel.classList.remove("max-h-0", "opacity-0");
+        settingsPanel.classList.add("max-h-[1000px]", "opacity-100");
+        settingsChevron.classList.add("rotate-90");
+      } else {
+        settingsPanel.classList.add("max-h-0", "opacity-0");
+        settingsPanel.classList.remove("max-h-[1000px]", "opacity-100");
+        settingsChevron.classList.remove("rotate-90");
+      }
     };
 
-    const menuBtn = document.getElementById('menu-btn');
-    if (menuBtn && globalThis.Components?.toggleMenu) menuBtn.onclick = () => globalThis.Components.toggleMenu();
+  const anonymousToggle = document.getElementById("anonymous-login-toggle");
+  if (anonymousToggle)
+    anonymousToggle.onchange = () => {
+      const isAnonymous = anonymousToggle.checked;
+      const uInput = document.getElementById("ftp-username");
+      const pInput = document.getElementById("ftp-password");
+      if (isAnonymous) {
+        authFields.classList.add("max-h-0", "opacity-0");
+        authFields.classList.remove("max-h-[200px]", "opacity-100");
+        if (uInput) uInput.disabled = true;
+        if (pInput) pInput.disabled = true;
+      } else {
+        authFields.classList.remove("max-h-0", "opacity-0");
+        authFields.classList.add("max-h-[200px]", "opacity-100");
+        if (uInput) uInput.disabled = false;
+        if (pInput) pInput.disabled = false;
+      }
+      updateToggleUI(anonymousToggle, isAnonymous);
+    };
 
-    // Init Logic
-    if (globalThis.Components?.Sidebar?.highlight) {
-        globalThis.Components.Sidebar.highlight('hosting-panel');
+  if (createInviteBtn) createInviteBtn.onclick = createInternetInvite;
+  if (copyInviteBtn) {
+    copyInviteBtn.onclick = () => {
+      navigator.clipboard.writeText(offerOutput?.value || "").then(() => {
+        if (globalThis.Components?.showToast)
+          globalThis.Components.showToast("Invite link copied");
+      });
+    };
+  }
+
+  const copyBtn = document.getElementById("copy-web-url-btn");
+  if (copyBtn)
+    copyBtn.onclick = () => {
+      const url = webUrlText.innerText;
+      navigator.clipboard.writeText(url).then(() => {
+        if (globalThis.Components?.showToast)
+          globalThis.Components.showToast("Web URL copied");
+      });
+    };
+
+  const menuBtn = document.getElementById("menu-btn");
+  if (menuBtn && globalThis.Components?.toggleMenu)
+    menuBtn.onclick = () => globalThis.Components.toggleMenu();
+
+  // Init Logic
+  if (globalThis.Components?.Sidebar?.highlight) {
+    globalThis.Components.Sidebar.highlight("hosting-panel");
+  }
+
+  const selectedFolder = localStorage.getItem("selectedFolderPath");
+  if (selectedFolder) {
+    const ftpRoot = document.getElementById("ftp-root");
+    if (ftpRoot) ftpRoot.value = selectedFolder;
+    localStorage.removeItem("selectedFolderPath");
+  }
+
+  p2pUnsubscribe = P2PConnection.subscribe((status) => {
+    if (otpCode && status.verificationCode) {
+      otpCode.textContent = status.verificationCode;
     }
+    updateP2PStatusUI(status);
+  });
 
-    const selectedFolder = localStorage.getItem('selectedFolderPath');
-    if (selectedFolder) {
-        const ftpRoot = document.getElementById('ftp-root');
-        if (ftpRoot) ftpRoot.value = selectedFolder;
-        localStorage.removeItem('selectedFolderPath');
-    }
+  updateP2PStatusUI();
+  fetchServerStatus();
+  fetchWebShareStatus();
 
-    fetchServerStatus();
-    fetchWebShareStatus();
+  return () => {
+    if (p2pUnsubscribe) p2pUnsubscribe();
+  };
 }

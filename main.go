@@ -10,6 +10,7 @@ import (
 	"net/http"
 
 	"github.com/404errorg6/share-all/internal/config"
+	"github.com/404errorg6/share-all/internal/p2p"
 	"github.com/404errorg6/share-all/internal/services"
 	"github.com/joho/godotenv"
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -35,6 +36,8 @@ func init() {
 	}
 
 	config.AssetsServer = http.FileServer(http.FS(contents))
+	p2p.CaptureInviteArg(os.Args[1:])
+	p2p.Init()
 }
 
 func main() {
