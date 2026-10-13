@@ -59,6 +59,15 @@ export function RemoteLS(remotePath) {
     }));
 }
 
+/**
+ * @param {string} localFilePath
+ * @param {string} remoteDirPath
+ * @returns {$CancellablePromise<void>}
+ */
+export function SendFileToRemote(localFilePath, remoteDirPath) {
+    return $Call.ByID(410782514, localFilePath, remoteDirPath);
+}
+
 // Private type creation functions
 const $$createType0 = config$0.FSObject.createFrom;
 const $$createType1 = $Create.Array($$createType0);

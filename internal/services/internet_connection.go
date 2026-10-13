@@ -51,7 +51,7 @@ func (c *OTITransfer) CreateConnectKey() (string, error) { //Server creates the 
 	}
 
 	c.ServerHost.SetStreamHandler(oti.APP_LS_PROTOCOL, oti.HandlerLS)
-	c.ServerHost.SetStreamHandler(oti.APP_FILE_TRANSFER_PROTOCOL, oti.HandlerFT)
+	c.ServerHost.SetStreamHandler(oti.APP_FILE_TRANSFER_PROTOCOL, oti.HandlerFileTransfer)
 
 	relayAddr, err := multiaddr.NewMultiaddr(config.RelayServerAddr)
 	if err != nil {
@@ -156,6 +156,7 @@ func (c *OTITransfer) RecvFileFromRemote(localDirPath, remoteFilePath string) er
 	if err != nil {
 		return err
 	}
+	defer stream.Close()
 
 	fullLocalPath := config.ResolveLocalPath(localDirPath)
 	info, err := os.Lstat(fullLocalPath)
@@ -176,11 +177,21 @@ func (c *OTITransfer) RecvFileFromRemote(localDirPath, remoteFilePath string) er
 	}
 	defer localFile.Close()
 
-	_, err = stream.Write([]byte(remoteFilePath))
+	var header oti.Header
+	header.TransferType = oti.FromServerToClient
+	header.Path = remoteFilePath
+
+	headerBytes, err := json.Marshal(header)
 	if err != nil {
 		return err
 	}
-	defer stream.Close()
+
+	_, err = stream.Write(headerBytes)
+	if err != nil {
+		return err
+	}
+
+	stream.Write([]byte("\n"))
 
 	err = stream.CloseWrite()
 	if err != nil {
@@ -188,6 +199,53 @@ func (c *OTITransfer) RecvFileFromRemote(localDirPath, remoteFilePath string) er
 	}
 
 	_, err = io.Copy(localFile, stream)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *OTITransfer) SendFileToRemote(localFilePath, remoteDirPath string) error {
+	stream, err := oti.GetFTStream(c.ClientHost, c.ServerInfo.ID)
+	if err != nil {
+		return err
+	}
+	defer stream.Close()
+
+	localFilePath = config.ResolveLocalPath(localFilePath)
+	info, err := os.Lstat(localFilePath)
+	if err != nil {
+		return err
+	}
+
+	if info.IsDir() {
+		return fmt.Errorf("\"%v\" is not a file", localFilePath)
+	}
+
+	header := oti.Header{
+		ClientFileName: filepath.Base(localFilePath),
+		TransferType:   oti.FromClientToServer,
+		Path:           localFilePath,
+	}
+
+	headerBytes, err := json.Marshal(header)
+	if err != nil {
+		return err
+	}
+
+	_, err = stream.Write(headerBytes)
+	if err != nil {
+		return err
+	}
+	stream.Write([]byte("\n"))
+
+	localFile, err := os.Open(localFilePath)
+	if err != nil {
+		return err
+	}
+
+	_, err = io.Copy(stream, localFile)
 	if err != nil {
 		return err
 	}

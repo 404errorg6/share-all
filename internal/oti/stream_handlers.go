@@ -1,6 +1,7 @@
 package oti
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -68,17 +69,31 @@ func HandlerLS(s network.Stream) { //Dir info sent to the client
 	s.Write(FSObjJson)
 }
 
-func HandlerFT(s network.Stream) {
+func HandlerFileTransfer(s network.Stream) { //Handles client's file transfer requests
 	defer s.Close()
+	var header Header
 
-	buf := make([]byte, buffSize)
-	n, err := s.Read(buf)
+	headerBytes, err := bufio.NewReader(s).ReadString(byte('\n'))
 	if err != nil {
-		config.LogsCh <- "Error reading buffer: " + err.Error()
+		config.LogsCh <- "Error reading headerBytes: " + err.Error()
 		return
 	}
 
-	path := config.ResolveLocalPath(string(buf[:n]))
+	err = json.Unmarshal([]byte(headerBytes), header)
+	if err != nil {
+		config.LogsCh <- fmt.Sprintf("Error unmarshalling data: %v", err)
+		return
+	}
+
+	path := config.ResolveLocalPath(header.Path)
+	if header.TransferType == FromServerToClient {
+		SendFromServerToClient(s, path)
+	} else {
+		SendFromClientToServer(s, path, header.ClientFileName)
+	}
+}
+
+func SendFromServerToClient(s network.Stream, path string) {
 	info, err := os.Lstat(path)
 	if err != nil {
 		config.LogsCh <- fmt.Sprintf("Error lstat-ing path \"%v\": %v", path, err)
@@ -103,5 +118,35 @@ func HandlerFT(s network.Stream) {
 		return
 	}
 
-	config.LogsCh <- fmt.Sprintf("Transferred %v successfully!", filepath.Base(path))
+	config.LogsCh <- fmt.Sprintf("Sent %v successfully!", filepath.Base(path))
+}
+
+func SendFromClientToServer(s network.Stream, path, fileName string) {
+	defer s.Close()
+
+	info, err := os.Lstat(path)
+	if err != nil {
+		config.LogsCh <- fmt.Sprintf("Error ls-stating \"%v\": %v", path, err)
+		return
+	}
+
+	if !info.IsDir() {
+		config.LogsCh <- fmt.Sprintf("\"%v\" is not a directory", path)
+		return
+	}
+
+	filePath := filepath.Join(path, fileName)
+	file, err := os.Create(fileName)
+	if err != nil {
+		config.LogsCh <- fmt.Sprintf("Error creating file at \"%v\": %v", filePath, err)
+		return
+	}
+
+	_, err = io.Copy(file, s)
+	if err != nil {
+		config.LogsCh <- fmt.Sprintf("Error copying file to \"%v\": %v", filePath, err)
+		return
+	}
+
+	config.LogsCh <- fmt.Sprintf("Successfully received \"%v\"", filePath)
 }
