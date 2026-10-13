@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	_ "embed"
+	"fmt"
 	"io/fs"
 	"os"
 
@@ -29,6 +30,12 @@ func init() {
 		config.Dev = true
 	}
 
+	relayID := os.Getenv("RELAY_PEER_ID")
+	relayIP := os.Getenv("RELAY_IP")
+	relayPort := os.Getenv("RELAY_PORT")
+
+	config.RelayServerAddr = fmt.Sprintf("/ip4/%s/tcp/%s/p2p/%s", relayIP, relayPort, relayID)
+
 	contents, err := fs.Sub(assets, "frontend/dist") //cd into frontend
 	if err != nil {
 		log.Fatalf("Error cding into frontend: %v", err)
@@ -46,6 +53,7 @@ func main() {
 		},
 		Services: []application.Service{
 			application.NewService(&services.Discovery{}),
+			application.NewService(&services.Connection{}),
 		},
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,

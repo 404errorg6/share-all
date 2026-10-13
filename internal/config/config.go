@@ -67,8 +67,9 @@ const (
 )
 
 var (
-	AssetsServer http.Handler //will be initalized from root/init.go
-	MiniServer   MiniWebServer
+	AssetsServer    http.Handler //will be initalized from root/init.go
+	MiniServer      MiniWebServer
+	RelayServerAddr string
 )
 
 var (
