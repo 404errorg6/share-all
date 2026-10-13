@@ -143,7 +143,7 @@ func (c *OTITransfer) RemoteLS(remotePath string) ([]config.FSObject, error) { /
 		return entries, err
 	}
 
-	err = json.Unmarshal(data, entries)
+	err = json.Unmarshal(data, &entries)
 	if err != nil {
 		return entries, err
 	}
@@ -226,7 +226,7 @@ func (c *OTITransfer) SendFileToRemote(localFilePath, remoteDirPath string) erro
 	header := oti.Header{
 		ClientFileName: filepath.Base(localFilePath),
 		TransferType:   oti.FromClientToServer,
-		Path:           localFilePath,
+		Path:           remoteDirPath,
 	}
 
 	headerBytes, err := json.Marshal(header)

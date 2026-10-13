@@ -8,6 +8,9 @@ import { Events } from '@wailsio/runtime';
  * Browse Remote Local Page Logic
  */
 
+// Check if connected via OTI (Over The Internet)
+const isOTIConnected = globalThis.OTI_CONNECTED === true;
+
 export const template = `
     <header class="sticky top-0 z-20 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
         <div class="flex items-center p-4 pb-0 justify-between">
@@ -269,7 +272,15 @@ export function init() {
     async function fetchFiles(type, path, silent = false, forceRefresh = false) {
         if (!silent && syncOverlay) syncOverlay.classList.remove('hidden');
         try {
-            const data = await FTP_API.fetchFiles(type, path, forceRefresh);
+            let data;
+            if (type === 'remote' && isOTIConnected) {
+                // Use OTI RemoteLS binding for internet connection
+                const OTITransfer = await import('../../../../bindings/github.com/404errorg6/share-all/internal/services/otitransfer.js');
+                data = await OTITransfer.RemoteLS(path);
+            } else {
+                // Use regular FTP API for local network connection
+                data = await FTP_API.fetchFiles(type, path, forceRefresh);
+            }
             Renderer.renderList(type, data, path, handleAction);
             renderActiveBreadcrumbs(path, type);
         } catch (e) {
@@ -503,13 +514,13 @@ export function init() {
         Clipboard.disableMode(() => refreshCurrent());
     };
 
-    pasteActionBtn.onclick = () => {
+    pasteActionBtn.onclick = async () => {
         if (state.clipboard.length === 0) return;
-        
+
         const items = [...state.clipboard];
         const isRemoteToLocal = items[0].pane === 'remote';
         const targetPath = isRemoteToLocal ? state.currentLocalPath : state.currentRemotePath;
-        
+
         // Show "Started" notification immediately
         if (globalThis.Components?.showToast) {
             const label = isRemoteToLocal ? 'Download' : 'Upload';
@@ -519,18 +530,43 @@ export function init() {
         // Clear clipboard immediately to prevent double-pasting while browsing
         Clipboard.clear(() => refreshCurrent(true));
 
-        // Call API without blocking the UI with an overlay
-        FTP_API.transferFile(items, targetPath, isRemoteToLocal)
-            .then(() => {
+        try {
+            if (isOTIConnected && !isRemoteToLocal) {
+                // Upload to remote via OTI (local to remote)
+                const OTITransfer = await import('../../../../bindings/github.com/404errorg6/share-all/internal/services/otitransfer.js');
+                for (const item of items) {
+                    await OTITransfer.SendFileToRemote(item.path, state.currentRemotePath);
+                }
                 if (globalThis.Components?.showToast) {
                     globalThis.Components.showToast('Transfer completed successfully', 'success');
                 }
-                // Refresh the target pane to show new files
                 refreshCurrent(true, true);
-            })
-            .catch((e) => {
-                handleError(e);
-            });
+            } else if (isOTIConnected && isRemoteToLocal) {
+                // Download from remote via OTI (remote to local)
+                const OTITransfer = await import('../../../../bindings/github.com/404errorg6/share-all/internal/services/otitransfer.js');
+                for (const item of items) {
+                    await OTITransfer.RecvFileFromRemote(state.currentLocalPath, item.path);
+                }
+                if (globalThis.Components?.showToast) {
+                    globalThis.Components.showToast('Transfer completed successfully', 'success');
+                }
+                refreshCurrent(true, true);
+            } else {
+                // Regular FTP transfer
+                FTP_API.transferFile(items, targetPath, isRemoteToLocal)
+                    .then(() => {
+                        if (globalThis.Components?.showToast) {
+                            globalThis.Components.showToast('Transfer completed successfully', 'success');
+                        }
+                        refreshCurrent(true, true);
+                    })
+                    .catch((e) => {
+                        handleError(e);
+                    });
+            }
+        } catch (e) {
+            handleError(e);
+        }
     };
 
 
@@ -571,26 +607,39 @@ export function init() {
         }
 
         try {
-            const body = new URLSearchParams();
-            body.append('remote_path', remotePath);
-            for (const p of filePaths) {
-                body.append('local_paths', p);
-            }
+            if (isOTIConnected) {
+                // Use OTI SendFileToRemote for drag-and-drop upload
+                const OTITransfer = await import('../../../../bindings/github.com/404errorg6/share-all/internal/services/otitransfer.js');
+                for (const filePath of filePaths) {
+                    await OTITransfer.SendFileToRemote(filePath, remotePath);
+                }
+                if (globalThis.Components?.showToast) {
+                    globalThis.Components.showToast('Upload completed successfully!', 'success');
+                }
+                refreshCurrent(true, true);
+            } else {
+                // Regular FTP upload
+                const body = new URLSearchParams();
+                body.append('remote_path', remotePath);
+                for (const p of filePaths) {
+                    body.append('local_paths', p);
+                }
 
-            const res = await fetch('/api/ftp/client/upload', {
-                method: 'POST',
-                body,
-            });
+                const res = await fetch('/api/ftp/client/upload', {
+                    method: 'POST',
+                    body,
+                });
 
-            if (!res.ok) {
-                const msg = await res.text();
-                throw new Error(msg || `Upload failed (${res.status})`);
-            }
+                if (!res.ok) {
+                    const msg = await res.text();
+                    throw new Error(msg || `Upload failed (${res.status})`);
+                }
 
-            if (globalThis.Components?.showToast) {
-                globalThis.Components.showToast('Upload completed successfully!', 'success');
+                if (globalThis.Components?.showToast) {
+                    globalThis.Components.showToast('Upload completed successfully!', 'success');
+                }
+                refreshCurrent(true, true);
             }
-            refreshCurrent(true, true);
         } catch (e) {
             console.error('[item-dropped] upload error:', e);
             handleError(e);
@@ -599,32 +648,47 @@ export function init() {
 
     // Initial state setup
     optContent.classList.add('scale-95', 'opacity-0');
-    
-    const serverId = localStorage.getItem('current_server_id');
-    const servers = JSON.parse(localStorage.getItem('ftp_servers') || '[]');
-    const savedServer = servers.find(s => s.id == serverId);
 
-    if (savedServer) {
-        currentServer = savedServer;
-        serverNameEl.innerText = savedServer.name;
-        serverInfoEl.innerText = `${savedServer.host}:${savedServer.port}`;
+    if (isOTIConnected) {
+        // Connected via OTI (Over The Internet)
+        currentServer = {
+            name: "Internet Connection",
+            host: "P2P",
+            port: "OTI"
+        };
+        serverNameEl.innerText = currentServer.name;
+        serverInfoEl.innerText = "Over The Internet Transfer";
+        if (globalThis.Components?.Sidebar?.showSessionLink) globalThis.Components.Sidebar.showSessionLink();
     } else {
-        const discName = localStorage.getItem('current_remote_name');
-        const discHost = localStorage.getItem('current_remote_host');
-        const discPort = localStorage.getItem('current_remote_port');
+        // Regular FTP connection
+        const serverId = localStorage.getItem('current_server_id');
+        const servers = JSON.parse(localStorage.getItem('ftp_servers') || '[]');
+        const savedServer = servers.find(s => s.id == serverId);
 
-        if (discHost) {
-            currentServer = {
-                name: discName || "Remote Server",
-                host: discHost,
-                port: discPort || "21"
-            };
-            serverNameEl.innerText = currentServer.name;
-            serverInfoEl.innerText = `${discHost}:${discPort}`;
+        if (savedServer) {
+            currentServer = savedServer;
+            serverNameEl.innerText = savedServer.name;
+            serverInfoEl.innerText = `${savedServer.host}:${savedServer.port}`;
+            if (globalThis.Components?.Sidebar?.showSessionLink) globalThis.Components.Sidebar.showSessionLink();
         } else {
-            console.warn('No connection info found, redirecting to discover.');
-            window.location.hash = '#/discover';
-            return;
+            const discName = localStorage.getItem('current_remote_name');
+            const discHost = localStorage.getItem('current_remote_host');
+            const discPort = localStorage.getItem('current_remote_port');
+
+            if (discHost) {
+                currentServer = {
+                    name: discName || "Remote Server",
+                    host: discHost,
+                    port: discPort || "21"
+                };
+                serverNameEl.innerText = currentServer.name;
+                serverInfoEl.innerText = `${discHost}:${discPort}`;
+                if (globalThis.Components?.Sidebar?.showSessionLink) globalThis.Components.Sidebar.showSessionLink();
+            } else {
+                console.warn('No connection info found, redirecting to discover.');
+                window.location.hash = '#/discover';
+                return;
+            }
         }
     }
 

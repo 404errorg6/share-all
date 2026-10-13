@@ -32,11 +32,6 @@ func init() {
 		os.Setenv(key, val)
 	}
 
-	dev := os.Getenv("DEV")
-	if dev == "true" {
-		config.Dev = true
-	}
-
 	relayID := os.Getenv("RELAY_PEER_ID")
 	relayIP := os.Getenv("RELAY_IP")
 	relayPort := os.Getenv("RELAY_PORT")

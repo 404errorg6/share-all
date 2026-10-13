@@ -12,19 +12,16 @@ import (
 	"github.com/libp2p/go-libp2p/core/network"
 )
 
-var buffSize = 1024
-
 func HandlerLS(s network.Stream) { //Dir info sent to the client
 	defer s.Close()
 
-	buf := make([]byte, buffSize)
-	n, err := s.Read(buf)
+	buf, err := io.ReadAll(s)
 	if err != nil {
 		config.LogsCh <- "Error reading the buffer: " + err.Error()
 		return
 	}
 
-	path := config.ResolveLocalPath(string(buf[:n]))
+	path := config.ResolveLocalPath(string(buf))
 	entry, err := os.Lstat(path)
 	if err != nil {
 		config.DisplayError(err, "")
@@ -79,7 +76,7 @@ func HandlerFileTransfer(s network.Stream) { //Handles client's file transfer re
 		return
 	}
 
-	err = json.Unmarshal([]byte(headerBytes), header)
+	err = json.Unmarshal([]byte(headerBytes), &header)
 	if err != nil {
 		config.LogsCh <- fmt.Sprintf("Error unmarshalling data: %v", err)
 		return
@@ -124,6 +121,7 @@ func SendFromServerToClient(s network.Stream, path string) {
 func SendFromClientToServer(s network.Stream, path, fileName string) {
 	defer s.Close()
 
+	path = config.ResolveLocalPath(path)
 	info, err := os.Lstat(path)
 	if err != nil {
 		config.LogsCh <- fmt.Sprintf("Error ls-stating \"%v\": %v", path, err)
@@ -136,11 +134,12 @@ func SendFromClientToServer(s network.Stream, path, fileName string) {
 	}
 
 	filePath := filepath.Join(path, fileName)
-	file, err := os.Create(fileName)
+	file, err := os.Create(filePath)
 	if err != nil {
 		config.LogsCh <- fmt.Sprintf("Error creating file at \"%v\": %v", filePath, err)
 		return
 	}
+	defer file.Close()
 
 	_, err = io.Copy(file, s)
 	if err != nil {

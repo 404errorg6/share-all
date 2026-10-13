@@ -551,7 +551,17 @@ export function init() {
             const OTITransfer = await import('../../../../bindings/github.com/404errorg6/share-all/internal/services/otitransfer.js');
             await OTITransfer.ConnectUsingKey(key);
             otiStatus.textContent = 'Connected';
+
+            // Set global variable for OTI connection
+            globalThis.OTI_CONNECTED = true;
+
             if (globalThis.Components?.showToast) globalThis.Components.showToast('Connected to remote');
+
+            // Show session link in sidebar
+            if (globalThis.Components?.Sidebar?.showSessionLink) globalThis.Components.Sidebar.showSessionLink();
+
+            // Navigate to browse-remote-local
+            window.location.hash = '#/browse-remote-local';
         } catch (error) {
             otiStatus.textContent = 'Connection failed';
             if (globalThis.Components?.showToast) globalThis.Components.showToast(error.message, 'error');

@@ -1,8 +1,10 @@
 package client
 
 import (
-	"github.com/404errorg6/share-all/internal/config"
+	"fmt"
 	"os"
+
+	"github.com/404errorg6/share-all/internal/config"
 
 	"github.com/jlaffaye/ftp"
 )
@@ -16,6 +18,7 @@ func AuthClient(user, pass, addr string) error {
 		if err != nil {
 			return err
 		}
+		fmt.Printf("Dev mode activated")
 	} else {
 		c, err = ftp.Dial(addr, ftp.DialWithTimeout(config.MaxTimeout))
 		if err != nil {

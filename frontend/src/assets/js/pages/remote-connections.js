@@ -281,6 +281,7 @@ export function init() {
                     localStorage.setItem('current_remote_host', host);
                     localStorage.setItem('current_remote_port', port);
                 }
+                if (globalThis.Components?.Sidebar?.showSessionLink) globalThis.Components.Sidebar.showSessionLink();
                 window.location.hash = '#/browse-remote-local';
             } else {
                 if (globalThis.Components?.showToast) globalThis.Components.showToast(`Connection failed: ${text}`, 'error');

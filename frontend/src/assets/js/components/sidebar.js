@@ -43,6 +43,16 @@ globalThis.Components.Sidebar = {
                         <span class="text-sm font-semibold">Find Devices</span>
                     </div>
                 </a>
+                <a href="#/browse-remote-local" onclick="globalThis.Components.Sidebar.handleClick(event, '#/browse-remote-local')"
+                    id="session-link"
+                    class="sidebar-link px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group border-l-4 border-transparent hidden" data-id="session">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center justify-center size-10 rounded-full bg-rose-50 dark:bg-rose-500/10 text-rose-500">
+                            <span class="material-symbols-outlined">link</span>
+                        </div>
+                        <span class="text-sm font-semibold">Active Session</span>
+                    </div>
+                </a>
                 <a href="#/transfers" onclick="globalThis.Components.Sidebar.handleClick(event, '#/transfers')"
                     class="sidebar-link px-6 py-4 border-b border-slate-50 dark:border-slate-800/20 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all duration-200 group border-l-4 border-transparent" data-id="transfers">
                     <div class="flex items-center gap-3">
@@ -138,6 +148,16 @@ globalThis.Components.Sidebar = {
         }, 150);
         event.preventDefault();
         return false;
+    },
+
+    showSessionLink() {
+        const sessionLink = document.getElementById('session-link');
+        if (sessionLink) sessionLink.classList.remove('hidden');
+    },
+
+    hideSessionLink() {
+        const sessionLink = document.getElementById('session-link');
+        if (sessionLink) sessionLink.classList.add('hidden');
     }
 };
 
