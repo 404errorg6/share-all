@@ -19,10 +19,17 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
+//go:embed all:.env
+var envFile []byte
+
 func init() {
-	err := godotenv.Load(".env")
+	env, err := godotenv.Unmarshal(string(envFile))
 	if err != nil {
 		config.LogsCh <- "Error loading env file: " + err.Error()
+	}
+
+	for key, val := range env {
+		os.Setenv(key, val)
 	}
 
 	dev := os.Getenv("DEV")
@@ -53,7 +60,7 @@ func main() {
 		},
 		Services: []application.Service{
 			application.NewService(&services.Discovery{}),
-			application.NewService(&services.Connection{}),
+			application.NewService(&services.OTITransfer{}),
 		},
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,

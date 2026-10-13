@@ -12,28 +12,28 @@ import (
 	"github.com/404errorg6/share-all/internal/config"
 	"github.com/404errorg6/share-all/internal/oti"
 	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/p2p/protocol/circuitv2/client"
 	"github.com/multiformats/go-multiaddr"
 )
 
-type Connection struct {
+type OTITransfer struct {
 	ClientHost host.Host //Used for sending reqs to server
 	ServerHost host.Host //Used for responding reqs from client
 	ServerInfo *peer.AddrInfo
 }
 
-func (c *Connection) CloseServer() {
+func (c *OTITransfer) CloseServer() {
 	c.ServerHost.Close()
 }
 
-func (c *Connection) CloseClient() {
+func (c *OTITransfer) CloseClient() {
 	c.ClientHost.Close()
 }
 
 // TODO: Might exit before connection
-func (c *Connection) CreateConnectKey() (string, error) { //Server creates the key and shares with client
+func (c *OTITransfer) CreateConnectKey() (string, error) { //Server creates the key and shares with client
 	if c.ServerHost != nil {
 		c.ServerHost.Close()
 	}
@@ -79,7 +79,7 @@ func (c *Connection) CreateConnectKey() (string, error) { //Server creates the k
 	return key, nil
 }
 
-func (c *Connection) ConnectUsingKey(key string) error { //Client connects to server using the key
+func (c *OTITransfer) ConnectUsingKey(key string) error { //Client connects to server using the key
 	if c.ClientHost != nil {
 		c.ClientHost.Close()
 	}
@@ -119,7 +119,7 @@ func (c *Connection) ConnectUsingKey(key string) error { //Client connects to se
 	return nil
 }
 
-func (c *Connection) RemoteLS(remotePath string) ([]config.FSObject, error) { //Performs LS on remote server
+func (c *OTITransfer) RemoteLS(remotePath string) ([]config.FSObject, error) { //Performs LS on remote server
 	var entries []config.FSObject
 
 	stream, err := oti.GetLSStrem(c.ClientHost, c.ServerInfo.ID)
@@ -151,7 +151,7 @@ func (c *Connection) RemoteLS(remotePath string) ([]config.FSObject, error) { //
 	return entries, nil
 }
 
-func (c *Connection) RemoteFT(localDirPath, remoteFilePath string) error {
+func (c *OTITransfer) RecvFileFromRemote(localDirPath, remoteFilePath string) error {
 	stream, err := oti.GetFTStream(c.ClientHost, c.ServerInfo.ID)
 	if err != nil {
 		return err

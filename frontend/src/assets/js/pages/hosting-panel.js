@@ -179,6 +179,60 @@ export const template = `
                     <p class="text-[11px] text-slate-500 leading-relaxed">Use this to share with devices that don't have the app. They can simply open the address shown above in their web browser.</p>
                 </div>
             </div>
+
+            <!-- OTI Transfer Card -->
+            <div class="bg-white/5 rounded-2xl overflow-hidden border border-white/5 p-4 transition-all duration-300">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="size-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500">
+                            <span class="material-symbols-outlined text-2xl">cloud_sync</span>
+                        </div>
+                        <div>
+                            <h3 class="text-white font-bold">Over The Internet Transfer</h3>
+                            <p id="oti-status" class="text-[#9cb0ba] text-xs">P2P Connection</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Create Connect Key Section -->
+                <div class="mt-4">
+                    <div class="flex flex-col gap-1 mb-2">
+                        <label class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Your Connect Key</label>
+                        <div class="flex items-center gap-2">
+                            <input id="oti-connect-key" type="text" readonly
+                                class="bg-background-dark/50 border border-white/5 rounded-lg text-[#9cb0ba] text-xs px-3 py-2 flex-1 focus:border-primary transition-colors outline-none" />
+                            <button id="oti-generate-btn"
+                                class="size-9 flex items-center justify-center bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors">
+                                <span class="material-symbols-outlined text-xl">refresh</span>
+                            </button>
+                            <button id="oti-copy-btn"
+                                class="size-9 flex items-center justify-center bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors">
+                                <span class="material-symbols-outlined text-xl">content_copy</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Connect to Remote Section -->
+                    <div class="flex flex-col gap-1 mt-3">
+                        <label class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Paste Remote Key</label>
+                        <div class="flex items-center gap-2">
+                            <input id="oti-paste-key" type="text" placeholder="Paste connect key here"
+                                class="bg-background-dark/50 border border-white/5 rounded-lg text-[#9cb0ba] text-xs px-3 py-2 flex-1 focus:border-primary transition-colors outline-none" />
+                            <button id="oti-connect-btn"
+                                class="px-4 py-2 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90 transition-colors">
+                                Connect
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OTI info hint -->
+                <div class="mt-3 flex items-start gap-2 px-1">
+                    <span class="material-symbols-outlined text-[14px] text-slate-500 mt-px shrink-0">info</span>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">Transfer files over the internet using P2P connection. Share your connect key with others to let them connect to your device.</p>
+                </div>
+            </div>
         </main>
 `;
 
@@ -446,6 +500,64 @@ export function init() {
         navigator.clipboard.writeText(url).then(() => {
             if (globalThis.Components?.showToast) globalThis.Components.showToast('Web URL copied');
         });
+    };
+
+    // OTI Transfer Functions
+    const otiConnectKeyInput = document.getElementById('oti-connect-key');
+    const otiGenerateBtn = document.getElementById('oti-generate-btn');
+    const otiCopyBtn = document.getElementById('oti-copy-btn');
+    const otiPasteKeyInput = document.getElementById('oti-paste-key');
+    const otiConnectBtn = document.getElementById('oti-connect-btn');
+    const otiStatus = document.getElementById('oti-status');
+
+    // Generate Connect Key
+    if (otiGenerateBtn) otiGenerateBtn.onclick = async () => {
+        try {
+            otiStatus.textContent = 'Generating key...';
+            const OTITransfer = await import('../../../../bindings/github.com/404errorg6/share-all/internal/services/otitransfer.js');
+            const key = await OTITransfer.CreateConnectKey();
+            if (otiConnectKeyInput) otiConnectKeyInput.value = key;
+            otiStatus.textContent = 'Key generated';
+            if (globalThis.Components?.showToast) globalThis.Components.showToast('Connect key generated');
+        } catch (error) {
+            otiStatus.textContent = 'Failed to generate';
+            if (globalThis.Components?.showToast) globalThis.Components.showToast(error.message, 'error');
+        }
+    };
+
+    // Copy Connect Key
+    if (otiCopyBtn) otiCopyBtn.onclick = () => {
+        const key = otiConnectKeyInput?.value;
+        if (key) {
+            navigator.clipboard.writeText(key).then(() => {
+                if (globalThis.Components?.showToast) globalThis.Components.showToast('Connect key copied');
+            });
+        } else {
+            if (globalThis.Components?.showToast) globalThis.Components.showToast('No key to copy', 'error');
+        }
+    };
+
+    // Connect using Key
+    if (otiConnectBtn) otiConnectBtn.onclick = async () => {
+        const key = otiPasteKeyInput?.value;
+        if (!key) {
+            if (globalThis.Components?.showToast) globalThis.Components.showToast('Please paste a connect key', 'error');
+            return;
+        }
+
+        try {
+            otiStatus.textContent = 'Connecting...';
+            otiConnectBtn.disabled = true;
+            const OTITransfer = await import('../../../../bindings/github.com/404errorg6/share-all/internal/services/otitransfer.js');
+            await OTITransfer.ConnectUsingKey(key);
+            otiStatus.textContent = 'Connected';
+            if (globalThis.Components?.showToast) globalThis.Components.showToast('Connected to remote');
+        } catch (error) {
+            otiStatus.textContent = 'Connection failed';
+            if (globalThis.Components?.showToast) globalThis.Components.showToast(error.message, 'error');
+        } finally {
+            otiConnectBtn.disabled = false;
+        }
     };
 
     const menuBtn = document.getElementById('menu-btn');

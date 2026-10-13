@@ -6,6 +6,59 @@
 // @ts-ignore: Unused imports
 import { Create as $Create } from "@wailsio/runtime";
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
+import * as time$0 from "../../../../../time/models.js";
+
+export class FSObject {
+    /**
+     * Creates a new FSObject instance.
+     * @param {Partial<FSObject>} [$$source = {}] - The source object to create the FSObject.
+     */
+    constructor($$source = {}) {
+        if (!("Name" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["Name"] = "";
+        }
+        if (!("IsFolder" in $$source)) {
+            /**
+             * @member
+             * @type {boolean}
+             */
+            this["IsFolder"] = false;
+        }
+        if (!("LastModified" in $$source)) {
+            /**
+             * @member
+             * @type {time$0.Time}
+             */
+            this["LastModified"] = null;
+        }
+        if (!("Size" in $$source)) {
+            /**
+             * @member
+             * @type {number}
+             */
+            this["Size"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new FSObject instance from a string or object.
+     * @param {any} [$$source = {}]
+     * @returns {FSObject}
+     */
+    static createFrom($$source = {}) {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new FSObject(/** @type {Partial<FSObject>} */($$parsedSource));
+    }
+}
+
 export class ServerDiscoveryInfo {
     /**
      * Creates a new ServerDiscoveryInfo instance.

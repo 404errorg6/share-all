@@ -52,7 +52,6 @@ require (
 	github.com/jlaffaye/ftp v0.2.0
 	github.com/joho/godotenv v1.5.1
 	github.com/libp2p/go-libp2p v0.50.0
-	github.com/libp2p/go-libp2p-core v0.20.1
 	github.com/machinebox/progress v0.2.0
 	github.com/multiformats/go-multiaddr v0.16.1
 	github.com/spf13/afero v1.15.0
