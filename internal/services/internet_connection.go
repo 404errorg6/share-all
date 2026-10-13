@@ -44,6 +44,7 @@ func (c *OTITransfer) CreateConnectKey() (string, error) { //Server creates the 
 		libp2p.EnableRelay(),
 		libp2p.ForceReachabilityPrivate(),
 		libp2p.EnableHolePunching(),
+		libp2p.EnableAutoNATv2(),
 	)
 
 	if err != nil {
@@ -90,6 +91,7 @@ func (c *OTITransfer) ConnectUsingKey(key string) error { //Client connects to s
 		libp2p.EnableRelay(),
 		libp2p.ForceReachabilityPrivate(),
 		libp2p.EnableHolePunching(),
+		libp2p.EnableAutoNATv2(),
 	)
 
 	if err != nil {

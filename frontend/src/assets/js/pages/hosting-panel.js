@@ -202,9 +202,9 @@ export const template = `
                         <div class="flex items-center gap-2">
                             <input id="oti-connect-key" type="text" readonly
                                 class="bg-background-dark/50 border border-white/5 rounded-lg text-[#9cb0ba] text-xs px-3 py-2 flex-1 focus:border-primary transition-colors outline-none" />
-                            <button id="oti-generate-btn"
-                                class="size-9 flex items-center justify-center bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors">
-                                <span class="material-symbols-outlined text-xl">refresh</span>
+                            <button id="oti-toggle-btn"
+                                class="size-9 flex items-center justify-center bg-slate-700/50 text-slate-400 rounded-lg hover:bg-slate-700 transition-colors">
+                                <span id="oti-toggle-icon" class="material-symbols-outlined text-xl">power_settings_new</span>
                             </button>
                             <button id="oti-copy-btn"
                                 class="size-9 flex items-center justify-center bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors">
@@ -509,19 +509,46 @@ export function init() {
     const otiPasteKeyInput = document.getElementById('oti-paste-key');
     const otiConnectBtn = document.getElementById('oti-connect-btn');
     const otiStatus = document.getElementById('oti-status');
+    const otiToggleBtn = document.getElementById('oti-toggle-btn');
+    const otiToggleIcon = document.getElementById('oti-toggle-icon');
 
-    // Generate Connect Key
-    if (otiGenerateBtn) otiGenerateBtn.onclick = async () => {
+    let otiServerOn = false;
+
+    // Toggle OTI Server
+    if (otiToggleBtn) otiToggleBtn.onclick = async () => {
         try {
-            otiStatus.textContent = 'Generating key...';
             const OTITransfer = await import('../../../../bindings/github.com/404errorg6/share-all/internal/services/otitransfer.js');
-            const key = await OTITransfer.CreateConnectKey();
-            if (otiConnectKeyInput) otiConnectKeyInput.value = key;
-            otiStatus.textContent = 'Key generated';
-            if (globalThis.Components?.showToast) globalThis.Components.showToast('Connect key generated');
+
+            if (!otiServerOn) {
+                // Turn on - Create Connect Key
+                otiStatus.textContent = 'Starting server...';
+                otiToggleBtn.disabled = true;
+                const key = await OTITransfer.CreateConnectKey();
+                if (otiConnectKeyInput) otiConnectKeyInput.value = key;
+                otiStatus.textContent = 'Server running';
+                otiToggleBtn.classList.remove('bg-slate-700/50', 'text-slate-400');
+                otiToggleBtn.classList.add('bg-green-500/20', 'text-green-500');
+                otiToggleIcon.innerText = 'power_settings_new';
+                if (globalThis.Components?.showToast) globalThis.Components.showToast('Server started, key generated');
+                otiServerOn = true;
+            } else {
+                // Turn off - Close Server
+                otiStatus.textContent = 'Stopping server...';
+                otiToggleBtn.disabled = true;
+                await OTITransfer.CloseServer();
+                if (otiConnectKeyInput) otiConnectKeyInput.value = '';
+                otiStatus.textContent = 'Server stopped';
+                otiToggleBtn.classList.remove('bg-green-500/20', 'text-green-500');
+                otiToggleBtn.classList.add('bg-slate-700/50', 'text-slate-400');
+                otiToggleIcon.innerText = 'power_settings_new';
+                if (globalThis.Components?.showToast) globalThis.Components.showToast('Server stopped');
+                otiServerOn = false;
+            }
         } catch (error) {
-            otiStatus.textContent = 'Failed to generate';
+            otiStatus.textContent = otiServerOn ? 'Failed to stop' : 'Failed to start';
             if (globalThis.Components?.showToast) globalThis.Components.showToast(error.message, 'error');
+        } finally {
+            otiToggleBtn.disabled = false;
         }
     };
 

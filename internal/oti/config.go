@@ -12,8 +12,9 @@ const (
 	FromClientToServer
 )
 
-type Header struct {
+type Header struct { //Sent as a request from client to server
 	ClientFileName string
 	TransferType   TransferType
 	Path           string
+	IsDir          bool
 }
