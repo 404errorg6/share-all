@@ -65,9 +65,9 @@ export const template = `
             </button>
             <button id="discover-btn"
                 class="flex items-center justify-center gap-1.5 px-3 h-9 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-all border border-primary/20"
-                title="Discover Others">
+                title="Discover local devices">
                 <span class="material-symbols-outlined text-[18px]">radar</span>
-                <span class="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Discover Others</span>
+                <span class="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Discover local devices</span>
             </button>
             <div id="pane-selection-indicator"
                 class="bg-primary/10 text-primary px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ml-2">
