@@ -281,6 +281,10 @@ export function init() {
                     localStorage.setItem('current_remote_host', host);
                     localStorage.setItem('current_remote_port', port);
                 }
+                // Start syncing transfers with server
+                fetch('/api/ftp/client/sync-transfers', { method: 'POST' }).catch(err => {
+                    console.error('Failed to start transfer sync:', err);
+                });
                 window.location.hash = '#/browse-remote-local';
             } else {
                 if (globalThis.Components?.showToast) globalThis.Components.showToast(`Connection failed: ${text}`, 'error');

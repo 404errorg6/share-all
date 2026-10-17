@@ -49,6 +49,7 @@ require (
 require (
 	github.com/betamos/zeroconf v0.1.8-0.20250208023331-d559d61612b7
 	github.com/fclairamb/ftpserverlib v0.29.0
+	github.com/gorilla/websocket v1.5.3
 	github.com/jlaffaye/ftp v0.2.0
 	github.com/joho/godotenv v1.5.1
 	github.com/machinebox/progress v0.2.0

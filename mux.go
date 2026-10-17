@@ -39,6 +39,6 @@ func Mux() *http.ServeMux {
 	mux.HandleFunc("POST /api/ftp/client/upload", clienthandlers.HandleUpload)          //upload to server, remote_path, local_path required
 	mux.HandleFunc("POST /api/ftp/client/delete", clienthandlers.HandleDelete)          //delete from local, local_path required
 	mux.HandleFunc("GET /api/ftp/discover", clienthandlers.HandlerDiscoverServers)
-	mux.HandleFunc("GET /api/ftp/transfers", clienthandlers.HandleTransfer)
+	mux.HandleFunc("POST /api/ftp/client/sync-transfers", clienthandlers.HandleSyncTransfer)
 	return mux
 }

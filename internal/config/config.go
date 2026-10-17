@@ -73,6 +73,7 @@ var (
 
 var (
 	Dev               bool
+	BridgePort        = "8081"
 	DefFTPServerName  = getHostname()
 	DefFTPPort        = "2121"
 	DefFTPWriteAccess = "false"

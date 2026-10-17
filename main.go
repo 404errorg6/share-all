@@ -10,6 +10,7 @@ import (
 	"net/http"
 
 	"github.com/404errorg6/share-all/internal/config"
+	serverhandlers "github.com/404errorg6/share-all/internal/handlers/server_handlers"
 	"github.com/404errorg6/share-all/internal/services"
 	"github.com/joho/godotenv"
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -71,6 +72,7 @@ func main() {
 		})
 
 		StartEventSystem(app, win)
+		go serverhandlers.StartBridgeServer()
 
 		config.LogsCh <- "app ready to start"
 	}
