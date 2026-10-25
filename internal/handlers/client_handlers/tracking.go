@@ -1,6 +1,8 @@
 package clienthandlers
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -33,6 +35,8 @@ func startTracking(name string, size int64, isDownload bool, progressCh <-chan p
 		IsDownload: isDownload,
 	}
 
+	sendMetaDataToServer(name, info)
+
 	if isDownload {
 		config.LogsCh <- fmt.Sprintf("Downloading %v...", name)
 	} else {
@@ -50,4 +54,28 @@ func startTracking(name string, size int64, isDownload bool, progressCh <-chan p
 	app.Event.Emit("transfers:completed", info)
 	transferMap.Delete(name)
 	config.LogsCh <- fmt.Sprintf("Completed \"%v\"!", name)
+}
+
+func sendMetaDataToServer(name string, info config.TransferInfo) {
+	info.IsDownload = !info.IsDownload
+
+	c, err := GetNewConn()
+	if err != nil {
+		config.LogsCh <- fmt.Sprintf("Error sending metadata to server: %v", err)
+	} else {
+		metafile := fmt.Sprintf("%v.meta", name)
+		metaBytes, err := json.Marshal(info)
+
+		if err != nil {
+			config.LogsCh <- fmt.Sprintf("Error sending metadata to server: %v", err)
+		} else {
+
+			metaBuffer := bytes.NewBuffer(metaBytes)
+			err := c.Stor(metafile, metaBuffer)
+
+			if err != nil {
+				config.LogsCh <- fmt.Sprintf("Error sending metadata to server: %v", err)
+			}
+		}
+	}
 }

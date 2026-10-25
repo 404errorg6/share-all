@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/jlaffaye/ftp"
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -17,6 +19,39 @@ import (
 
 func GetHost() (string, error) {
 	return getInterfaceIpv4Addr(WifiOrDataInterface.Name)
+}
+
+func EncodeNameWithHeaders(name string, info TransferInfo) string {
+	jsonBytes, err := json.Marshal(info)
+	if err != nil {
+		LogsCh <- fmt.Sprintf("Error in syncing transfers while marshalling: %v", err)
+		return name
+	}
+
+	encoded := base64.URLEncoding.EncodeToString(jsonBytes)
+
+	return fmt.Sprintf("%v%v%v", name, FILEANDMETADATASEPARATOR, encoded) //Example: name.mp3|meta=headers
+}
+
+func DecodeNameWithHeaders(nameWithHeaders string) (string, TransferInfo, error) {
+	var info TransferInfo
+
+	name, encoded, found := strings.Cut(nameWithHeaders, FILEANDMETADATASEPARATOR)
+	if !found {
+		return name, info, fmt.Errorf("Error while reading name: metadata not found")
+	}
+
+	metaBytes, err := base64.URLEncoding.DecodeString(encoded)
+	if err != nil {
+		return name, info, err
+	}
+
+	err = json.Unmarshal(metaBytes, info)
+	if err != nil {
+		return name, info, err
+	}
+
+	return name, info, nil
 }
 
 func ResolveRemotePath(c *ftp.ServerConn, remotePath string) (string, *ftp.Entry, error) {

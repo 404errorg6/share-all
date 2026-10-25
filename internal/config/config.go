@@ -61,9 +61,10 @@ type TransferInfo struct {
 }
 
 const (
-	SERVICE       = "_ftp._tcp"
-	DOMAIN        = "local."
-	COMMONFTPNAME = "my ftp server" //Default name sent from frontend
+	SERVICE                  = "_ftp._tcp"
+	DOMAIN                   = "local."
+	COMMONFTPNAME            = "my ftp server" //Default name sent from frontend
+	FILEANDMETADATASEPARATOR = "|meta="
 )
 
 var (

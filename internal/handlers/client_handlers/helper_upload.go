@@ -67,7 +67,14 @@ func uploadWithProgress(remoteFilePath, localFilePath string) {
 
 	go startTracking(localEntry.Name(), localEntry.Size(), false, progressCh)
 	func() {
-		uploadConn.Stor(remoteFilePath, trackedFile)
+		meta := config.TransferInfo{
+			Name:       localEntry.Name(),
+			TotalSize:  localEntry.Size(),
+			IsDownload: true,
+		}
+
+		pathWithHeaders := config.EncodeNameWithHeaders(remoteFilePath, meta)
+		uploadConn.Stor(pathWithHeaders, trackedFile)
 
 		//		uploadPass <- true
 		//	uploadConn.Logout()
