@@ -165,6 +165,7 @@ func uploadFile(remoteDirPath, localFilePath string, c *ftp.ServerConn) error {
 		return err
 	}
 
+	config.LogsCh <- fmt.Sprintf("Uploading to remote path: %v", remoteFilePath)
 	uploadWithProgress(remoteFilePath, localFilePath)
 
 	return nil

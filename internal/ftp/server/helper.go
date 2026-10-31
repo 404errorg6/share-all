@@ -31,7 +31,7 @@ func (prf *progressReaderFile) Read(p []byte) (int, error) {
 
 // For client downloads
 func wrapWithReadProgress(file afero.File, clientTransferInfo config.TransferInfo) afero.File {
-	config.LogsCh <- fmt.Sprintf("%v is being uploaded...", clientTransferInfo.Name)
+	config.LogsCh <- fmt.Sprintf("Uploading %v...", clientTransferInfo.Name)
 
 	app := application.Get()
 	pr := progress.NewReader(file)
@@ -42,10 +42,12 @@ func wrapWithReadProgress(file afero.File, clientTransferInfo config.TransferInf
 		for p := range ticker {
 			clientTransferInfo.Percent = p.Percent()
 			clientTransferInfo.Written = p.N()
+			config.LogsCh <- fmt.Sprintf("Server: Emitting transfers:ongoing for %v (percent: %.2f)", clientTransferInfo.Name, clientTransferInfo.Percent)
 			app.Event.Emit("transfers:ongoing", clientTransferInfo)
 		}
 
 		clientTransferInfo.IsComplete = true
+		config.LogsCh <- fmt.Sprintf("Server: Emitting transfers:completed for %v", clientTransferInfo.Name)
 		app.Event.Emit("transfers:completed", clientTransferInfo)
 	}()
 
@@ -57,7 +59,7 @@ func wrapWithReadProgress(file afero.File, clientTransferInfo config.TransferInf
 
 // For client uploads
 func wrapWithWriteProgress(file afero.File, clientTransferInfo config.TransferInfo, name string) afero.File {
-	config.LogsCh <- fmt.Sprintf("%v is being uploaded...", clientTransferInfo.Name)
+	config.LogsCh <- fmt.Sprintf("Downloading %v to this device...", clientTransferInfo.Name)
 
 	if clientTransferInfo.TotalSize == 0 {
 		return file

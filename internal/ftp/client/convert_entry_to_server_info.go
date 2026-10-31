@@ -52,7 +52,7 @@ func getUsableIP(addrs []netip.Addr) (netip.Addr, error) {
 				continue
 			}
 
-			if isLocal(addr) {
+			if isLocal(addr) && !config.Dev {
 				config.LogsCh <- fmt.Sprintf("Skipped local addr: %v", addr.String())
 				continue
 			}

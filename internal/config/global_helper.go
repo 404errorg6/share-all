@@ -46,7 +46,7 @@ func DecodeNameWithHeaders(nameWithHeaders string) (string, TransferInfo, error)
 		return name, info, err
 	}
 
-	err = json.Unmarshal(metaBytes, info)
+	err = json.Unmarshal(metaBytes, &info)
 	if err != nil {
 		return name, info, err
 	}

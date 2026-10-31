@@ -20,11 +20,13 @@ globalThis.Components.Transfers = {
         
         // Listen for real-time transfer updates via Wails events
         Events.On('transfers:ongoing', (event) => {
+            console.log('Frontend: Received transfers:ongoing event:', event);
             const data = event && event.data ? event.data : event;
             this.handleTransferEvent(data, false);
         });
 
         Events.On('transfers:completed', (event) => {
+            console.log('Frontend: Received transfers:completed event:', event);
             const data = event && event.data ? event.data : event;
             this.handleTransferEvent(data, true);
         });

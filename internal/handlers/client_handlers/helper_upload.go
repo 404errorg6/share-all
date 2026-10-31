@@ -66,7 +66,7 @@ func uploadWithProgress(remoteFilePath, localFilePath string) {
 	time.Sleep(time.Second)
 
 	go startTracking(localEntry.Name(), localEntry.Size(), false, progressCh)
-	func() {
+	go func() {
 		meta := config.TransferInfo{
 			Name:       localEntry.Name(),
 			TotalSize:  localEntry.Size(),
@@ -74,7 +74,12 @@ func uploadWithProgress(remoteFilePath, localFilePath string) {
 		}
 
 		pathWithHeaders := config.EncodeNameWithHeaders(remoteFilePath, meta)
-		uploadConn.Stor(pathWithHeaders, trackedFile)
+		err := uploadConn.Stor(pathWithHeaders, trackedFile)
+		if err != nil {
+			config.LogsCh <- fmt.Sprintf("Upload failed for %v: %v", localEntry.Name(), err)
+		} else {
+			config.LogsCh <- fmt.Sprintf("Upload completed for %v", localEntry.Name())
+		}
 
 		//		uploadPass <- true
 		//	uploadConn.Logout()

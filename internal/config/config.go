@@ -7,6 +7,7 @@ import (
 	"time"
 
 	ftpserver "github.com/fclairamb/ftpserverlib"
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 type FSObject struct { //Struct used for sending to frontend to show entries
@@ -97,6 +98,13 @@ func Setup() error {
 	_, err = getInterfaceIpv4Addr(iface.Name)
 	if err != nil {
 		return err
+	}
+
+	if application.Get().Env.Info().Debug {
+		DefFTPServerName = "Dev"
+		DefFTPPort = "2122"
+		LogsCh <- "Changed port to 2122"
+		Dev = true
 	}
 
 	return nil
