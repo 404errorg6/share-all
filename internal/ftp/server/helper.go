@@ -42,12 +42,10 @@ func wrapWithReadProgress(file afero.File, clientTransferInfo config.TransferInf
 		for p := range ticker {
 			clientTransferInfo.Percent = p.Percent()
 			clientTransferInfo.Written = p.N()
-			config.LogsCh <- fmt.Sprintf("Server: Emitting transfers:ongoing for %v (percent: %.2f)", clientTransferInfo.Name, clientTransferInfo.Percent)
 			app.Event.Emit("transfers:ongoing", clientTransferInfo)
 		}
 
 		clientTransferInfo.IsComplete = true
-		config.LogsCh <- fmt.Sprintf("Server: Emitting transfers:completed for %v", clientTransferInfo.Name)
 		app.Event.Emit("transfers:completed", clientTransferInfo)
 	}()
 

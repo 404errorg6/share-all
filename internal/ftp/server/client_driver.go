@@ -29,7 +29,6 @@ func (d *AndroidClientDriver) Open(name string) (afero.File, error) {
 	}
 
 	if fileInfo.IsDir() {
-		config.LogsCh <- fmt.Sprintf("Skipping download of %v...", name)
 		return file, nil
 	}
 
@@ -44,7 +43,6 @@ func (d *AndroidClientDriver) Open(name string) (afero.File, error) {
 
 // Catch uploads that use OpenFile instead of Create
 func (d *AndroidClientDriver) OpenFile(name string, flag int, perm os.FileMode) (afero.File, error) {
-	config.LogsCh <- "OpenFile function called"
 	// If the file is being opened for writing or appending, treat it as an upload
 	if flag&os.O_WRONLY != 0 || flag&os.O_RDWR != 0 || flag&os.O_CREATE != 0 {
 		return d.Create(name)
@@ -56,12 +54,9 @@ func (d *AndroidClientDriver) OpenFile(name string, flag int, perm os.FileMode) 
 
 // Show progress for client-uploads
 func (d *AndroidClientDriver) Create(name string) (afero.File, error) {
-	config.LogsCh <- fmt.Sprintf("client is uploading %v to this device", name)
 	var clientTransferInfo config.TransferInfo
 
 	actualName, clientTransferInfo, err := config.DecodeNameWithHeaders(name)
-	config.LogsCh <- fmt.Sprintf("Decoded path: %v, original: %v", actualName, name)
-
 	if err != nil {
 		config.LogsCh <- fmt.Sprintf("Error while decoding name: %v", err)
 		clientTransferInfo.IsDownload = true //client upload is server download
